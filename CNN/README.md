@@ -10,19 +10,11 @@ tensorflowの練習用
 
 
 # Requirement
-```
-$ brew install pyenv
-$ pyenv install 3.6.7
-$ pyenv global 3.6.7
-$ pip install numpy
-$ pip install matplotlib
-$ pip install requests
-$ pip install tensorflowß
-```
+新たにinstallするものはないため、[READMR.md](../README.md)を参照
 
 # Usage
 ```bash
-python main.py --data (データ名) \
+python main.py --data (データ名) \
                --n_epoch (学習回数) \
                --opt (optimizer) \
                --test
