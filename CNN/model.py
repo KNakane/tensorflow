@@ -41,10 +41,7 @@ class MnistClassifier(object):
         return outputs
 
     def loss(self, logits, labels):
-        #labels = tf.reshape(tf.cast(labels, tf.int32), (-1, ))
-        #loss = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=labels)
-        #loss = tf.reduce_mean(loss)
-        loss = tf.nn.softmax_cross_entropy_with_logits_v2(labels, logits)
+        loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=logits, labels=labels))
         return loss
 
     def optimize(self, loss, clipped_value=1.0):
