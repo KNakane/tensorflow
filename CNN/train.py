@@ -1,7 +1,6 @@
 import tensorflow as tf
-from mnist_classifier import MnistClassifier
-import mnist_loader
-
+from model import MnistClassifier
+from data_load import Load
 
 def main():
     flags = tf.app.flags
@@ -14,7 +13,7 @@ def main():
         'model_path', '',
         'model output path')
     flags.DEFINE_integer(
-        'checkpoints_to_keep', 5,
+        'checkpoints_to_keep', 1000,
         'checkpoint keep count')
     flags.DEFINE_integer(
         'keep_checkpoint_every_n_hours', 1,
@@ -38,8 +37,8 @@ def main():
     batch_size = FLAGS.batch_size
 
     # load dataset
-    converter = mnist_loader.Converter()
-    dataset = mnist_loader.load(train_data, converter, batch_size=batch_size)
+    data = Load('mnist')
+    dataset = data.load(data.x_train, data.y_train, batch_size=batch_size, is_training=True)
     iterator = dataset.make_one_shot_iterator()
     inputs, labels = iterator.get_next()
 
@@ -50,7 +49,8 @@ def main():
     loss = model.loss(logits, labels)
     train_op = model.optimize(loss)
     predict = model.predict(logits)
-    accuracy = tf.reduce_mean(tf.cast(tf.equal(tf.cast(predict, tf.uint8), labels), tf.float32))
+    correct_prediction = tf.equal(tf.argmax(logits,1), tf.argmax(labels, 1))
+    accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
     with tf.control_dependencies([train_op]):
         train_op = tf.assign_add(global_step, 1)
 
