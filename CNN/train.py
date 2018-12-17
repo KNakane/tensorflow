@@ -1,43 +1,25 @@
 import tensorflow as tf
 from model import MnistClassifier
 from data_load import Load
+from utils import Utils
 
-def main():
-    flags = tf.app.flags
-    FLAGS = flags.FLAGS
+def main(argv):
+    print("---Start Learning------")
+    print("data : {}".format(FLAGS.data))
+    print("epoch : {}".format(FLAGS.n_epoch))
+    print("batch_size : {}".format(FLAGS.batch_size))
+    print("learning rate : {}".format(FLAGS.lr))
+    print("Optimizer : {}".format(FLAGS.opt))
+    print("-----------------------")
 
-    flags.DEFINE_string(
-        'train_data', '',
-        'taraining data file path')
-    flags.DEFINE_string(
-        'model_path', '',
-        'model output path')
-    flags.DEFINE_integer(
-        'checkpoints_to_keep', 1000,
-        'checkpoint keep count')
-    flags.DEFINE_integer(
-        'keep_checkpoint_every_n_hours', 1,
-        'checkpoint create ')
-    flags.DEFINE_integer(
-        'max_steps', 10000,
-        'max trainig step')
-    flags.DEFINE_integer(
-        'save_checkpoint_steps', 1000,
-        'save checkpoint step')
-    flags.DEFINE_integer(
-        'batch_size', 128,
-        'training batch size')
-
-    train_data = FLAGS.train_data
-    model_path = FLAGS.model_path
     checkpoints_to_keep = FLAGS.checkpoints_to_keep
     keep_checkpoint_every_n_hours = FLAGS.keep_checkpoint_every_n_hours
-    max_steps = FLAGS.max_steps
+    max_steps = FLAGS.n_epoch
     save_checkpoint_steps = FLAGS.save_checkpoint_steps
     batch_size = FLAGS.batch_size
 
     # load dataset
-    data = Load('mnist')
+    data = Load(FLAGS.data)
     dataset = data.load(data.x_train, data.y_train, batch_size=batch_size, is_training=True)
     iterator = dataset.make_one_shot_iterator()
     inputs, labels = iterator.get_next()
@@ -55,6 +37,7 @@ def main():
         train_op = tf.assign_add(global_step, 1)
 
     # logging for tensorboard
+    util = Utils()
     tf.summary.scalar('global_step', global_step)
     tf.summary.scalar('loss', loss)
     tf.summary.scalar('accuracy', accuracy)
@@ -80,7 +63,7 @@ def main():
 
     # training
     session = tf.train.MonitoredTrainingSession(
-        checkpoint_dir=model_path,
+        checkpoint_dir=util.model_path,
         hooks=hooks,
         scaffold=scaffold,
         save_checkpoint_steps=save_checkpoint_steps)
@@ -91,4 +74,14 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    flags = tf.app.flags
+    FLAGS = flags.FLAGS
+    flags.DEFINE_string('data', 'mnist', 'Choice the training data name -> ["mnist","cifar10","cifar100"]')
+    flags.DEFINE_integer('n_epoch', '1000', 'Input max epoch')
+    flags.DEFINE_integer('batch_size', '32', 'Input batch size')
+    flags.DEFINE_float('lr', '0.1', 'Input learning rate')
+    flags.DEFINE_string('opt','SGD','Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]')
+    flags.DEFINE_integer('checkpoints_to_keep', 5,'checkpoint keep count')
+    flags.DEFINE_integer('keep_checkpoint_every_n_hours', 1, 'checkpoint create ')
+    flags.DEFINE_integer('save_checkpoint_steps', 1000,'save checkpoint step')
+    tf.app.run()

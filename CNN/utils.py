@@ -9,6 +9,7 @@ class Utils():
         self.res_dir = "./results/"+dt_now.strftime("%y%m%d_%H%M%S")
         self.log_dir = self.res_dir + "/log"
         self.tf_board = self.res_dir + "/tf_board"
+        self.model_path = self.res_dir + "/model"
 
     def conf_log(self):
         if tf.gfile.Exists(self.res_dir):
