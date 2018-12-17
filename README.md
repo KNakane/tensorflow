@@ -3,6 +3,19 @@ tensorflow
 
 # Overview
 tensorflowの勉強用
+CNNと強化学習について触れる
+
+# Requirement
+```
+$ brew install pyenv
+$ pyenv install 3.6.7
+$ pyenv global 3.6.7
+$ pip install numpy
+$ pip install matplotlib
+$ pip install requests
+$ pip install tensorflow or pip install tensorflow-gpu
+```
+
 
 # Directory
 ディレクトリ構造は以下の通り
@@ -29,14 +42,3 @@ tensorflow
 ┃  　　　┗ README.md  
 ┃  
 ┗ README.md  
-
-# Requirement
-```
-$ brew install pyenv
-$ pyenv install 3.6.7
-$ pyenv global 3.6.7
-$ pip install numpy
-$ pip install matplotlib
-$ pip install requests
-$ pip install tensorflow or pip install tensorflow-gpu
-```
