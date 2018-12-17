@@ -12,7 +12,7 @@ class MnistClassifier(object):
                  lr=0.001):
         self.hidden_size = hidden_size
         self.classes = classes
-        self.optimizer = eval(opt)(learning_rate=lr).method
+        self.optimizer = opt(learning_rate=lr).method
         #self.optimizer = tf.train.AdamOptimizer(learning_rate=lr)
         self.built = False
         self._layers = []

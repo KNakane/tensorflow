@@ -26,7 +26,8 @@ def main(argv):
 
     # build train operation
     global_step = tf.train.get_or_create_global_step()
-    model = MnistClassifier(hidden_size=512, classes=10, opt=FLAGS.opt, lr=FLAGS.lr)
+    #model = MnistClassifier(hidden_size=512, classes=10, opt=FLAGS.opt, lr=FLAGS.lr)
+    model = MnistClassifier(hidden_size=512, classes=10, lr=FLAGS.lr)
     logits = model(inputs)
     loss = model.loss(logits, labels)
     train_op = model.optimize(loss)
