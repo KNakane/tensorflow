@@ -1,14 +1,19 @@
+import os,sys
+sys.path.append(os.path.join(os.path.dirname(__file__), '../utility'))
 import tensorflow as tf
+from optimizer import *
 
 
 class MnistClassifier(object):
     def __init__(self,
                  hidden_size=512,
                  classes=2,
+                 opt=SGD,
                  lr=0.001):
         self.hidden_size = hidden_size
         self.classes = classes
-        self.optimizer = tf.train.AdamOptimizer(learning_rate=lr)
+        self.optimizer = eval(opt)(learning_rate=lr).method
+        #self.optimizer = tf.train.AdamOptimizer(learning_rate=lr)
         self.built = False
         self._layers = []
 
