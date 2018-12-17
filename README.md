@@ -40,5 +40,7 @@ tensorflow
 ┃  　　　┣ trainer.py  
 ┃  　　　┣ writer.py  
 ┃  　　　┗ README.md  
-┃  
+┣ utility  
+┃  ┣ __init__.py
+┃  ┗ optimizer.py  
 ┗ README.md  
