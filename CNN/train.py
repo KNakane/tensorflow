@@ -67,8 +67,9 @@ def main(argv):
         checkpoint_dir=util.model_path,
         hooks=hooks,
         scaffold=scaffold,
-        save_checkpoint_steps=save_checkpoint_steps)
-
+        save_checkpoint_steps=save_checkpoint_steps,
+        summary_dir=util.tf_board)
+        
     with session:
         while not session.should_stop():
             session.run([train_op, labels, predict])
