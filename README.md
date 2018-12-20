@@ -24,14 +24,20 @@ $ pip install tensorflow or pip install tensorflow-gpu
 
 # Directory
 ディレクトリ構造は以下の通り
-tensorflow  
+tensorflow 
+┃  
 ┣ CNN  
-┃  ┣ data_load.py  
-┃  ┣ model.py  
-┃  ┣ optimizer.py  
+┃  ┣ \_\_init\_\_.py  
+┃  ┣ data_load.py     
 ┃  ┣ train.py  
 ┃  ┣ utils.py  
-┃  ┗ README.md  
+┃  ┗ README.md 
+┃   
+┣ network  
+┃  ┣ \_\_init\_\_.py  
+┃  ┣ lenet.py     
+┃  ┣ model.py   
+┃  ┗ module.py  
 ┃  
 ┣ rl  
 ┃ ┗ atari  
@@ -46,6 +52,8 @@ tensorflow
 ┃  　　　┣ writer.py  
 ┃  　　　┗ README.md  
 ┣ utility  
-┃  ┣ __init__.py  
+┃  ┣ \_\_init\_\_.py 
+┃  ┣ losses.py  
+┃  ┣ utils.py  
 ┃  ┗ optimizer.py  
 ┗ README.md  

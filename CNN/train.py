@@ -43,7 +43,7 @@ def main(argv):
     global_step = tf.train.get_or_create_global_step()
 
     model_set = set_model(data.output_dim)
-    model = DNN(model=model_set, name='sample', lr=FLAGS.lr, opt=FLAGS.opt, trainable=True)
+    model = LeNet(model=model_set, name='sample', lr=FLAGS.lr, opt=FLAGS.opt, trainable=True)
     logits = model.inference(inputs)
     logits  = tf.identity(logits, name="output_logits")
     loss = model.loss(logits, labels)
@@ -54,11 +54,12 @@ def main(argv):
     update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
     train_op = tf.group([opt_op] + update_ops)
     predict = model.predict(logits)
-    correct_prediction = tf.equal(tf.argmax(logits,1), tf.argmax(labels, 1))
+    correct_prediction = tf.equal(tf.argmax(logits), tf.argmax(labels, 1))
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
     # logging for tensorboard
     util = Utils()
+    util.conf_log()
     tf.summary.scalar('global_step', global_step)
     tf.summary.scalar('loss', loss)
     tf.summary.scalar('accuracy', accuracy)
