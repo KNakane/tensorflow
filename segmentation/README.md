@@ -1,4 +1,7 @@
-# Semantic Segmentation using U-Net on Pascal VOC 2012
+Semantic Segmentation using U-Net on Pascal VOC 2012
+==
+[こちらのソース](https://qiita.com/tktktks10/items/0f551aea27d2f62ef708)を基に自分用に変更するため
+
 This repository implements semantic segmentation on Pascal VOC2012 using U-Net.
 
 An article about this implementation is [here](https://qiita.com/tktktks10/items/0f551aea27d2f62ef708).
