@@ -1,5 +1,5 @@
 import sys
-sys.path.append('./../utility')
+sys.path.append('./utility')
 import tensorflow as tf
 from model import DNN
 from losses import classification_loss, add_to_watch_list
@@ -7,9 +7,11 @@ from data_load import Load
 from utils import Utils
 
 def set_model(outdim):
-    model_set = [['fc', 100, tf.nn.relu],
-                ['fc', 100, tf.nn.relu],
-                ['fc', outdim, None]]
+    model_set = [['conv', 3, 64, 2],
+                 ['conv', 3, 64, 2],
+                 ['conv', 3, 64, 2],
+                 ['fc', 50, tf.nn.relu],
+                 ['fc', outdim, None]]
     return model_set
 
 def main(argv):
@@ -31,6 +33,7 @@ def main(argv):
     dataset = data.load(data.x_train, data.y_train, batch_size=batch_size, is_training=True)
     iterator = dataset.make_one_shot_iterator()
     inputs, labels = iterator.get_next()
+    inputs = tf.reshape(inputs, (-1, data.size, data.size, data.channel)) / 255.0
 
     # build train operation
     global_step = tf.train.get_or_create_global_step()
@@ -47,7 +50,7 @@ def main(argv):
     update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
     train_op = tf.group([opt_op] + update_ops)
     predict = model.predict(logits)
-    correct_prediction = tf.equal(tf.argmax(logits,1), tf.argmax(labels, 1))
+    correct_prediction = tf.equal(tf.argmax(logits), tf.argmax(labels, 1))
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
     # logging for tensorboard

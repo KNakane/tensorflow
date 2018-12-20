@@ -15,14 +15,14 @@ class DNN(Module):
         self._layers = []
         self.name = name
         self.built = False
-        self.optimizer = opt(learning_rate=lr).method
+        #self.optimizer = opt(learning_rate=lr).method
+        self.optimizer = tf.train.AdamOptimizer(learning_rate=lr)
         self.trainable = trainable
 
     def inference(self, inputs):
-        outputs = tf.reshape(inputs, (-1, 28*28)) / 255.0
         with tf.variable_scope(self.name):
             for l in range(len(self.model)):
-                outputs = (eval('self.' + self.model[l][0])(outputs, self.model[l][1:]))
+                outputs = (eval('self.' + self.model[l][0])(inputs, self.model[l][1:]))
         return outputs
 
     @property
@@ -38,14 +38,6 @@ class DNN(Module):
 
     def optimize(self, loss, global_step):
         return self.optimizer.minimize(loss=loss, global_step=global_step)
-
-    """
-    def optimize(self, loss, clipped_value=1.0):
-        grads = self.optimizer.compute_gradients(loss, self.variables)
-        clipped_grads = [(tf.clip_by_value(g, -clipped_value, clipped_value), v) for g, v in grads]
-        train_op = self.optimizer.apply_gradients(clipped_grads)
-        return train_op
-    """
 
     def predict(self, logits):
         _, indices = tf.nn.top_k(logits, 1, sorted=False)
