@@ -2,6 +2,7 @@ import sys
 sys.path.append('./../utility')
 import tensorflow as tf
 from model import DNN
+from losses import classification_loss, add_to_watch_list
 from data_load import Load
 from utils import Utils
 
@@ -33,16 +34,21 @@ def main(argv):
 
     # build train operation
     global_step = tf.train.get_or_create_global_step()
+
     model_set = set_model(data.output_dim)
     model = DNN(model=model_set, name='sample', trainable=True)
-    logits = model(inputs)
+    logits = model.inference(inputs)
+    logits  = tf.identity(logits, name="output_logits")
     loss = model.loss(logits, labels)
-    train_op = model.optimize(loss)
+    #loss = classification_loss(logits, labels)
+    #add_to_watch_list("loss/classification", loss)
+    
+    opt_op = model.optimize(loss, global_step)
+    update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+    train_op = tf.group([opt_op] + update_ops)
     predict = model.predict(logits)
     correct_prediction = tf.equal(tf.argmax(logits,1), tf.argmax(labels, 1))
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
-    with tf.control_dependencies([train_op]):
-        train_op = tf.assign_add(global_step, 1)
 
     # logging for tensorboard
     util = Utils()
