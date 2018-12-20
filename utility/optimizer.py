@@ -24,7 +24,7 @@ class Momentum(SGD):
 
 
 class Adadelta(SGD):
-    def __init__(self, learning_rate=0.1):
+    def __init__(self, learning_rate=0.001):
         super().__init__(learning_rate=learning_rate)
         self.method = tf.train.AdadeltaOptimizer(self.lr)
 

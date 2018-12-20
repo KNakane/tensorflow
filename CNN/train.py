@@ -1,7 +1,15 @@
+import sys
+sys.path.append('./../utility')
 import tensorflow as tf
-from model import MnistClassifier
+from model import DNN
 from data_load import Load
 from utils import Utils
+
+def set_model(outdim):
+    model_set = [['fc', 100, tf.nn.relu],
+                ['fc', 100, tf.nn.relu],
+                ['fc', outdim, None]]
+    return model_set
 
 def main(argv):
     print("---Start Learning------")
@@ -9,7 +17,6 @@ def main(argv):
     print("epoch : {}".format(FLAGS.n_epoch))
     print("batch_size : {}".format(FLAGS.batch_size))
     print("learning rate : {}".format(FLAGS.lr))
-    print("Optimizer : {}".format(FLAGS.opt))
     print("-----------------------")
 
     checkpoints_to_keep = FLAGS.checkpoints_to_keep
@@ -26,8 +33,8 @@ def main(argv):
 
     # build train operation
     global_step = tf.train.get_or_create_global_step()
-    #model = MnistClassifier(hidden_size=512, classes=10, opt=FLAGS.opt, lr=FLAGS.lr)
-    model = MnistClassifier(hidden_size=512, classes=10, lr=FLAGS.lr)
+    model_set = set_model(data.output_dim)
+    model = DNN(model=model_set, name='sample', trainable=True)
     logits = model(inputs)
     loss = model.loss(logits, labels)
     train_op = model.optimize(loss)
@@ -82,7 +89,6 @@ if __name__ == '__main__':
     flags.DEFINE_integer('n_epoch', '1000', 'Input max epoch')
     flags.DEFINE_integer('batch_size', '32', 'Input batch size')
     flags.DEFINE_float('lr', '0.1', 'Input learning rate')
-    flags.DEFINE_string('opt','SGD','Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]')
     flags.DEFINE_integer('checkpoints_to_keep', 5,'checkpoint keep count')
     flags.DEFINE_integer('keep_checkpoint_every_n_hours', 1, 'checkpoint create ')
     flags.DEFINE_integer('save_checkpoint_steps', 1000,'save checkpoint step')
