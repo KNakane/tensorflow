@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
+import sys
 import tensorflow as tf
+sys.path.append('./utility')
 from module import Module
 from optimizer import *
 
@@ -15,8 +17,7 @@ class DNN(Module):
         self._layers = []
         self.name = name
         self.built = False
-        #self.optimizer = opt(learning_rate=lr).method
-        self.optimizer = tf.train.AdamOptimizer(learning_rate=lr)
+        self.optimizer = eval(opt)(learning_rate=lr)
         self.trainable = trainable
 
     def inference(self, inputs):
@@ -37,7 +38,7 @@ class DNN(Module):
         return loss
 
     def optimize(self, loss, global_step):
-        return self.optimizer.minimize(loss=loss, global_step=global_step)
+        return self.optimizer.optimize(loss=loss, global_step=global_step)
 
     def predict(self, logits):
         _, indices = tf.nn.top_k(logits, 1, sorted=False)
