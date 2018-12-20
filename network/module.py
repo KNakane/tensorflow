@@ -48,7 +48,7 @@ class Module(object):
         x = tf.layers.dense(inputs=x, units=args[0], activation=args[1], use_bias=True)
         return x
 
-    def dropout_fc(self, x, args):
+    def dropout(self, x, args):
         assert len(args) == 3, '[Dropout] Not enough Argument -> [units, activation, rate]'
-        x = self.fc(x=x, args=args)
+        x = self.fc(x=x, args=args[:2])
         return tf.layers.dropout(inputs=x, rate=args[2], training=self._trainable)

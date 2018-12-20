@@ -2,17 +2,18 @@ import sys
 sys.path.append('./utility')
 sys.path.append('./network')
 import tensorflow as tf
-#from model import DNN
+from model import DNN
 from lenet import LeNet
 from losses import classification_loss, add_to_watch_list
 from data_load import Load
 from utils import Utils
 
 def set_model(outdim):
-    model_set = [['conv', 3, 64, 2],
-                 ['conv', 3, 64, 2],
-                 ['conv', 3, 64, 2],
-                 ['fc', 50, tf.nn.relu],
+    model_set = [['conv', 5, 32, 1],
+                 ['max_pool', 2, 2],
+                 ['conv', 5, 64, 1],
+                 ['max_pool', 2, 2],
+                 ['dropout', 1024, tf.nn.relu, 0.5],
                  ['fc', outdim, None]]
     return model_set
 
@@ -42,7 +43,7 @@ def main(argv):
     global_step = tf.train.get_or_create_global_step()
 
     model_set = set_model(data.output_dim)
-    model = LeNet(model=model_set, name='sample', lr=FLAGS.lr, opt=FLAGS.opt, trainable=True)
+    model = DNN(model=model_set, name='sample', lr=FLAGS.lr, opt=FLAGS.opt, trainable=True)
     logits = model.inference(inputs)
     logits  = tf.identity(logits, name="output_logits")
     loss = model.loss(logits, labels)
