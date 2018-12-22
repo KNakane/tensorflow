@@ -1,6 +1,7 @@
 import os,sys
 import tensorflow as tf
 from keras.datasets import *
+from keras.utils import np_utils
 
 class Load():
     def __init__(self,name):
@@ -33,6 +34,7 @@ class Load():
             y = tf.one_hot(tf.cast(label, tf.uint8), self.output_dim)
             return x, y
 
+        labels = labels.reshape(labels.shape[0])
         dataset = tf.data.Dataset.from_tensor_slices((images, labels))
 
         # Transform and batch data at the same time

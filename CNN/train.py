@@ -54,7 +54,7 @@ def main(argv):
     update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
     train_op = tf.group([opt_op] + update_ops)
     predict = model.predict(logits)
-    correct_prediction = tf.equal(tf.argmax(logits), tf.argmax(labels, 1))
+    correct_prediction = tf.equal(tf.argmax(logits,1), tf.argmax(labels, 1))
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
     # logging for tensorboard
