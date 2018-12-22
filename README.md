@@ -5,12 +5,7 @@ tensorflow
 tensorflowの勉強用
 CNNと強化学習について触れる
 
-# Requirement
-
-## バージョン
-- tensorflow=1.12.0
-
-## install
+# Installation
 ```
 $ brew install pyenv
 $ pyenv install 3.6.7

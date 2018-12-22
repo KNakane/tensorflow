@@ -1,0 +1,6 @@
+numpy
+keras
+gym
+tensorflow
+matplotlib
+requests
