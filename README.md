@@ -15,37 +15,18 @@ $ pip install -r requirements.txt
 
 
 # Directory
-ディレクトリ構造は以下の通り
-tensorflow 
+ディレクトリ構造は以下の通り  
+tensorflow  
 ┃  
-┣ CNN  
-┃  ┣ \_\_init\_\_.py  
-┃  ┣ data_load.py     
-┃  ┣ train.py  
-┃  ┣ utils.py  
-┃  ┗ README.md  
+┣ CNN : CNNで学習するディレクトリ  
 ┃   
-┣ network  
-┃  ┣ \_\_init\_\_.py  
-┃  ┣ lenet.py     
-┃  ┣ model.py   
-┃  ┗ module.py  
+┣ network  : DLのNetworkを構築するディレクトリ    
 ┃  
 ┣ rl  
-┃ ┗ atari  
-┃  　　　┣ atari_wrapper.py  
-┃  　　　┣ cartpole_sample.py  
-┃  　　　┣ cartpole_wrapper.py  
-┃  　　　┣ display_as_gif.py  
-┃  　　　┣ dqn.py  
-┃  　　　┣ model.py  
-┃  　　　┣ replay_memory.py  
-┃  　　　┣ trainer.py  
-┃  　　　┣ writer.py  
-┃  　　　┗ README.md  
+┃  ┣ agents  : 強化学習用のAgent  
+┃  ┣ atari  : atariを使用して強化学習  
+┃  ┗ classic : 古典的なenvを使用して強化学習  
+┃  
 ┣ utility  
-┃  ┣ \_\_init\_\_.py  
-┃  ┣ losses.py  
-┃  ┣ utils.py  
-┃  ┗ optimizer.py  
+┃  
 ┗ README.md  
