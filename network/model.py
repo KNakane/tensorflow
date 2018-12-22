@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-import sys
+import os,sys
 import tensorflow as tf
-sys.path.append('./utility')
+sys.path.append(os.path.join(os.path.dirname(__file__), './utility'))
 from module import Module
 from optimizer import *
 
@@ -16,9 +16,9 @@ class DNN(Module):
         self.model = model
         self._layers = []
         self.name = name
-        self.built = False
-        self.optimizer = eval(opt)(learning_rate=lr)
         self.trainable = trainable
+        if self.trainable:
+            self.optimizer = eval(opt)(learning_rate=lr)
 
     def inference(self, inputs):
         with tf.variable_scope(self.name):
@@ -37,7 +37,7 @@ class DNN(Module):
         loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=logits, labels=labels))
         return loss
 
-    def optimize(self, loss, global_step):
+    def optimize(self, loss, global_step=None):
         return self.optimizer.optimize(loss=loss, global_step=global_step)
 
     def predict(self, logits):

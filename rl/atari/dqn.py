@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 import sys,os
-sys.path.append(os.path.join(os.path.dirname(__file__), '../../practice/program'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '../../utility'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '../../network'))
 import numpy as np
 import tensorflow as tf
 from optimizer import *
+from model import DNN
 from writer import Writer
 
 class DQN():
@@ -60,15 +62,15 @@ class DQN():
         self.q_target = tf.placeholder(tf.float32, [None, self.n_actions], name='Q_target')  # for calculating loss
         
         with tf.variable_scope('eval_net'):
-            self.q_eval = self.model(inputs=self.s, name='Q_net', trainable=True)
+            self.q_eval_model = DNN(model=self.model,name='Q_net', opt=self._optimizer, lr=self.lr, trainable=True)
+            self.q_eval = self.q_eval_model.inference(self.s)
 
         with tf.variable_scope('loss'):
             self.loss = tf.reduce_mean(tf.squared_difference(self.q_target, self.q_eval))
             self.loss_summary = tf.summary.scalar("loss", self.loss)
         
         with tf.variable_scope('train'):
-            opt = eval(self._optimizer)(self.lr)
-            self._train_op = opt.optimize(self.loss)
+            self._train_op = self.q_eval_model.optimize(self.loss)
 
         # ------------------ build target_net ------------------
         with tf.variable_scope('target_input'):
@@ -77,7 +79,7 @@ class DQN():
             except:
                 self.s_ = tf.placeholder(tf.float32, [None, self.n_features], name='s_')    # input
         with tf.variable_scope('target_net'):
-            self.q_next = self.model(inputs=self.s_, name='target_net', trainable=False)
+            self.q_next = DNN(model=self.model, name='target_net', trainable=False).inference(self.s_)
 
     def choose_action(self, observation):
         # to have batch dimension when feed into tf placeholder

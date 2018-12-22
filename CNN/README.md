@@ -13,11 +13,37 @@ tensorflowの練習用
 新たにinstallするものはないため、[READMR.md](../README.md)を参照
 
 # Usage
+## Build Network
+```train.py```内にある```set_model```関数に作成したいモデルを定義する  
+listである**model_set**にlayerごとの情報をlistとしてappendする  
+定義の方法は以下の通り  
+- 基本設計：['layer種類', 'args']
+- argsの設計
+    - **fc**:[units, activation]
+    - **dropout**:[units, activation, rate]
+    - **ReLU**:なし
+    - **conv**:[kernel, filter, strides]
+    - **max_pool**:[pool_size, strides]
+    - **avg_pool**:[pool_size, strides]
+    - **BN**:なし
+
+## Learning
 ```bash
-python main.py --data (データ名) \
-               --n_epoch (学習回数) \
-               --opt (optimizer) \
+$ python CNN/main.py --data (データ名) \
+                     --n_epoch (学習回数) \
+                     --batch_size (batch size) \
+                     --lr (学習率) \
+                     --opt (optimizer) \
+                     --checkpoints_to_keep \
+                     --keep_checkpoint_every_n_hours \
+                     --save_checkpoint_steps
 ```
+## Tensorboard
+```
+$ tensorboard --logdir=/path/to/logdir
+```
+
+## 
 # Sample Result
 ```bash
 ---Start Learning------

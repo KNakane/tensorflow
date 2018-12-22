@@ -1,21 +1,26 @@
 # -*- coding: utf-8 -*-
 #tensorboard --logdir ./logs
 import sys,os
-sys.path.append(os.path.join(os.path.dirname(__file__), '../../practice/program'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '../../utility'))
 import tensorflow as tf
 from optimizer import *
-from model import CNNFunction,NNFunction
 import numpy as np
 import gym
 import gym.spaces
 from trainer import Trainer
 from dqn import DQN,DDQN
 
+def set_model(outdim):
+    model_set = [['fc', 10, tf.nn.relu],
+                 ['fc', 10, tf.nn.relu],
+                 ['fc', outdim, None]]
+    return model_set
+
 
 def main(argv):
     env = gym.make('CartPole-v0')
     env = env.unwrapped
-    agent = DDQN(model=NNFunction(output_dim=env.action_space.n),
+    agent = DDQN(model=set_model(outdim=env.action_space.n),
                  n_actions=env.action_space.n,
                  n_features=env.observation_space.shape[0],
                  learning_rate=0.01, e_greedy=0.9,
