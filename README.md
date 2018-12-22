@@ -15,10 +15,7 @@ CNNと強化学習について触れる
 $ brew install pyenv
 $ pyenv install 3.6.7
 $ pyenv global 3.6.7
-$ pip install numpy
-$ pip install matplotlib
-$ pip install requests
-$ pip install tensorflow or pip install tensorflow-gpu
+$ pip install -r requirements.txt
 ```
 
 
