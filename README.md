@@ -23,7 +23,7 @@ tensorflow
 ┃  ┣ data_load.py     
 ┃  ┣ train.py  
 ┃  ┣ utils.py  
-┃  ┗ README.md 
+┃  ┗ README.md  
 ┃   
 ┣ network  
 ┃  ┣ \_\_init\_\_.py  
@@ -44,7 +44,7 @@ tensorflow
 ┃  　　　┣ writer.py  
 ┃  　　　┗ README.md  
 ┣ utility  
-┃  ┣ \_\_init\_\_.py 
+┃  ┣ \_\_init\_\_.py  
 ┃  ┣ losses.py  
 ┃  ┣ utils.py  
 ┃  ┗ optimizer.py  
