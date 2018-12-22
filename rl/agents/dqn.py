@@ -20,7 +20,7 @@ class DQN():
             replace_target_iter=300,
             batch_size=32,
             e_greedy_increment=None,
-            optimizer='RMSProp',
+            optimizer=Adam
     ):
         self.model = model
         self.n_actions = n_actions
@@ -62,15 +62,16 @@ class DQN():
         self.q_target = tf.placeholder(tf.float32, [None, self.n_actions], name='Q_target')  # for calculating loss
         
         with tf.variable_scope('eval_net'):
-            self.q_eval_model = DNN(model=self.model,name='Q_net', opt=self._optimizer, lr=self.lr, trainable=True)
+            self.q_eval_model = DNN(model=self.model, name='Q_net', opt=self._optimizer, lr=self.lr, trainable=True)
             self.q_eval = self.q_eval_model.inference(self.s)
 
-        with tf.variable_scope('loss'):
-            self.loss = tf.reduce_mean(tf.squared_difference(self.q_target, self.q_eval))
-            self.loss_summary = tf.summary.scalar("loss", self.loss)
-        
-        with tf.variable_scope('train'):
-            self._train_op = self.q_eval_model.optimize(self.loss)
+            with tf.variable_scope('loss'):
+                self.loss = tf.losses.huber_loss(labels=self.q_target, predictions=self.q_eval)
+                #self.loss = tf.reduce_mean(tf.squared_difference(self.q_target, self.q_eval))
+                self.loss_summary = tf.summary.scalar("loss", self.loss)
+            
+            with tf.variable_scope('train'):
+                self._train_op = self.q_eval_model.optimize(self.loss)
 
         # ------------------ build target_net ------------------
         with tf.variable_scope('target_input'):

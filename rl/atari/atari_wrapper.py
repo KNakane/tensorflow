@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 #tensorboard --logdir ./logs
 import sys,os
-sys.path.append(os.path.join(os.path.dirname(__file__), '../../practice/program'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '../../utility'))
 import tensorflow as tf
 from optimizer import *
-from model import CNNFunction
 import numpy as np
 os.environ.setdefault('PATH', '')
 from collections import deque
@@ -240,12 +239,20 @@ def wrap_deepmind(env, episode_life=True, clip_rewards=True, frame_stack=False, 
         env = FrameStack(env, 4)
     return env
 
+def set_model(outdim):
+    model_set = [['conv', 7, 32, 1],
+                 ['conv', 5, 64, 2],
+                 ['conv', 3, 128, 1],
+                 ['fc', 100, None],
+                 ['fc', outdim, None]]
+    return model_set
+
 
 def main(argv):
     env = make_atari(FLAGS.env)
     env = wrap_deepmind(env, frame_stack=True)
     #env = EnvWrap(env)
-    agent = DQN(model=CNNFunction(output_dim=env.action_space.n),
+    agent = DDQN(model=set_model(outdim=env.action_space.n),
                 n_actions=env.action_space.n,
                 n_features=env.observation_space.shape,
                 learning_rate=0.01, e_greedy=0.9,

@@ -1,14 +1,17 @@
 # -*- coding: utf-8 -*-
 #tensorboard --logdir ./logs
 import sys,os
+sys.path.append(os.path.join(os.path.dirname(__file__), '../'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '../agents'))
 sys.path.append(os.path.join(os.path.dirname(__file__), '../../utility'))
-import tensorflow as tf
-from optimizer import *
-import numpy as np
 import gym
 import gym.spaces
-from trainer import Trainer
+import numpy as np
+import tensorflow as tf
+from optimizer import *
 from dqn import DQN,DDQN
+from trainer import Trainer
+
 
 def set_model(outdim):
     model_set = [['fc', 10, tf.nn.relu],
@@ -49,7 +52,7 @@ def main(argv):
     print("n_warmup : {}".format(FLAGS.n_warmup))
     print("model_update : {}".format(FLAGS.model_update))
     print("-----------------------")
-    trainer.train_cartpole()
+    trainer.train()
 
 
 if __name__ == '__main__':

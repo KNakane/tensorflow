@@ -9,12 +9,12 @@ from data_load import Load
 from utils import Utils
 
 def set_model(outdim):
-    model_set = [['conv', 5, 32, 1],
-                 ['max_pool', 2, 2],
-                 ['conv', 5, 64, 1],
-                 ['max_pool', 2, 2],
-                 ['dropout', 1024, tf.nn.relu, 0.5],
-                 ['fc', outdim, None]]
+    model_set = [['conv', 5, 32, 1, 'conv1'],
+                 ['max_pool', 2, 2, 'max_pool1'],
+                 ['conv', 5, 64, 1, 'conv2'],
+                 ['max_pool', 2, 2, 'max_pool1'],
+                 ['dropout', 0.5, 1024, tf.nn.relu, 'dropout_fc1'],
+                 ['fc', outdim, None, 'fc2']]
     return model_set
 
 def main(argv):
@@ -43,7 +43,7 @@ def main(argv):
     global_step = tf.train.get_or_create_global_step()
 
     model_set = set_model(data.output_dim)
-    model = LeNet(model=model_set, name='sample', lr=FLAGS.lr, opt=FLAGS.opt, trainable=True)
+    model = DNN(model=model_set, name='sample', lr=FLAGS.lr, opt=FLAGS.opt, trainable=True)
     logits = model.inference(inputs)
     logits  = tf.identity(logits, name="output_logits")
     loss = model.loss(logits, labels)
@@ -88,12 +88,14 @@ def main(argv):
         checkpoint_dir=util.model_path,
         hooks=hooks,
         scaffold=scaffold,
-        save_checkpoint_steps=save_checkpoint_steps,
-        summary_dir=util.tf_board)
+        save_checkpoint_steps=save_checkpoint_steps)
+
+    run_options = tf.RunOptions(output_partition_graphs=True)
+    run_metadata = tf.RunMetadata()
         
     with session:
         while not session.should_stop():
-            session.run([train_op, labels, predict])
+            session.run([train_op, labels, predict],run_metadata=run_metadata, options=run_options)
 
 
 if __name__ == '__main__':

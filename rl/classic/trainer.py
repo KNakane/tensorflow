@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 #tensorboard --logdir ./logs
 import sys,os
-sys.path.append(os.path.join(os.path.dirname(__file__), '../'))
-sys.path.append(os.path.join(os.path.dirname(__file__), '../agents'))
 sys.path.append(os.path.join(os.path.dirname(__file__), '../../utility'))
 import random
 import numpy as np
@@ -36,6 +34,7 @@ class Trainer():
         self.test_episode = test_episode
         self.replay_buf = ReplayMemory(self.data_size)
 
+    
     def train(self):
         for episode in range(self.n_episode):    
             state = self.env.reset()
@@ -43,9 +42,16 @@ class Trainer():
             for step in range(self.max_steps):
                 if self.render:
                     self.env.render()
-                action = self.agent.choose_action(state)
-                state_, reward, done, info = self.env.step(action)
 
+                action = self.agent.choose_action(state)
+                state_, _, done, _ = self.env.step(action)
+
+                # the smaller theta and closer to center the better
+                x, x_dot, theta, theta_dot = state_
+                r1 = (self.env.x_threshold - abs(x))/self.env.x_threshold - 0.8
+                r2 = (self.env.theta_threshold_radians - abs(theta))/self.env.theta_threshold_radians - 0.5
+                reward = r1 + r2
+                
                 self.replay_buf.push(state, action, done, state_, reward)
 
                 total_reward += reward
@@ -84,7 +90,7 @@ class Trainer():
                                        average_reward = total_reward / step)
                     self.agent.writer.add_list(record_dict, episode, True)
                     print("episode: %d  total_steps: %d  total_reward: %0.2f"%(episode, step, total_reward))
-                    display_frames_as_gif(frames,"gif_image", './')
+                    #display_frames_as_gif(frames,"gif_image", './')
 
                 state = next_state
 

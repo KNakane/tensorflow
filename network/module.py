@@ -28,14 +28,16 @@ class Module(object):
                                            strides=[args[1], args[1]],
                                            padding='same')
 
-    def global_average_pooling(self, x, args):
-        for _ in range(2):
-            x = tf.reduce_mean(x, axis=1)
-        return x
+    def gap(self, x, args): #global_average_pooling
+        with tf.variable_scope('GAP'):
+            for _ in range(2):
+                x = tf.reduce_mean(x, axis=1)
+            return x
 
-    def BN(self, x, args):
-        return tf.layers.batch_normalization(inputs=x,
-                                             trainable=self._trainable)
+    def BN(self, x, args): #Batch Normalization
+        with tf.variable_scope('BatchNorm'):
+            return tf.layers.batch_normalization(inputs=x,
+                                                 trainable=self._trainable)
     
     def ReLU(self, x, args):
         with tf.variable_scope('ReLU'):
