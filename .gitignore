@@ -1,1 +1,11 @@
 results/
+CNN/__pycache__
+network/__pycache__
+rl/__pycache__
+rl/atari/__pycache__
+rl/classic/__pycache__
+rl/agents/__pycache__
+segmentation/__pycache__
+segmentation/util/__pycache__
+segmentation/data_set
+utility/__pycache__
