@@ -63,7 +63,6 @@ class Loader(object):
             raise FileNotFoundError("Could not load images.")
         filenames = list(map(lambda path: path.split(os.sep)[-1].split(".")[0], paths_segmented))
         paths_original = list(map(lambda filename: dir_original + "/" + filename + ".jpg", filenames))
-
         return paths_original, paths_segmented
 
     @staticmethod

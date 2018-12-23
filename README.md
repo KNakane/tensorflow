@@ -2,7 +2,7 @@ tensorflow
 ==
 
 # Overview
-tensorflowの勉強用
+tensorflowの勉強用  
 CNNと強化学習について触れる
 
 # Installation
@@ -25,7 +25,9 @@ tensorflow
 ┣ rl  
 ┃  ┣ agents  : 強化学習用のAgent  
 ┃  ┣ atari  : atariを使用して強化学習  
-┃  ┗ classic : 古典的なenvを使用して強化学習  
+┃  ┗ classic : 古典的なenvを使用して強化学習 
+┃  
+┣ segmentation : segmentationを行うディレクトリ 
 ┃  
 ┣ utility  
 ┃  

@@ -8,8 +8,8 @@ from util import repoter as rp
 
 
 def load_dataset(train_rate):
-    loader = ld.Loader(dir_original="data_set/VOCdevkit/VOC2012/JPEGImages",
-                       dir_segmented="data_set/VOCdevkit/VOC2012/SegmentationClass")
+    loader = ld.Loader(dir_original="segmentation/data_set/VOCdevkit/VOC2012/JPEGImages",
+                       dir_segmented="segmentation/data_set/VOCdevkit/VOC2012/SegmentationClass")
     return loader.load_train_test(train_rate=train_rate, shuffle=False)
 
 

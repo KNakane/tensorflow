@@ -8,7 +8,7 @@ from optimizer import *
 class LeNet(DNN):
     def __init__(self, 
                  model=None,
-                 name='DNN',
+                 name='LeNet',
                  opt=Adam,   # Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]
                  lr=0.001,
                  trainable=False):
