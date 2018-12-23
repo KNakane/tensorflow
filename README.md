@@ -25,9 +25,9 @@ tensorflow
 ┣ rl  
 ┃  ┣ agents  : 強化学習用のAgent  
 ┃  ┣ atari  : atariを使用して強化学習  
-┃  ┗ classic : 古典的なenvを使用して強化学習 
+┃  ┗ classic : 古典的なenvを使用して強化学習  
 ┃  
-┣ segmentation : segmentationを行うディレクトリ 
+┣ segmentation : segmentationを行うディレクトリ  
 ┃  
 ┣ utility  
 ┃  
