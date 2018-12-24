@@ -4,6 +4,33 @@ class Module(object):
     def __init__(self, trainable=False):
         self._trainable = trainable
 
+    def Residual(self, x, args):
+        input = x
+        assert len(args) == 4, '[Residual] Not enough Argument -> [kernel, filter, strides, bottleneck]'
+        with tf.variable_scope('Residual'):
+            if args[3]:
+                x = self.BN(x=x, args=None)
+                x = self.ReLU(x=x, args=None)
+                x = self.conv(x=x, args=[1, args[1],1])
+                x = self.BN(x=x, args=None)
+                x = self.ReLU(x=x, args=None)
+                x = self.conv(x=x, args=args[:3])
+                x = self.BN(x=x, args=None)
+                x = self.ReLU(x=x, args=None)
+                x = self.conv(x=x, args=[1, args[1],1])
+            else:
+                x = self.BN(x=x, args=None)
+                x = self.ReLU(x=x, args=None)
+                x = self.conv(x=x, args=[args[0], args[1],1])
+                x = self.BN(x=x, args=None)
+                x = self.ReLU(x=x, args=None)
+                x = self.conv(x=x, args=args[:3])
+
+            if input.shape[1] != x.shape[1] or input.shape[3] != x.shape[3]:
+                input = self.conv(x=input, args=[1, args[1], args[2]])
+            
+            return x + input
+
     def conv(self, x, args):
         assert len(args) == 3, '[conv] Not enough Argument -> [kernel, filter, strides]'
         return tf.layers.conv2d(inputs=x,
