@@ -91,7 +91,7 @@ def main(argv):
     hooks.append(tf.train.NanTensorHook(loss))
     if max_steps:
         hooks.append(tf.train.StopAtStepHook(last_step=max_steps))
-
+        
     # training
     session = tf.train.MonitoredTrainingSession(
         checkpoint_dir=util.model_path,
@@ -105,7 +105,7 @@ def main(argv):
         
     with session:
         while not session.should_stop():
-            session.run([train_op],run_metadata=run_metadata, options=run_options)
+            session.run([train_op, loss, global_step],run_metadata=run_metadata, options=run_options)
     return
 
 if __name__ == '__main__':
