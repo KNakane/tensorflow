@@ -21,16 +21,16 @@ def set_model(outdim):
 
 
 def main(argv):
-    env = gym.make('CartPole-v0')
+    env = gym.make(FLAGS.env)
     env = env.unwrapped
-    agent = eval(FLAGS.agent)(model=set_model(outdim=env.action_space.n),
-                              n_actions=env.action_space.n,
-                              n_features=env.observation_space.shape[0],
-                              learning_rate=0.01, e_greedy=0.9,
-                              replace_target_iter=100,
-                              e_greedy_increment=0.001,
-                              optimizer=FLAGS.opt
-                              )
+    agent = DDQN(model=set_model(outdim=env.action_space.shape[0]),
+                 n_actions=env.action_space.shape[0],
+                 n_features=env.observation_space.shape,
+                 learning_rate=0.01, e_greedy=0.9,
+                 replace_target_iter=100,
+                 e_greedy_increment=0.001,
+                 optimizer=FLAGS.opt
+                 )
 
     trainer = Trainer(agent=agent, 
                       env=env, 
@@ -43,8 +43,7 @@ def main(argv):
 
     print()
     print("---Start Learning------")
-    print("data : {}".format(env))
-    print("Agent : {}".format(FLAGS.agent))
+    print("data : {}".format(FLAGS.env))
     print("epoch : {}".format(FLAGS.n_episode))
     print("step : {}".format(FLAGS.step))
     print("batch_size : {}".format(FLAGS.batch_size))
@@ -59,7 +58,7 @@ def main(argv):
 if __name__ == '__main__':
     flags = tf.app.flags
     FLAGS = flags.FLAGS
-    flags.DEFINE_string('agent', 'DQN', 'Choise Agents -> [DQN, DDQN]')
+    flags.DEFINE_string('env', 'Pendulum-v0', 'Choice environment -> [Pendulum-v0,MountainCar-v0]')
     flags.DEFINE_integer('n_episode', '100000', 'Input max episode')
     flags.DEFINE_integer('step', '10000', 'Input max steps')
     flags.DEFINE_integer('batch_size', '32', 'Input batch size')

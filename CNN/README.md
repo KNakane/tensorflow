@@ -10,7 +10,7 @@ tensorflowの練習用
 
 
 # Requirement
-新たにinstallするものはないため、[READMR.md](../README.md)を参照
+新たにinstallするものはないため、[README.md](../README.md)を参照
 
 # Usage
 ## Build Network
