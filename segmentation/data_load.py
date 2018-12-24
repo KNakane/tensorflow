@@ -12,7 +12,8 @@ class Load():
     def __init__(self, init_size=(128, 128), one_hot=True):
         self.init_size = init_size
         self.one_hot = one_hot
-        self.dataset_dir = "segmentation/data_set"
+        #self.dataset_dir = "segmentation/data_set"
+        self.dataset_dir = "/home/rl/Desktop/models/research/deeplab/datasets/pascal_voc_seg"
         self.dir_original = self.dataset_dir + "/VOCdevkit/VOC2012/JPEGImages"
         self.dir_segmented = self.dataset_dir + "/VOCdevkit/VOC2012/SegmentationClass"
         self.deploy()

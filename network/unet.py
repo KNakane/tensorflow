@@ -11,8 +11,10 @@ class UNet(DNN):
                  name='U-Net',
                  opt=Adam,   # Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]
                  lr=0.001,
-                 trainable=False):
+                 trainable=False,
+                 **kwargs):
         super().__init__(name=name,opt=opt,lr=lr,trainable=trainable)
+        self.output_dim = kwargs['output_dim']
         
     def inference(self, featmap):
         with tf.variable_scope(self.name):
@@ -55,6 +57,6 @@ class UNet(DNN):
 
             featmap = tf.layers.conv2d(featmap, 64, [3, 3], activation=tf.nn.relu, padding='same', name="conv17")
             featmap = tf.layers.conv2d(featmap, 64, [3, 3], activation=tf.nn.relu, padding='same', name="conv18")
-            featmap = tf.layers.conv2d(featmap, 3, [1, 1], activation=None, padding='same', name="conv19")
+            featmap = tf.layers.conv2d(featmap, self.output_dim, [1, 1], activation=None, padding='same', name="conv19")
 
             return featmap

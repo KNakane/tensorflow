@@ -32,8 +32,8 @@ def main(argv):
     # Load Dataset
     data = Load()
     x_train, y_train = data.get_data()
-    dataset = data.load(x_train, y_train, batch_size)
-    iterator = dataset.make_one_shot_iterator()
+    dataset = data.load(x_train, y_train, batch_size, buffer_size=1000, is_training=True)
+    iterator = dataset.make_initializable_iterator()
     inputs, labels = iterator.get_next()
 
     """
@@ -47,7 +47,7 @@ def main(argv):
     global_step = tf.train.get_or_create_global_step()
 
     # Create a model
-    model = UNet(model=None, name='U-Net', lr=FLAGS.lr, opt=FLAGS.opt, trainable=True)
+    model = UNet(model=None, name='U-Net', lr=FLAGS.lr, opt=FLAGS.opt, trainable=True, output_dim=len(data.category))
     logits = model.inference(inputs)
     loss = model.loss(logits, labels)
     loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=labels,
@@ -59,7 +59,7 @@ def main(argv):
     # Calculate accuracy
     correct_prediction = tf.equal(tf.argmax(logits, 3), tf.argmax(labels, 3))
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
-    mIoU = tf.metrics.mean_iou(labels,logits,data.category)
+    mIoU, _ = tf.metrics.mean_iou(labels,logits,len(data.category))
 
     # logging for tensorboard
     util = Utils()
@@ -69,8 +69,12 @@ def main(argv):
     tf.summary.scalar('accuracy', accuracy)
     tf.summary.scalar('mIoU', mIoU)
 
+    def init_fn(scaffold, session):
+        session.run(iterator.initializer)
+
     # create saver
     scaffold = tf.train.Scaffold(
+        init_fn=init_fn,
         saver=tf.train.Saver(
             max_to_keep=checkpoints_to_keep,
             keep_checkpoint_every_n_hours=keep_checkpoint_every_n_hours))
@@ -93,7 +97,8 @@ def main(argv):
         checkpoint_dir=util.model_path,
         hooks=hooks,
         scaffold=scaffold,
-        save_checkpoint_steps=save_checkpoint_steps)
+        save_checkpoint_steps=save_checkpoint_steps,
+        summary_dir=util.tf_board)
 
     run_options = tf.RunOptions(output_partition_graphs=True)
     run_metadata = tf.RunMetadata()
