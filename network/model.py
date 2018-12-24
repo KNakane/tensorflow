@@ -24,7 +24,7 @@ class DNN(Module):
         with tf.variable_scope(self.name):
             for l in range(len(self.model)):
                 outputs = (eval('self.' + self.model[l][0])(outputs, self.model[l][1:]))
-        return outputs
+            return outputs
 
     @property
     def variables(self):

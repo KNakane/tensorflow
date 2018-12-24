@@ -3,7 +3,8 @@ tensorflow
 
 # Overview
 tensorflowの勉強用  
-CNNと強化学習について触れる
+CNNと強化学習について触れる  
+使い方などは各ディレクトリのREADME.mdを見てください  
 
 # Installation
 ```

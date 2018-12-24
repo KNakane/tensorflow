@@ -17,7 +17,7 @@ tensorflowの練習用
 ```train.py```内にある```set_model```関数に作成したいモデルを定義する  
 listである**model_set**にlayerごとの情報をlistとしてappendする  
 定義の方法は以下の通り  
-- 基本設計：['layer種類', 'args']
+### 基本設計：[`layer種類`, `args`]
 - argsの設計
     - **fc**:[units, activation]
     - **dropout**:[units, activation, rate]
@@ -26,6 +26,18 @@ listである**model_set**にlayerごとの情報をlistとしてappendする
     - **max_pool**:[pool_size, strides]
     - **avg_pool**:[pool_size, strides]
     - **BN**:なし
+### Example
+```
+def set_model(outdim):
+    model_set = [['conv', 5, 32, 1],
+                 ['max_pool', 2, 2],
+                 ['conv', 5, 64, 1],
+                 ['max_pool', 2, 2],
+                 ['dropout', 1024, tf.nn.relu, 0.5],
+                 ['fc', outdim, None]]
+    return model_set
+```
+
 
 ## Learning
 ```bash
