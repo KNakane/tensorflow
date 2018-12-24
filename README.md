@@ -11,6 +11,7 @@ CNNと強化学習について触れる
 $ brew install pyenv
 $ pyenv install 3.6.7
 $ pyenv global 3.6.7
+$ git clone https://github.com/KNakane/tensorflow.git
 $ pip install -r requirements.txt
 ```
 
