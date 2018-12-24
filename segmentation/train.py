@@ -59,6 +59,7 @@ def main(argv):
     # Calculate accuracy
     correct_prediction = tf.equal(tf.argmax(logits, 3), tf.argmax(labels, 3))
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+    mIoU = tf.metrics.mean_iou(labels,logits,data.category)
 
     # logging for tensorboard
     util = Utils()
@@ -66,6 +67,7 @@ def main(argv):
     tf.summary.scalar('global_step', global_step)
     tf.summary.scalar('loss', loss)
     tf.summary.scalar('accuracy', accuracy)
+    tf.summary.scalar('mIoU', mIoU)
 
     # create saver
     scaffold = tf.train.Scaffold(
@@ -79,7 +81,8 @@ def main(argv):
     metrics = {
         "global_step": global_step,
         "loss": loss,
-        "accuracy": accuracy}
+        "accuracy": accuracy,
+        "mIoU": mIoU}
     hooks.append(tf.train.LoggingTensorHook(metrics, every_n_iter=100))
     hooks.append(tf.train.NanTensorHook(loss))
     if max_steps:

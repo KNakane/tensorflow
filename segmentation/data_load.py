@@ -16,6 +16,7 @@ class Load():
         self.dir_original = self.dataset_dir + "/VOCdevkit/VOC2012/JPEGImages"
         self.dir_segmented = self.dataset_dir + "/VOCdevkit/VOC2012/SegmentationClass"
         self.deploy()
+        self.category = DataSet.CATEGORY
 
     def deploy(self): # Download and Deploy
         if not os.path.exists(self.dataset_dir + "/VOCdevkit"):
