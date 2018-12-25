@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
+import sys
+sys.path.append('./utility')
+from utils import Utils
 import datetime
 import tensorflow as tf
 
-class Writer():
-    def __init__(self,
-                 sess):
+class Writer(Utils):
+    def __init__(self, sess):
+        super().__init__(sess=sess)
         dt_now = datetime.datetime.now()
-        self.sess = sess
         self.res_dir = './results/'+dt_now.strftime("%y%m%d_%H%M%S")
 
         if tf.gfile.Exists(self.res_dir):
@@ -29,13 +31,3 @@ class Writer():
         self.writer.add_summary(list, iter)
         self.writer.flush()
         return
-
-    def save_model(self, episode):
-        self.saver.save(self.sess, self.log_dir + "/model.ckpt"%episode)
-
-    def restore_model(self):
-        if tf.train.get_checkpoint_state(self.log_dir):
-            self.saver = tf.train.import_meta_graph(self.log_dir + "/model.ckpt.meta")
-            self.saver.restore(self.sess, self.log_dir + "/model.ckpt")
-        else:
-            return

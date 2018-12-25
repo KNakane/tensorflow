@@ -46,8 +46,6 @@ def main(argv):
     logits = model.inference(inputs)
     logits  = tf.identity(logits, name="output_logits")
     loss = model.loss(logits, labels)
-    #loss = classification_loss(logits, labels)
-    #add_to_watch_list("loss/classification", loss)
     
     opt_op = model.optimize(loss, global_step)
     update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
@@ -57,7 +55,7 @@ def main(argv):
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
     # logging for tensorboard
-    util = Utils()
+    util = Utils(prefix='CNN')
     util.conf_log()
     tf.summary.scalar('global_step', global_step)
     tf.summary.scalar('loss', loss)

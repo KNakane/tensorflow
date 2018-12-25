@@ -17,7 +17,7 @@ tensorflowの練習用
 ```train.py```内にある```set_model```関数に作成したいモデルを定義する  
 listである**model_set**にlayerごとの情報をlistとしてappendする  
 定義の方法は以下の通り  
-### 基本設計：[`layer種類`, `args`]
+### 基本設計：[`layer種類`,`args`]
 - argsの設計
     - **fc**:[units, activation]
     - **dropout**:[units, activation, rate]
@@ -42,6 +42,7 @@ def set_model(outdim):
 ## Learning
 ```bash
 $ python CNN/main.py --data (データ名) \
+                     --network (ネットワーク名) \
                      --n_epoch (学習回数) \
                      --batch_size (batch size) \
                      --lr (学習率) \
@@ -50,12 +51,18 @@ $ python CNN/main.py --data (データ名) \
                      --keep_checkpoint_every_n_hours \
                      --save_checkpoint_steps
 ```
+## Test
+```
+$ python CNN/eval.py --ckpt_dir (checkpoint保存directory) \
+                     --network (ネットワーク名) \
+                     --data (データ名)
+```
+
 ## Tensorboard
 ```
 $ tensorboard --logdir=/path/to/logdir
 ```
-
-## 
+ 
 # Sample Result
 ```bash
 ---Start Learning------

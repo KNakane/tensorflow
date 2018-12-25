@@ -35,12 +35,12 @@ class Load():
             return x, y
 
         labels = labels.reshape(labels.shape[0])
-        features_placeholder = tf.placeholder(images.dtype, images.shape)
-        labels_placeholder = tf.placeholder(labels.dtype, labels.shape)
+        features_placeholder = tf.placeholder(images.dtype, images.shape, name='input_images')
+        labels_placeholder = tf.placeholder(labels.dtype, labels.shape, name='labels')
         dataset = tf.data.Dataset.from_tensor_slices((features_placeholder, labels_placeholder))
 
         # Transform and batch data at the same time
-        dataset = dataset.apply(tf.contrib.data.map_and_batch(
+        dataset = dataset.apply(tf.data.experimental.map_and_batch( #tf.contrib.data.map_and_batch(
             preprocess_fn, batch_size,
             num_parallel_batches=4,  # cpu cores
             drop_remainder=True if is_training else False))

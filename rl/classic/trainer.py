@@ -5,8 +5,6 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '../../utility'))
 import random
 import numpy as np
 import tensorflow as tf
-from utils import Utils
-from writer import Writer
 from replay_memory import ReplayMemory
 from display_as_gif import display_frames_as_gif
 

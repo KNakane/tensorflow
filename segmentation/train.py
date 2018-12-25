@@ -81,7 +81,7 @@ def main(argv):
         "loss": loss,
         "accuracy": accuracy,
         "mIoU": mIoU}
-    hooks.append(tf.train.LoggingTensorHook(metrics, every_n_iter=10))
+    hooks.append(tf.train.LoggingTensorHook(metrics, every_n_iter=100))
     hooks.append(tf.train.NanTensorHook(loss))
     if max_steps:
         hooks.append(tf.train.StopAtStepHook(last_step=max_steps))
@@ -104,11 +104,11 @@ if __name__ == '__main__':
     FLAGS = flags.FLAGS
     flags.DEFINE_integer('n_epoch', '1000', 'Input max epoch')
     flags.DEFINE_integer('batch_size', '32', 'Input batch size')
-    flags.DEFINE_float('lr', '0.001', 'Input learning rate')
+    flags.DEFINE_float('lr', '0.0001', 'Input learning rate')
     flags.DEFINE_string('opt', 'SGD', 'Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]')
     flags.DEFINE_float('trainrate','0.85', 'Training rate')
     flags.DEFINE_float('l2reg', '0.0001','L2 regularization')
     flags.DEFINE_integer('checkpoints_to_keep', 5,'checkpoint keep count')
     flags.DEFINE_integer('keep_checkpoint_every_n_hours', 1, 'checkpoint create ')
-    flags.DEFINE_integer('save_checkpoint_steps', 1000,'save checkpoint step')
+    flags.DEFINE_integer('save_checkpoint_steps', 100,'save checkpoint step')
     tf.app.run()
