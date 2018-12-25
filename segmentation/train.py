@@ -51,7 +51,7 @@ def main(argv):
     # Calculate accuracy
     correct_prediction = tf.equal(tf.argmax(logits, 3), tf.argmax(labels, 3))
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
-    mIoU, _ = tf.metrics.mean_iou(labels,logits,len(data.category))
+    mIoU, _ = tf.metrics.mean_iou(labels, logits, len(data.category))
 
     # logging for tensorboard
     util = Utils()
@@ -81,7 +81,7 @@ def main(argv):
         "loss": loss,
         "accuracy": accuracy,
         "mIoU": mIoU}
-    hooks.append(tf.train.LoggingTensorHook(metrics, every_n_iter=100))
+    hooks.append(tf.train.LoggingTensorHook(metrics, every_n_iter=10))
     hooks.append(tf.train.NanTensorHook(loss))
     if max_steps:
         hooks.append(tf.train.StopAtStepHook(last_step=max_steps))
@@ -96,7 +96,7 @@ def main(argv):
         
     with session:
         while not session.should_stop():
-            session.run([train_op, loss, global_step])
+            session.run([train_op, loss, mIoU, global_step])
     return
 
 if __name__ == '__main__':
