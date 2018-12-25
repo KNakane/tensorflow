@@ -240,10 +240,10 @@ def wrap_deepmind(env, episode_life=True, clip_rewards=True, frame_stack=False, 
     return env
 
 def set_model(outdim):
-    model_set = [['conv', 7, 32, 1],
-                 ['conv', 5, 64, 2],
-                 ['conv', 3, 128, 1],
-                 ['fc', 100, None],
+    model_set = [['conv', 8, 32, 4],
+                 ['conv', 4, 64, 2],
+                 ['conv', 3, 64, 1],
+                 ['fc', 512, tf.nn.relu],
                  ['fc', outdim, None]]
     return model_set
 
@@ -252,7 +252,7 @@ def main(argv):
     env = make_atari(FLAGS.env)
     env = wrap_deepmind(env, frame_stack=True)
     #env = EnvWrap(env)
-    agent = DDQN(model=set_model(outdim=env.action_space.n),
+    agent = eval(FLAGS.agent)(model=set_model(outdim=env.action_space.n),
                 n_actions=env.action_space.n,
                 n_features=env.observation_space.shape,
                 learning_rate=0.01, e_greedy=0.9,
@@ -273,6 +273,7 @@ def main(argv):
     print()
     print("---Start Learning------")
     print("data : {}".format(FLAGS.env))
+    print("Agent : {}".format(FLAGS.agent))
     print("epoch : {}".format(FLAGS.n_episode))
     print("batch_size : {}".format(FLAGS.batch_size))
     print("learning rate : {}".format(FLAGS.lr))
@@ -285,6 +286,7 @@ def main(argv):
 if __name__ == '__main__':
     flags = tf.app.flags
     FLAGS = flags.FLAGS
+    flags.DEFINE_string('agent', 'DQN', 'Choise Agents -> [DQN, DDQN]')
     flags.DEFINE_string('env', 'BreakoutNoFrameskip-v4', 'Choice the environment')
     flags.DEFINE_integer('n_episode', '100000', 'Input max episode')
     flags.DEFINE_integer('step', '10000', 'Input max steps')
