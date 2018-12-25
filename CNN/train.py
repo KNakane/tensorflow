@@ -33,8 +33,8 @@ def main(argv):
 
     # load dataset
     data = Load(FLAGS.data)
-    dataset = data.load(data.x_train, data.y_train, batch_size=batch_size, is_training=True)
-    iterator = dataset.make_one_shot_iterator()
+    dataset,features_placeholder,labels_placeholder = data.load(data.x_train, data.y_train, batch_size=batch_size, is_training=True)
+    iterator = dataset.make_initializable_iterator()
     inputs, labels = iterator.get_next()
     inputs = tf.reshape(inputs, (-1, data.size, data.size, data.channel)) / 255.0
 
@@ -64,8 +64,13 @@ def main(argv):
     tf.summary.scalar('accuracy', accuracy)
     tf.summary.image('image', inputs)
 
+    def init_fn(scaffold, session):
+        session.run(iterator.initializer,feed_dict={features_placeholder: data.x_train,
+                                                    labels_placeholder: data.y_train})
+
     # create saver
     scaffold = tf.train.Scaffold(
+        init_fn=init_fn,
         saver=tf.train.Saver(
             max_to_keep=checkpoints_to_keep,
             keep_checkpoint_every_n_hours=keep_checkpoint_every_n_hours))
@@ -89,13 +94,10 @@ def main(argv):
         scaffold=scaffold,
         save_checkpoint_steps=save_checkpoint_steps,
         summary_dir=util.tf_board)
-
-    run_options = tf.RunOptions(output_partition_graphs=True)
-    run_metadata = tf.RunMetadata()
         
     with session:
         while not session.should_stop():
-            session.run([train_op, labels, predict],run_metadata=run_metadata, options=run_options)
+            session.run([train_op, labels, predict])
 
 
 if __name__ == '__main__':

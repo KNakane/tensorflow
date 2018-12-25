@@ -6,14 +6,6 @@ sys.path.append('./network')
 from unet import UNet
 from utils import Utils
 from data_load import Load
-from util import loader as ld
-from util import model
-from util import repoter as rp
-
-def load_dataset(train_rate):
-    loader = ld.Loader(dir_original="data_set/VOCdevkit/VOC2012/JPEGImages",
-                       dir_segmented="data_set/VOCdevkit/VOC2012/SegmentationClass")
-    return loader.load_train_test(train_rate=train_rate, shuffle=False)
 
 def main(argv):
     print("---Start Learning------")
@@ -32,7 +24,7 @@ def main(argv):
     # Load Dataset
     data = Load()
     x_train, y_train = data.get_data()
-    dataset = data.load(x_train, y_train, batch_size, buffer_size=1000, is_training=True)
+    dataset,features_placeholder,labels_placeholder = data.load(x_train, y_train, batch_size, buffer_size=1000, is_training=True)
     iterator = dataset.make_initializable_iterator()
     inputs, labels = iterator.get_next()
 
@@ -70,7 +62,8 @@ def main(argv):
     tf.summary.scalar('mIoU', mIoU)
 
     def init_fn(scaffold, session):
-        session.run(iterator.initializer)
+        session.run(iterator.initializer,feed_dict={features_placeholder: x_train,
+                                                    labels_placeholder: y_train})
 
     # create saver
     scaffold = tf.train.Scaffold(
@@ -99,13 +92,10 @@ def main(argv):
         scaffold=scaffold,
         save_checkpoint_steps=save_checkpoint_steps,
         summary_dir=util.tf_board)
-
-    run_options = tf.RunOptions(output_partition_graphs=True)
-    run_metadata = tf.RunMetadata()
         
     with session:
         while not session.should_stop():
-            session.run([train_op, loss, global_step],run_metadata=run_metadata, options=run_options)
+            session.run([train_op, loss, global_step])
     return
 
 if __name__ == '__main__':

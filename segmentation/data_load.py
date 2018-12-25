@@ -133,7 +133,9 @@ class Load():
             y = tf.reshape(tf.cast(label, tf.uint8), (self.init_size[0], self.init_size[1], len(DataSet.CATEGORY)))
             return x, y
 
-        dataset = tf.data.Dataset.from_tensor_slices((images, labels))
+        features_placeholder = tf.placeholder(images.dtype, images.shape)
+        labels_placeholder = tf.placeholder(labels.dtype, labels.shape)
+        dataset = tf.data.Dataset.from_tensor_slices((features_placeholder, labels_placeholder))
 
         # Transform and batch data at the same time
         dataset = dataset.apply(tf.contrib.data.map_and_batch(
@@ -145,7 +147,7 @@ class Load():
             dataset = dataset.shuffle(buffer_size).repeat()  # depends on sample size
         dataset = dataset.prefetch(tf.contrib.data.AUTOTUNE)
 
-        return dataset
+        return dataset,features_placeholder,labels_placeholder
 
 class DataSet(object):
     CATEGORY = (
