@@ -3,7 +3,6 @@ numpy
 keras
 gym
 gym[atari]
-tensorflow
 matplotlib
 requests
 opencv-python

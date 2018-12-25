@@ -10,5 +10,11 @@ U-Netを用いてPascal VOC 2012のデータをSegmentationする
 
 # Usage
 ```
-$ python
+$ python segmentation/train.py --n_epoch (学習回数) \
+                               --batch_size (batch size) \
+                               --lr (学習率) \
+                               --opt (optimizer) \
+                               --checkpoints_to_keep \
+                               --keep_checkpoint_every_n_hours \
+                               --save_checkpoint_steps
 ```

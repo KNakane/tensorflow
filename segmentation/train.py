@@ -60,6 +60,7 @@ def main(argv):
     tf.summary.scalar('loss', loss)
     tf.summary.scalar('accuracy', accuracy)
     tf.summary.scalar('mIoU', mIoU)
+    tf.summary.image('image', inputs)
 
     def init_fn(scaffold, session):
         session.run(iterator.initializer,feed_dict={features_placeholder: x_train,
