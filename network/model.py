@@ -16,7 +16,6 @@ class DNN(Module):
         self.model = model
         self._layers = []
         self.name = name
-        self.trainable = trainable
         if self.trainable:
             self.optimizer = eval(opt)(learning_rate=lr)
 
