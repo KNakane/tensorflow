@@ -8,8 +8,6 @@ from model import DNN
 from lenet import LeNet
 from train import set_model
 
-
-
 def main(args):
     print("---------Start Evaluation--------")
     print("CheckPoint : {}".format(FLAGS.ckpt_dir))
