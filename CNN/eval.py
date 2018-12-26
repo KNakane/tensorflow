@@ -17,7 +17,7 @@ def main(args):
 
     # load dataset
     data = Load(FLAGS.data)
-    dataset,features_placeholder,labels_placeholder = data.load(data.x_test, data.y_test, batch_size=1000, is_training=False)
+    dataset = data.load(data.x_test, data.y_test, batch_size=1000, is_training=False)
     iterator = dataset.make_initializable_iterator()
     inputs, labels = iterator.get_next()
     inputs = tf.reshape(inputs, (-1, data.size, data.size, data.channel)) / 255.0
@@ -33,8 +33,8 @@ def main(args):
     with tf.Session() as sess:
         utils = Utils(sess=sess)
         utils.restore_model(FLAGS.ckpt_dir)
-        sess.run(iterator.initializer,feed_dict={features_placeholder: data.x_test,
-                                                    labels_placeholder: data.y_test})
+        sess.run(iterator.initializer,feed_dict={data.features_placeholder: data.x_test,
+                                                 data.labels_placeholder: data.y_test})
         test_accuracy = sess.run(accuracy)
         print("accuracy : {}".format(test_accuracy))
     return

@@ -33,7 +33,7 @@ def main(argv):
 
     # load dataset
     data = Load(FLAGS.data)
-    dataset,features_placeholder,labels_placeholder = data.load(data.x_train, data.y_train, batch_size=batch_size, is_training=True)
+    dataset = data.load(data.x_train, data.y_train, batch_size=batch_size, is_training=True)
     iterator = dataset.make_initializable_iterator()
     inputs, labels = iterator.get_next()
     inputs = tf.reshape(inputs, (-1, data.size, data.size, data.channel)) / 255.0
@@ -63,8 +63,8 @@ def main(argv):
     tf.summary.image('image', inputs)
 
     def init_fn(scaffold, session):
-        session.run(iterator.initializer,feed_dict={features_placeholder: data.x_train,
-                                                    labels_placeholder: data.y_train})
+        session.run(iterator.initializer,feed_dict={data.features_placeholder: data.x_train,
+                                                    data.labels_placeholder: data.y_train})
 
     # create saver
     scaffold = tf.train.Scaffold(

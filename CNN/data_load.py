@@ -35,9 +35,9 @@ class Load():
             return x, y
 
         labels = labels.reshape(labels.shape[0])
-        features_placeholder = tf.placeholder(images.dtype, images.shape, name='input_images')
-        labels_placeholder = tf.placeholder(labels.dtype, labels.shape, name='labels')
-        dataset = tf.data.Dataset.from_tensor_slices((features_placeholder, labels_placeholder))
+        self.features_placeholder = tf.placeholder(images.dtype, images.shape, name='input_images')
+        self.labels_placeholder = tf.placeholder(labels.dtype, labels.shape, name='labels')
+        dataset = tf.data.Dataset.from_tensor_slices((self.features_placeholder, self.labels_placeholder))
 
         # Transform and batch data at the same time
         dataset = dataset.apply(tf.data.experimental.map_and_batch( #tf.contrib.data.map_and_batch(
@@ -49,4 +49,4 @@ class Load():
             dataset = dataset.shuffle(buffer_size).repeat()  # depends on sample size
         dataset = dataset.prefetch(tf.contrib.data.AUTOTUNE)
 
-        return dataset,features_placeholder,labels_placeholder
+        return dataset

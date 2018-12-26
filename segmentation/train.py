@@ -24,7 +24,7 @@ def main(argv):
     # Load Dataset
     data = Load()
     x_train, y_train = data.get_data()
-    dataset,features_placeholder,labels_placeholder = data.load(x_train, y_train, batch_size, buffer_size=1000, is_training=True)
+    dataset = data.load(x_train, y_train, batch_size, buffer_size=1000, is_training=True)
     iterator = dataset.make_initializable_iterator()
     inputs, labels = iterator.get_next()
 
@@ -51,7 +51,7 @@ def main(argv):
     # Calculate accuracy
     correct_prediction = tf.equal(tf.argmax(logits, 3), tf.argmax(labels, 3))
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
-    mIoU, _ = tf.metrics.mean_iou(labels, logits, len(data.category))
+    mIoU, _ = tf.metrics.mean_iou(logits, labels, len(data.category))
 
     # logging for tensorboard
     util = Utils(prefix='segment')
@@ -63,8 +63,8 @@ def main(argv):
     tf.summary.image('image', inputs)
 
     def init_fn(scaffold, session):
-        session.run(iterator.initializer,feed_dict={features_placeholder: x_train,
-                                                    labels_placeholder: y_train})
+        session.run(iterator.initializer,feed_dict={data.features_placeholder: x_train,
+                                                    data.labels_placeholder: y_train})
 
     # create saver
     scaffold = tf.train.Scaffold(
@@ -81,7 +81,7 @@ def main(argv):
         "loss": loss,
         "accuracy": accuracy,
         "mIoU": mIoU}
-    hooks.append(tf.train.LoggingTensorHook(metrics, every_n_iter=100))
+    hooks.append(tf.train.LoggingTensorHook(metrics, every_n_iter=50))
     hooks.append(tf.train.NanTensorHook(loss))
     if max_steps:
         hooks.append(tf.train.StopAtStepHook(last_step=max_steps))
