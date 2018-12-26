@@ -1,7 +1,19 @@
 import os,sys
 import tensorflow as tf
+from data_load import GAN_Load
 
-def main():
+def main(args):
+    # Setting
+    batch_size = FLAGS.batch_size
+    
+    # Load Dataset
+    data = GAN_Load(FLAGS.data)
+    d_dataset = data.load(data.x_train, data.correct_label, batch_size=batch_size, is_training=True) #discriminator用
+    g_dataset = data.load(data.z, data.fake_label, batch_size=batch_size, is_training=True)
+    d_iterator = d_dataset.make_initializable_iterator()
+    inputs, labels = iterator.get_next()
+    inputs = tf.reshape(inputs, (-1, data.size, data.size, data.channel)) / 255.0
+
     return
 
 if __name__ == '__main__':

@@ -3,7 +3,7 @@ sys.path.append('./network')
 import tensorflow as tf
 from model import DNN
 
-class Generator(DNN):
+class Discriminator(DNN):
     def __init__(self):
         super().__init__()
 
