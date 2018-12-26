@@ -133,8 +133,8 @@ class Load():
             y = tf.reshape(tf.cast(label, tf.uint8), (self.init_size[0], self.init_size[1], len(DataSet.CATEGORY)))
             return x, y
 
-        features_placeholder = tf.placeholder(images.dtype, images.shape)
-        labels_placeholder = tf.placeholder(labels.dtype, labels.shape)
+        features_placeholder = tf.placeholder(images.dtype, images.shape, name='input_images')
+        labels_placeholder = tf.placeholder(labels.dtype, labels.shape, name='correct_data')
         dataset = tf.data.Dataset.from_tensor_slices((features_placeholder, labels_placeholder))
 
         # Transform and batch data at the same time

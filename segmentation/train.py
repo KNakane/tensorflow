@@ -54,7 +54,7 @@ def main(argv):
     mIoU, _ = tf.metrics.mean_iou(labels, logits, len(data.category))
 
     # logging for tensorboard
-    util = Utils()
+    util = Utils(prefix='segment')
     util.conf_log()
     tf.summary.scalar('global_step', global_step)
     tf.summary.scalar('loss', loss)

@@ -34,3 +34,16 @@ class Utils():
         else:
             print ('Not Restore model in "{}"'.format(log_dir))
             return
+
+    def saved_model(self, x, y):
+        '''
+        x : Placeholder input
+        y : Placeholder label or correct data
+        '''
+        builder = tf.saved_model.builder.SavedModelBuilder(self.model_path)
+        signature = tf.saved_model.predict_signature_def(inputs={'inputs':x}, outputs={'label':y})
+        builder.add_meta_graph_and_variables(sess=self.sess,
+                                             tags=[tf.saved_model.tag_constants.SERVING],
+                                             signature_def_map={'predict': signature})
+        builder.save()
+        return
