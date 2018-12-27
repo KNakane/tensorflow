@@ -42,14 +42,15 @@ def main(args):
     update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
     train_op = tf.group([opt_op] + update_ops)
     predict = model.predict()
-    correct_prediction = tf.equal(tf.argmax(logits,1), tf.argmax(labels, 1))
+    correct_prediction = tf.equal(dis_true, 1) + tf.equal(dis_fake, 0)
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
     # logging for tensorboard
     util = Utils(prefix='GAN')
     util.conf_log()
     tf.summary.scalar('global_step', global_step)
-    tf.summary.scalar('loss', loss)
+    tf.summary.scalar('discriminator_loss', dis_loss)
+    tf.summary.scalar('generator_loss', gen_loss)
     tf.summary.scalar('accuracy', accuracy)
     tf.summary.image('image', inputs)
     tf.summary.image('image', fake_image)
@@ -70,10 +71,11 @@ def main(args):
     tf.logging.set_verbosity(tf.logging.INFO)
     metrics = {
         "global_step": global_step,
-        "loss": loss,
+        "discriminator_loss": dis_loss,
+        "generator_loss": gen_loss,
         "accuracy": accuracy}
     hooks.append(tf.train.LoggingTensorHook(metrics, every_n_iter=50))
-    hooks.append(tf.train.NanTensorHook(loss))
+    hooks.append(tf.train.NanTensorHook(dis_loss))
     if max_steps:
         hooks.append(tf.train.StopAtStepHook(last_step=max_steps))
 

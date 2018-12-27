@@ -36,12 +36,15 @@ class GAN(DNN):
 
     def inference(self, inputs, batch_size):
         with tf.variable_scope(self.name):
-            z = tf.random_normal((batch_size, self._z_dim), dtype=tf.float32)
-            gens = self.generator.inference(z)
+            self.z = tf.random_normal((batch_size, self._z_dim), dtype=tf.float32)
+            gens = self.generator.inference(self.z)
             
             dis_true = self.discriminator(inputs=inputs)
             dis_fake = self.discriminator(gens)
-            return dis_true, dis_fake
+            return dis_true, dis_fake, gens
+
+    def predict(self):
+        return self.generator.inference(self.z)
 
     def loss(self, true, fake):
         dis_loss = tf.reduce_mean(tf.nn.relu(1 - true))
