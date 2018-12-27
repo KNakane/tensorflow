@@ -9,28 +9,41 @@ from discriminator import Discriminator
 
 
 class GAN(DNN):
-    def __init__(self, 
+    def __init__(self,
+                 z_dim=100,
                  name='GAN',
                  opt=Adam,
                  lr=0.001,
-                 interval=5,
-                 trainable=False):
+                 trainable=False,
+                 interval=5):
         super().__init__(name=name, opt=opt, lr=lr, trainable=trainable)
         gen_model, dis_model = self.build()
-        self.generator = Generator(model=gen_model, trainable=trainable)
-        self.discriminator = Discriminator(model=dis_model, trainable=trainable)
+        self.generator = Generator(model=gen_model, opt=opt, trainable=trainable)
+        self.discriminator = Discriminator(model=dis_model, opt=opt, trainable=trainable)
         self.gen_train_interval = interval
+        self._z_dim = z_dim
 
     def build(self):
-        gen_model = [['conv', 5, 32, 1],
-                     ['max_pool', 2, 2],
-                     ['dropout', 1024, tf.nn.relu, 0.5],
-                     ['fc', outdim, None]]
+        gen_model = [['fc', 6*6*512, None],
+                     ['BN', 1],
+                     ['ReLU'],
+                     ['reshape', [-1, 6, 6, 512]],
+                     ['deconv', 4, 256, 2, tf.nn.relu],
+                     ['BN', 2],
+                     ['deconv', 4, 128, 2, tf.nn.relu],
+                     ['BN', 3],
+                     ['deconv', 4, 64, 2, tf.nn.relu],
+                     ['BN', 4],
+                     ['deconv', 4, 3, 2, None]]
 
-        dis_model = [['conv', 5, 32, 1],
-                     ['max_pool', 2, 2],
-                     ['dropout', 1024, tf.nn.relu, 0.5],
-                     ['fc', outdim, None]]
+        dis_model = [['conv', 4, 64, 2, tf.nn.relu],
+                     ['conv', 4, 128, 2, tf.nn.relu],
+                     ['BN', 1],
+                     ['conv', 4, 256, 2, tf.nn.relu],
+                     ['BN', 2],
+                     ['conv', 4, 512, 2, tf.nn.relu],
+                     ['BN', 3],
+                     ['fc', 2, None]]
 
         return gen_model, dis_model
 
@@ -39,8 +52,8 @@ class GAN(DNN):
             self.z = tf.random_normal((batch_size, self._z_dim), dtype=tf.float32)
             gens = self.generator.inference(self.z)
             
-            dis_true = self.discriminator(inputs=inputs)
-            dis_fake = self.discriminator(gens)
+            dis_true = self.discriminator.inference(inputs)
+            dis_fake = self.discriminator.inference(gens)
             return dis_true, dis_fake, gens
 
     def predict(self):

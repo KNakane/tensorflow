@@ -33,7 +33,7 @@ def main(args):
     # build train operation
     global_step = tf.train.get_or_create_global_step()
 
-    model = eval(FLAGS.network)(name=FLAGS.network, lr=FLAGS.lr, opt=FLAGS.opt, trainable=True)
+    model = eval(FLAGS.network)(z_dim=100, name=FLAGS.network, lr=FLAGS.lr, opt=FLAGS.opt, interval=5, trainable=True)
     dis_true, dis_fake, fake_image = model.inference(inputs, batch_size)
     #logits  = tf.identity(dis_true, dis_fake, name="output_logits")
     dis_loss, gen_loss = model.loss(dis_true, dis_fake)

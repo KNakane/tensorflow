@@ -1,8 +1,9 @@
 import tensorflow as tf
 
 class Module(object):
-    def __init__(self, trainable=False):
+    def __init__(self, trainable=False, reuse=False):
         self._trainable = trainable
+        self._reuse = reuse
 
     def Residual(self, x, args):
         input = x
@@ -39,7 +40,8 @@ class Module(object):
                                 strides=[args[2], args[2]],
                                 padding='same',
                                 activation=args[3],
-                                trainable=self._trainable)
+                                trainable=self._trainable,
+                                reuse=self._reuse)
     
     def deconv(self, x, args):
         assert len(args) == 4, '[deconv] Not enough Argument -> [kernel, filter, strides, activation]'
@@ -49,7 +51,11 @@ class Module(object):
                                           strides=[args[2], args[2]],
                                           padding='same',
                                           activation=args[3],
-                                          trainable=self._trainable)
+                                          trainable=self._trainable,
+                                          reuse=self._reuse)
+
+    def reshape(self, x, args):
+        return tf.reshape(tensor=x, shape=args[0])
 
     def max_pool(self, x, args):
         assert len(args) == 2, '[max_pool] Not enough Argument -> [pool_size, strides]'
@@ -72,9 +78,11 @@ class Module(object):
             return x
 
     def BN(self, x, args): #Batch Normalization
-        with tf.variable_scope('BatchNorm'):
+        assert len(args) == 1, '[BN] Not enough Argument -> [No]'
+        with tf.variable_scope('BatchNorm_{}'.format(args[0])):
             return tf.layers.batch_normalization(inputs=x,
-                                                 trainable=self._trainable)
+                                                 trainable=self._trainable,
+                                                 reuse=self._reuse)
     
     def ReLU(self, x, args):
         with tf.variable_scope('ReLU'):

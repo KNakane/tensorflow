@@ -1,14 +1,18 @@
 import os,sys
 sys.path.append('./network')
+sys.path.append('./utility')
 import tensorflow as tf
 from model import DNN
+from optimizer import *
 
 class Discriminator(DNN):
     def __init__(self, 
                  model,
+                 opt=Adam,
                  name='Discriminator',
-                 trainable=False):
-        super().__init__(model=model, name=name, trainable=trainable)
+                 trainable=False,
+                 reuse=tf.AUTO_REUSE):
+        super().__init__(model=model, name=name, opt=opt, trainable=trainable, reuse=reuse)
 
     def inference(self, outputs):
         with tf.variable_scope(self.name):

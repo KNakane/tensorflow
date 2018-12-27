@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import os,sys
 import tensorflow as tf
-sys.path.append(os.path.join(os.path.dirname(__file__), './utility'))
+sys.path.append('./utility')
 from module import Module
 from optimizer import *
 
@@ -11,12 +11,13 @@ class DNN(Module):
                  name='DNN',
                  opt=Adam,   # Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]
                  lr=0.001,
-                 trainable=False):
-        super().__init__(trainable=trainable)
+                 trainable=False,
+                 reuse=False):
+        super().__init__(trainable=trainable, reuse=reuse)
         self.model = model
         self._layers = []
         self.name = name
-        if self.trainable:
+        if self._trainable:
             self.optimizer = eval(opt)(learning_rate=lr)
 
     def inference(self, outputs):

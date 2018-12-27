@@ -9,7 +9,9 @@ from data_load import Load
 from utils import Utils
 
 def set_model(outdim):
-    model_set = [['Residual', 5, 32, 1, True],
+    model_set = [['conv', 5, 32, 1, tf.nn.relu],
+                 ['max_pool', 2, 2],
+                 ['conv', 5, 64, 1, tf.nn.relu],
                  ['max_pool', 2, 2],
                  ['dropout', 1024, tf.nn.relu, 0.5],
                  ['fc', outdim, None]]
