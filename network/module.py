@@ -32,14 +32,24 @@ class Module(object):
             return x + input
 
     def conv(self, x, args):
-        assert len(args) == 3, '[conv] Not enough Argument -> [kernel, filter, strides]'
+        assert len(args) == 4, '[conv] Not enough Argument -> [kernel, filter, strides, activation]'
         return tf.layers.conv2d(inputs=x,
                                 filters=args[1],
                                 kernel_size=[args[0], args[0]],
                                 strides=[args[2], args[2]],
                                 padding='same',
-                                activation=None,
+                                activation=args[3],
                                 trainable=self._trainable)
+    
+    def deconv(self, x, args):
+        assert len(args) == 4, '[deconv] Not enough Argument -> [kernel, filter, strides, activation]'
+        return tf.layers.conv2d_transpose(inputs=x,
+                                          filters=args[1],
+                                          kernel_size=[args[0], args[0]],
+                                          strides=[args[2], args[2]],
+                                          padding='same',
+                                          activation=args[3],
+                                          trainable=self._trainable)
 
     def max_pool(self, x, args):
         assert len(args) == 2, '[max_pool] Not enough Argument -> [pool_size, strides]'

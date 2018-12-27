@@ -46,7 +46,7 @@ def main(args):
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
     # logging for tensorboard
-    util = Utils(prefix='CNN')
+    util = Utils(prefix='GAN')
     util.conf_log()
     tf.summary.scalar('global_step', global_step)
     tf.summary.scalar('loss', loss)
