@@ -42,7 +42,7 @@ def main(argv):
     global_step = tf.train.get_or_create_global_step()
 
     model_set = set_model(data.output_dim)
-    model = eval(FLAGS.network)(model=model_set, name='LeNet', lr=FLAGS.lr, opt=FLAGS.opt, trainable=True)
+    model = eval(FLAGS.network)(model=model_set, name=FLAGS.network, lr=FLAGS.lr, opt=FLAGS.opt, trainable=True)
     logits = model.inference(inputs)
     logits  = tf.identity(logits, name="output_logits")
     loss = model.loss(logits, labels)
