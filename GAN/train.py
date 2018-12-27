@@ -34,14 +34,14 @@ def main(args):
     global_step = tf.train.get_or_create_global_step()
 
     model = GAN(name='GAN', lr=FLAGS.lr, opt=FLAGS.opt, trainable=True)
-    logits = model.inference(inputs, batch_size)
-    logits  = tf.identity(logits, name="output_logits")
-    loss = model.loss(logits, labels)
+    dis_true, dis_fake, fake_image = model.inference(inputs, batch_size)
+    #logits  = tf.identity(dis_true, dis_fake, name="output_logits")
+    dis_loss, gen_loss = model.loss(dis_true, dis_fake)
     
-    opt_op = model.optimize(loss, global_step)
+    opt_op = model.optimize(dis_loss, gen_loss, global_step)
     update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
     train_op = tf.group([opt_op] + update_ops)
-    predict = model.predict(logits)
+    predict = model.predict()
     correct_prediction = tf.equal(tf.argmax(logits,1), tf.argmax(labels, 1))
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
@@ -52,6 +52,7 @@ def main(args):
     tf.summary.scalar('loss', loss)
     tf.summary.scalar('accuracy', accuracy)
     tf.summary.image('image', inputs)
+    tf.summary.image('image', fake_image)
 
     def init_fn(scaffold, session):
         session.run(iterator.initializer,feed_dict={data.features_placeholder: data.x_train,
@@ -71,7 +72,7 @@ def main(args):
         "global_step": global_step,
         "loss": loss,
         "accuracy": accuracy}
-    hooks.append(tf.train.LoggingTensorHook(metrics, every_n_iter=100))
+    hooks.append(tf.train.LoggingTensorHook(metrics, every_n_iter=50))
     hooks.append(tf.train.NanTensorHook(loss))
     if max_steps:
         hooks.append(tf.train.StopAtStepHook(last_step=max_steps))
