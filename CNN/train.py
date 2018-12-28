@@ -95,7 +95,12 @@ def main(argv):
     # create hooks
     hooks = []
     tf.logging.set_verbosity(tf.logging.INFO)
-    signature_def_map = tf.saved_model.predict_signature_def(inputs={'input': inputs}, outputs={'output': predict})
+    signature_def_map = {
+                        'predict': tf.saved_model.signature_def_utils.build_signature_def(
+                            inputs={'inputs': tf.saved_model.utils.build_tensor_info(data.features_placeholder)},
+                            outputs={'predict':  tf.saved_model.utils.build_tensor_info(predict)},
+                            method_name=tf.saved_model.signature_constants.PREDICT_METHOD_NAME,)
+                        }
     metrics = {
         "test loss": test_loss,
         "test accuracy":test_accuracy,
@@ -104,7 +109,7 @@ def main(argv):
         "train accuracy":train_accuracy}
     hooks.append(tf.train.LoggingTensorHook(metrics, every_n_iter=100))
     hooks.append(tf.train.NanTensorHook(train_loss))
-    #hooks.append(SavedModelBuilderHook(util.saved_model_path, signature_def_map))
+    hooks.append(SavedModelBuilderHook(util.saved_model_path, signature_def_map))
     if max_steps:
         hooks.append(tf.train.StopAtStepHook(last_step=max_steps))
 
