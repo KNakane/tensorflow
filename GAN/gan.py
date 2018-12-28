@@ -68,8 +68,9 @@ class GAN(DNN):
 
     def optimize(self, dis_loss, gen_loss, global_step=None):
         def gen_train(gen_loss):
-            return self.optimizer.optimize(loss=gen_loss, global_step=global_step)
+            return self.optimizer.optimize(loss=gen_loss, global_step=global_steps)
 
-        gen_train_op = tf.cond(global_step % self.gen_train_interval == 0, gen_train, lambda: tf.no_op())
+        global_steps = tf.train.get_or_create_global_step()
+        gen_train_op = tf.cond(global_steps % self.gen_train_interval == 0, lambda: gen_train, lambda: tf.no_op())
         with tf.control_dependencies([gen_train_op]):
-            return self.optimizer.optimize(loss=dis_loss, global_step=global_step)
+            return self.optimizer.optimize(loss=dis_loss, global_step=global_steps)

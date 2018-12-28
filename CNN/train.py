@@ -77,7 +77,6 @@ def main(argv):
     tf.summary.scalar('test/accuracy', test_accuracy)
     tf.summary.image('test/image', test_inputs)
 
-    tf.summary.scalar('train/global_step', global_step)
     tf.summary.scalar('train/loss', train_loss)
     tf.summary.scalar('train/accuracy', train_accuracy)
     tf.summary.image('train/image', inputs)
