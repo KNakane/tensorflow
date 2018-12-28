@@ -50,3 +50,8 @@ class Load():
         dataset = dataset.prefetch(tf.contrib.data.AUTOTUNE)
 
         return dataset
+
+    def load_test(self, images, labels):
+        x = tf.reshape(tf.cast(images, tf.float32), (-1, self.size, self.size, self.channel)) / 255.0
+        y = tf.one_hot(tf.cast(labels, tf.uint8), self.output_dim)
+        return x, y

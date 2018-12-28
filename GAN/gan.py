@@ -53,7 +53,8 @@ class GAN(DNN):
             gens = self.generator.inference(self.z)
             
             dis_true = self.discriminator.inference(inputs)
-            dis_fake = self.discriminator.inference(gens)
+            with tf.variable_scope(tf.get_variable_scope(), reuse=True):
+                dis_fake = self.discriminator.inference(gens)
             return dis_true, dis_fake, gens
 
     def predict(self):

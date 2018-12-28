@@ -43,26 +43,42 @@ def main(argv):
     # build train operation
     global_step = tf.train.get_or_create_global_step()
 
+    #training
     model_set = set_model(data.output_dim)
     model = eval(FLAGS.network)(model=model_set, name=FLAGS.network, lr=FLAGS.lr, opt=FLAGS.opt, trainable=True)
     logits = model.inference(inputs)
     logits  = tf.identity(logits, name="output_logits")
-    loss = model.loss(logits, labels)
-    
-    opt_op = model.optimize(loss, global_step)
+    train_loss = model.loss(logits, labels)
+
+    opt_op = model.optimize(train_loss, global_step)
     update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
     train_op = tf.group([opt_op] + update_ops)
     predict = model.predict(logits)
     correct_prediction = tf.equal(tf.argmax(logits,1), tf.argmax(labels, 1))
-    accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+    train_accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+
+    #test
+    test_inputs, test_labels = data.load_test(data.x_test, data.y_test)
+    with tf.variable_scope(tf.get_variable_scope(), reuse=True):
+        logits = model.inference(test_inputs)
+    logits  = tf.identity(logits, name="test_logits")
+    test_loss = model.loss(logits, test_labels)
+    correct_prediction = tf.equal(tf.argmax(logits,1), tf.argmax(test_labels, 1))
+    test_accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+
 
     # logging for tensorboard
     util = Utils(prefix='CNN')
     util.conf_log()
-    tf.summary.scalar('global_step', global_step)
-    tf.summary.scalar('loss', loss)
-    tf.summary.scalar('accuracy', accuracy)
-    tf.summary.image('image', inputs)
+
+    tf.summary.scalar('test/loss', test_loss)
+    tf.summary.scalar('test/accuracy', test_accuracy)
+    tf.summary.image('test/image', test_inputs)
+
+    tf.summary.scalar('train/global_step', global_step)
+    tf.summary.scalar('train/loss', train_loss)
+    tf.summary.scalar('train/accuracy', train_accuracy)
+    tf.summary.image('train/image', inputs)
 
     def init_fn(scaffold, session):
         session.run(iterator.initializer,feed_dict={data.features_placeholder: data.x_train,
@@ -79,11 +95,13 @@ def main(argv):
     hooks = []
     tf.logging.set_verbosity(tf.logging.INFO)
     metrics = {
+        "test loss": test_loss,
+        "test accuracy":test_accuracy,
         "global_step": global_step,
-        "loss": loss,
-        "accuracy": accuracy}
+        "train loss": train_loss,
+        "train accuracy":train_accuracy}
     hooks.append(tf.train.LoggingTensorHook(metrics, every_n_iter=100))
-    hooks.append(tf.train.NanTensorHook(loss))
+    hooks.append(tf.train.NanTensorHook(train_loss))
     if max_steps:
         hooks.append(tf.train.StopAtStepHook(last_step=max_steps))
 

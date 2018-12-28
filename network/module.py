@@ -1,29 +1,28 @@
 import tensorflow as tf
 
 class Module(object):
-    def __init__(self, trainable=False, reuse=False):
+    def __init__(self, trainable=False):
         self._trainable = trainable
-        self._reuse = reuse
 
     def Residual(self, x, args):
         input = x
         assert len(args) == 4, '[Residual] Not enough Argument -> [kernel, filter, strides, bottleneck]'
         with tf.variable_scope('Residual'):
             if args[3]:
-                x = self.BN(x=x, args=None)
+                x = self.BN(x=x, args=[1])
                 x = self.ReLU(x=x, args=None)
                 x = self.conv(x=x, args=[1, args[1],1])
-                x = self.BN(x=x, args=None)
+                x = self.BN(x=x, args=[2])
                 x = self.ReLU(x=x, args=None)
                 x = self.conv(x=x, args=args[:3])
-                x = self.BN(x=x, args=None)
+                x = self.BN(x=x, args=[3])
                 x = self.ReLU(x=x, args=None)
                 x = self.conv(x=x, args=[1, args[1],1])
             else:
-                x = self.BN(x=x, args=None)
+                x = self.BN(x=x, args=[1])
                 x = self.ReLU(x=x, args=None)
                 x = self.conv(x=x, args=[args[0], args[1],1])
-                x = self.BN(x=x, args=None)
+                x = self.BN(x=x, args=[2])
                 x = self.ReLU(x=x, args=None)
                 x = self.conv(x=x, args=args[:3])
 
@@ -40,8 +39,7 @@ class Module(object):
                                 strides=[args[2], args[2]],
                                 padding='same',
                                 activation=args[3],
-                                trainable=self._trainable,
-                                reuse=self._reuse)
+                                trainable=self._trainable)
     
     def deconv(self, x, args):
         assert len(args) == 4, '[deconv] Not enough Argument -> [kernel, filter, strides, activation]'
@@ -51,8 +49,7 @@ class Module(object):
                                           strides=[args[2], args[2]],
                                           padding='same',
                                           activation=args[3],
-                                          trainable=self._trainable,
-                                          reuse=self._reuse)
+                                          trainable=self._trainable)
 
     def reshape(self, x, args):
         return tf.reshape(tensor=x, shape=args[0])
@@ -81,8 +78,7 @@ class Module(object):
         assert len(args) == 1, '[BN] Not enough Argument -> [No]'
         with tf.variable_scope('BatchNorm_{}'.format(args[0])):
             return tf.layers.batch_normalization(inputs=x,
-                                                 trainable=self._trainable,
-                                                 reuse=self._reuse)
+                                                 trainable=self._trainable)
     
     def ReLU(self, x, args):
         with tf.variable_scope('ReLU'):

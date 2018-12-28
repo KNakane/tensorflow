@@ -11,9 +11,9 @@ class DNN(Module):
                  name='DNN',
                  opt=Adam,   # Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]
                  lr=0.001,
-                 trainable=False,
-                 reuse=False):
-        super().__init__(trainable=trainable, reuse=reuse)
+                 trainable=False
+                 ):
+        super().__init__(trainable=trainable)
         self.model = model
         self._layers = []
         self.name = name

@@ -10,9 +10,8 @@ class Discriminator(DNN):
                  model,
                  opt=Adam,
                  name='Discriminator',
-                 trainable=False,
-                 reuse=tf.AUTO_REUSE):
-        super().__init__(model=model, name=name, opt=opt, trainable=trainable, reuse=reuse)
+                 trainable=False):
+        super().__init__(model=model, name=name, opt=opt, trainable=trainable)
 
     def inference(self, outputs):
         with tf.variable_scope(self.name):
