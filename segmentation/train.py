@@ -7,6 +7,7 @@ sys.path.append('./dataset')
 from unet import UNet
 from utils import Utils
 from segment_load import Load
+from hooks import SavedModelBuilderHook, MyLoggerHook
 
 def main(argv):
     print("---Start Learning------")
@@ -82,7 +83,7 @@ def main(argv):
         "loss": loss,
         "accuracy": accuracy,
         "mIoU": mIoU}
-    hooks.append(tf.train.LoggingTensorHook(metrics, every_n_iter=50))
+    hooks.append(MyLoggerHook(util.log_dir, metrics, every_n_iter=50))
     hooks.append(tf.train.NanTensorHook(loss))
     if max_steps:
         hooks.append(tf.train.StopAtStepHook(last_step=max_steps))

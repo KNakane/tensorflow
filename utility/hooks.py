@@ -35,6 +35,7 @@ class MyLoggerHook(tf.train.SessionRunHook):
     def __init__(self, log_dir, tensors, every_n_iter=None, every_n_secs=None,
                  at_end=False, formatter=None):
         self.log_dir = log_dir
+        tf.gfile.MakeDirs(self.log_dir)
         only_log_at_end = (
             at_end and (every_n_iter is None) and (every_n_secs is None))
         if (not only_log_at_end and
@@ -59,6 +60,7 @@ class MyLoggerHook(tf.train.SessionRunHook):
     def begin(self):
         self._timer.reset()
         self._iter_count = 0
+        self.f = open(self.log_dir + '/log.txt', 'w')
         self._current_tensors = {tag: _as_graph_element(tensor)
                                  for (tag, tensor) in self._tensors.items()}
 
@@ -80,6 +82,8 @@ class MyLoggerHook(tf.train.SessionRunHook):
             for tag in self._tag_order:
                 stats.append("%s = %s" % (tag, tensor_values[tag]))
             if elapsed_secs is not None:
+                info = "%s (%.3f sec)\n"%(", ".join(stats), elapsed_secs)
+                self.f.write(str(info))
                 logging.info("%s (%.3f sec)", ", ".join(stats), elapsed_secs)
             else:
                 logging.info("%s", ", ".join(stats))
@@ -96,6 +100,7 @@ class MyLoggerHook(tf.train.SessionRunHook):
        if self._log_at_end:
            values = session.run(self._current_tensors)
            self._log_tensors(values)
+           self.f.close()
 
 
 class NeverTriggerTimer():

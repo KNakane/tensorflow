@@ -5,6 +5,7 @@ import tensorflow as tf
 from gan import GAN
 from utils import Utils
 from load import Load
+from hooks import SavedModelBuilderHook, MyLoggerHook
 
 
 def main(args):
@@ -75,7 +76,7 @@ def main(args):
         "discriminator_loss": dis_loss,
         "generator_loss": gen_loss,
         "accuracy": accuracy}
-    hooks.append(tf.train.LoggingTensorHook(metrics, every_n_iter=50))
+    hooks.append(MyLoggerHook(util.log_dir, metrics, every_n_iter=50))
     hooks.append(tf.train.NanTensorHook(dis_loss))
     if max_steps:
         hooks.append(tf.train.StopAtStepHook(last_step=max_steps))
