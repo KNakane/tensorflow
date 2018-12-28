@@ -7,6 +7,7 @@ from model import DNN
 from lenet import LeNet
 from losses import classification_loss, add_to_watch_list
 from load import Load
+from kuzushiji_load import kuzushiji_Load
 from utils import Utils
 
 def set_model(outdim):
@@ -123,7 +124,7 @@ if __name__ == '__main__':
     flags = tf.app.flags
     FLAGS = flags.FLAGS
     flags.DEFINE_string('network', 'DNN', 'Choice the training data name -> [DNN,LeNet]')
-    flags.DEFINE_string('data', 'mnist', 'Choice the training data name -> ["mnist","cifar10","cifar100"]')
+    flags.DEFINE_string('data', 'mnist', 'Choice the training data name -> ["mnist","cifar10","cifar100","kuzushiji"]')
     flags.DEFINE_integer('n_epoch', '1000', 'Input max epoch')
     flags.DEFINE_integer('batch_size', '32', 'Input batch size')
     flags.DEFINE_float('lr', '0.001', 'Input learning rate')
