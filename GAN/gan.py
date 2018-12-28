@@ -24,17 +24,15 @@ class GAN(DNN):
         self._z_dim = z_dim
 
     def build(self):
-        gen_model = [['fc', 6*6*512, None],
+        gen_model = [['fc', 7*7*512, None],
                      ['BN', 1],
                      ['ReLU'],
-                     ['reshape', [-1, 6, 6, 512]],
+                     ['reshape', [-1, 7, 7, 512]],
                      ['deconv', 4, 256, 2, tf.nn.relu],
                      ['BN', 2],
                      ['deconv', 4, 128, 2, tf.nn.relu],
                      ['BN', 3],
-                     ['deconv', 4, 64, 2, tf.nn.relu],
-                     ['BN', 4],
-                     ['deconv', 4, 3, 2, None]]
+                     ['deconv', 4, 1, 1, None]]
 
         dis_model = [['conv', 4, 64, 2, tf.nn.relu],
                      ['conv', 4, 128, 2, tf.nn.relu],
