@@ -3,12 +3,13 @@ sys.path.append('./utility')
 sys.path.append('./network')
 sys.path.append('./dataset')
 import tensorflow as tf
+from collections import OrderedDict
 from model import DNN
 from lenet import LeNet
-from losses import classification_loss, add_to_watch_list
+#from losses import classification_loss, add_to_watch_list
 from load import Load
 from utils import Utils
-from hooks import SavedModelBuilderHook
+from hooks import SavedModelBuilderHook, MyLoggerHook
 
 def set_model(outdim):
     model_set = [['conv', 5, 32, 1, tf.nn.relu],
@@ -101,13 +102,13 @@ def main(argv):
                             outputs={'predict':  tf.saved_model.utils.build_tensor_info(predict)},
                             method_name=tf.saved_model.signature_constants.PREDICT_METHOD_NAME,)
                         }
-    metrics = {
-        "test loss": test_loss,
-        "test accuracy":test_accuracy,
+    metrics = OrderedDict({
         "global_step": global_step,
         "train loss": train_loss,
-        "train accuracy":train_accuracy}
-    hooks.append(tf.train.LoggingTensorHook(metrics, every_n_iter=100))
+        "train accuracy":train_accuracy,
+        "test loss": test_loss,
+        "test accuracy":test_accuracy})
+    hooks.append(MyLoggerHook(util.log_dir, metrics, every_n_iter=100))
     hooks.append(tf.train.NanTensorHook(train_loss))
     hooks.append(SavedModelBuilderHook(util.saved_model_path, signature_def_map))
     if max_steps:
