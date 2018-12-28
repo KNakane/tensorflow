@@ -1,11 +1,12 @@
 import sys
 sys.path.append('./utility')
 sys.path.append('./network')
+sys.path.append('./dataset')
 import tensorflow as tf
 from model import DNN
 from lenet import LeNet
 from losses import classification_loss, add_to_watch_list
-from data_load import Load
+from load import Load
 from utils import Utils
 
 def set_model(outdim):

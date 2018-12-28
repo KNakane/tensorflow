@@ -3,9 +3,10 @@ import random
 import tensorflow as tf
 sys.path.append('./utility')
 sys.path.append('./network')
+sys.path.append('./dataset')
 from unet import UNet
 from utils import Utils
-from data_load import Load
+from segment_load import Load
 
 def main(argv):
     print("---Start Learning------")

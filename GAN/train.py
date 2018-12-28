@@ -1,9 +1,10 @@
 import os,sys
 sys.path.append('./CNN')
+sys.path.append('./dataset')
 import tensorflow as tf
 from gan import GAN
 from utils import Utils
-from data_load import Load
+from load import Load
 
 
 def main(args):
