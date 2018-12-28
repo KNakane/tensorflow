@@ -14,6 +14,7 @@ tensorflowの練習用
 
 # Usage
 ## Build Network
+GoogleNetの他に、  
 ```train.py```内にある```set_model```関数に作成したいモデルを定義する  
 listである**model_set**にlayerごとの情報をlistとしてappendする  
 定義の方法は以下の通り  

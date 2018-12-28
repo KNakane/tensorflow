@@ -23,7 +23,13 @@ tensorflow
 ┃  
 ┣ CNN : CNNで学習するディレクトリ  
 ┃   
+┣ GAN : GANを行うディレクトリ  
+┃   
+┣ dataset  : dataset取得用ディレクトリ  
+┃   
 ┣ network  : DLのNetworkを構築するディレクトリ    
+┃  
+┣ optuna : PFNが作成したハイパーパラメータチューニングを行うディレクトリ    
 ┃  
 ┣ rl  
 ┃  ┣ agents  : 強化学習用のAgent  
