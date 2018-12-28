@@ -13,6 +13,7 @@ class Utils():
         self.log_dir = self.res_dir + "/log"
         self.tf_board = self.res_dir + "/tf_board"
         self.model_path = self.res_dir + "/model"
+        self.saved_model_path = self.model_path + "/saved_model"
 
     def conf_log(self):
         if tf.gfile.Exists(self.res_dir):

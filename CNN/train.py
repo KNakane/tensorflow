@@ -7,8 +7,8 @@ from model import DNN
 from lenet import LeNet
 from losses import classification_loss, add_to_watch_list
 from load import Load
-from kuzushiji_load import kuzushiji_Load
 from utils import Utils
+from hooks import SavedModelBuilderHook
 
 def set_model(outdim):
     model_set = [['conv', 5, 32, 1, tf.nn.relu],
@@ -95,6 +95,7 @@ def main(argv):
     # create hooks
     hooks = []
     tf.logging.set_verbosity(tf.logging.INFO)
+    signature_def_map = tf.saved_model.predict_signature_def(inputs={'input': inputs}, outputs={'output': predict})
     metrics = {
         "test loss": test_loss,
         "test accuracy":test_accuracy,
@@ -103,6 +104,7 @@ def main(argv):
         "train accuracy":train_accuracy}
     hooks.append(tf.train.LoggingTensorHook(metrics, every_n_iter=100))
     hooks.append(tf.train.NanTensorHook(train_loss))
+    #hooks.append(SavedModelBuilderHook(util.saved_model_path, signature_def_map))
     if max_steps:
         hooks.append(tf.train.StopAtStepHook(last_step=max_steps))
 
