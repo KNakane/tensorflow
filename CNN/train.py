@@ -47,7 +47,7 @@ def main(argv):
 
     #training
     model_set = set_model(data.output_dim)
-    model = eval(FLAGS.network)(model=model_set, name=FLAGS.network, lr=FLAGS.lr, opt=FLAGS.opt, trainable=True)
+    model = eval(FLAGS.network)(model=model_set, name=FLAGS.network, out_dim=data.output_dim, lr=FLAGS.lr, opt=FLAGS.opt, trainable=True)
     logits = model.inference(inputs)
     logits  = tf.identity(logits, name="output_logits")
     train_loss = model.loss(logits, labels)

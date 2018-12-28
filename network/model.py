@@ -9,6 +9,7 @@ class DNN(Module):
     def __init__(self, 
                  model=None,
                  name='DNN',
+                 out_dim=10,
                  opt=Adam,   # Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]
                  lr=0.001,
                  trainable=False
@@ -17,6 +18,7 @@ class DNN(Module):
         self.model = model
         self._layers = []
         self.name = name
+        self.out_dim = out_dim
         if self._trainable:
             self.optimizer = eval(opt)(learning_rate=lr)
 

@@ -9,10 +9,11 @@ class LeNet(DNN):
     def __init__(self, 
                  model=None,
                  name='LeNet',
+                 out_dim=10,
                  opt=Adam,   # Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]
                  lr=0.001,
                  trainable=False):
-        super().__init__(name=name,opt=opt,lr=lr,trainable=trainable)
+        super().__init__(name=name,opt=opt,lr=lr,trainable=trainable, out_dim=out_dim)
         
     def inference(self, images):
         with tf.variable_scope(self.name):
@@ -24,6 +25,6 @@ class LeNet(DNN):
             features = tf.layers.flatten(featmap)
             features = tf.layers.dense(features, units=1024, activation=tf.nn.relu, name="fc3")
             features = tf.layers.dropout(features, rate=0.5, training=self._trainable)
-            logits = tf.layers.dense(features, units=10, name="fc4")
+            logits = tf.layers.dense(features, units=self.out_dim, name="fc4")
 
             return logits
