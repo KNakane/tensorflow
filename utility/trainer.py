@@ -12,13 +12,15 @@ class Train():
                  FLAGS,
                  message,
                  data,
-                 model):
+                 model,
+                 name):
 
         self.checkpoints_to_keep = FLAGS.checkpoints_to_keep
         self.keep_checkpoint_every_n_hours = FLAGS.keep_checkpoint_every_n_hours
         self.max_steps = FLAGS.n_epoch
         self.save_checkpoint_steps = FLAGS.save_checkpoint_steps
         self.batch_size = FLAGS.batch_size
+        self.name = name
         self.message = message
         self.data = data
         self.global_step = tf.train.get_or_create_global_step()
@@ -32,7 +34,7 @@ class Train():
         return inputs, labels
 
     def train(self):
-        util = Utils()
+        util = Utils(prefix=self.name)
         util.conf_log()
 
         #train
@@ -58,6 +60,8 @@ class Train():
         tf.summary.scalar('test/loss', test_loss)
         tf.summary.scalar('test/accuracy', test_accuracy)
         tf.summary.image('test/image', test_inputs)
+        if self.name == 'AutoEncoder':
+            tf.summary.image('test/encode_image', logits)
 
 
         def init_fn(scaffold, session):

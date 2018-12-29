@@ -37,7 +37,10 @@ class CNN(Module):
         return v
 
     def loss(self, logits, labels):
-        loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=logits, labels=labels))
+        if self.name == 'AutoEncoder':
+            loss = tf.reduce_mean(tf.square(logits - labels))
+        else:
+            loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=logits, labels=labels))
         return loss
 
     def optimize(self, loss, global_step=None):
