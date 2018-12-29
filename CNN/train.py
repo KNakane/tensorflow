@@ -3,7 +3,7 @@ sys.path.append('./utility')
 sys.path.append('./network')
 sys.path.append('./dataset')
 import tensorflow as tf
-from model import DNN
+from model import CNN
 from lenet import LeNet
 from load import Load
 from trainer import Train

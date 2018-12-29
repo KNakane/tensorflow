@@ -5,10 +5,10 @@ sys.path.append('./utility')
 from module import Module
 from optimizer import *
 
-class DNN(Module):
+class CNN(Module):
     def __init__(self, 
                  model=None,
-                 name='DNN',
+                 name='CNN',
                  out_dim=10,
                  opt=Adam,   # Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]
                  lr=0.001,
