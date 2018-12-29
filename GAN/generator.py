@@ -2,10 +2,10 @@ import os,sys
 sys.path.append('./network')
 sys.path.append('./utility')
 import tensorflow as tf
-from model import DNN
+from model import CNN
 from optimizer import *
 
-class Generator(DNN):
+class Generator(CNN):
     def __init__(self, 
                  model,
                  opt=Adam,

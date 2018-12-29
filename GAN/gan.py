@@ -2,13 +2,13 @@ import os,sys
 sys.path.append('./network')
 sys.path.append('./utility')
 import tensorflow as tf
-from model import DNN
+from model import CNN
 from optimizer import *
 from generator import Generator
 from discriminator import Discriminator
 
 
-class GAN(DNN):
+class GAN(CNN):
     def __init__(self,
                  z_dim=100,
                  name='GAN',
