@@ -21,14 +21,13 @@ def set_model(outdim):
     return model_set
 
 def main(argv):
-    print("---Start Learning------")
-    print("Network : {}".format(FLAGS.network))
-    print("data : {}".format(FLAGS.data))
-    print("epoch : {}".format(FLAGS.n_epoch))
-    print("batch_size : {}".format(FLAGS.batch_size))
-    print("Optimizer : {}".format(FLAGS.opt))
-    print("learning rate : {}".format(FLAGS.lr))
-    print("-----------------------")
+    message = OrderedDict({
+        "Network": FLAGS.network,
+        "data": FLAGS.data,
+        "epoch":FLAGS.n_epoch,
+        "batch_size": FLAGS.batch_size,
+        "Optimizer":FLAGS.opt,
+        "learning_rate":FLAGS.lr})
 
     checkpoints_to_keep = FLAGS.checkpoints_to_keep
     keep_checkpoint_every_n_hours = FLAGS.keep_checkpoint_every_n_hours
@@ -108,7 +107,7 @@ def main(argv):
         "train accuracy":train_accuracy,
         "test loss": test_loss,
         "test accuracy":test_accuracy})
-    hooks.append(MyLoggerHook(util.log_dir, metrics, every_n_iter=100))
+    hooks.append(MyLoggerHook(message, util.log_dir, metrics, every_n_iter=100))
     hooks.append(tf.train.NanTensorHook(train_loss))
     hooks.append(SavedModelBuilderHook(util.saved_model_path, signature_def_map))
     if max_steps:

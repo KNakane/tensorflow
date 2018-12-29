@@ -31,10 +31,11 @@ class SavedModelBuilderHook(tf.train.SessionRunHook):
         builder.save()
 
 class MyLoggerHook(tf.train.SessionRunHook):
-    """terminalとlogファイルに出力をする"""
-    def __init__(self, log_dir, tensors, every_n_iter=None, every_n_secs=None,
+    """terminalとlogファイルに学習過程を出力をする"""
+    def __init__(self, message, log_dir, tensors, every_n_iter=None, every_n_secs=None,
                  at_end=False, formatter=None):
         self.log_dir = log_dir
+        self.message = message
         tf.gfile.MakeDirs(self.log_dir)
         only_log_at_end = (
             at_end and (every_n_iter is None) and (every_n_secs is None))
@@ -63,6 +64,13 @@ class MyLoggerHook(tf.train.SessionRunHook):
         self.f = open(self.log_dir + '/log.txt', 'w')
         self._current_tensors = {tag: _as_graph_element(tensor)
                                  for (tag, tensor) in self._tensors.items()}
+        self._opening()
+
+    def _opening(self):
+        print("------Learning Details------")
+        for key, info in self.message.items():
+            print("%s : %s"%(key, info))
+        print("----------------------------")
 
     def before_run(self, run_context):  # pylint: disable=unused-argument
         self._should_trigger = self._timer.should_trigger_for_step(self._iter_count)

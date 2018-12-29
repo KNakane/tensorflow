@@ -7,15 +7,15 @@ sys.path.append('./dataset')
 from unet import UNet
 from utils import Utils
 from segment_load import Load
+from collections import OrderedDict
 from hooks import SavedModelBuilderHook, MyLoggerHook
 
 def main(argv):
-    print("---Start Learning------")
-    print("epoch : {}".format(FLAGS.n_epoch))
-    print("batch_size : {}".format(FLAGS.batch_size))
-    print("Optimizer : {}".format(FLAGS.opt))
-    print("learning rate : {}".format(FLAGS.lr))
-    print("-----------------------")
+    message = OrderedDict({
+        "epoch":FLAGS.n_epoch,
+        "batch_size": FLAGS.batch_size,
+        "Optimizer":FLAGS.opt,
+        "learning_rate":FLAGS.lr})
 
     checkpoints_to_keep = FLAGS.checkpoints_to_keep
     keep_checkpoint_every_n_hours = FLAGS.keep_checkpoint_every_n_hours
@@ -83,7 +83,7 @@ def main(argv):
         "loss": loss,
         "accuracy": accuracy,
         "mIoU": mIoU}
-    hooks.append(MyLoggerHook(util.log_dir, metrics, every_n_iter=50))
+    hooks.append(MyLoggerHook(message, util.log_dir, metrics, every_n_iter=50))
     hooks.append(tf.train.NanTensorHook(loss))
     if max_steps:
         hooks.append(tf.train.StopAtStepHook(last_step=max_steps))
