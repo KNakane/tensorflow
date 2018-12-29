@@ -26,6 +26,7 @@ class DNN(Module):
         with tf.variable_scope(self.name):
             for l in range(len(self.model)):
                 outputs = (eval('self.' + self.model[l][0])(outputs, self.model[l][1:]))
+            outputs  = tf.identity(outputs, name="output_logits")
             return outputs
 
     @property
@@ -45,3 +46,8 @@ class DNN(Module):
     def predict(self, logits):
         _, indices = tf.nn.top_k(logits, 1, sorted=False)
         return indices
+
+    def evaluate(self, logits, labels):
+        with tf.variable_scope('Accuracy'):
+            correct_prediction = tf.equal(tf.argmax(logits,1), tf.argmax(labels, 1))
+            return tf.reduce_mean(tf.cast(correct_prediction, tf.float32))

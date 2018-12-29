@@ -3,13 +3,11 @@ sys.path.append('./utility')
 sys.path.append('./network')
 sys.path.append('./dataset')
 import tensorflow as tf
-from collections import OrderedDict
 from model import DNN
 from lenet import LeNet
-#from losses import classification_loss, add_to_watch_list
 from load import Load
-from utils import Utils
-from hooks import SavedModelBuilderHook, MyLoggerHook
+from trainer import Train
+from collections import OrderedDict
 
 def set_model(outdim):
     model_set = [['conv', 5, 32, 1, tf.nn.relu],
@@ -29,101 +27,16 @@ def main(argv):
         "Optimizer":FLAGS.opt,
         "learning_rate":FLAGS.lr})
 
-    checkpoints_to_keep = FLAGS.checkpoints_to_keep
-    keep_checkpoint_every_n_hours = FLAGS.keep_checkpoint_every_n_hours
-    max_steps = FLAGS.n_epoch
-    save_checkpoint_steps = FLAGS.save_checkpoint_steps
-    batch_size = FLAGS.batch_size
-
-    # load dataset
+    # prepare training
+    ## load dataset
     data = Load(FLAGS.data)
-    dataset = data.load(data.x_train, data.y_train, batch_size=batch_size, is_training=True)
-    iterator = dataset.make_initializable_iterator()
-    inputs, labels = iterator.get_next()
-    inputs = tf.reshape(inputs, (-1, data.size, data.size, data.channel)) / 255.0
-
-    # build train operation
-    global_step = tf.train.get_or_create_global_step()
-
-    #training
+    ## setting models
     model_set = set_model(data.output_dim)
     model = eval(FLAGS.network)(model=model_set, name=FLAGS.network, out_dim=data.output_dim, lr=FLAGS.lr, opt=FLAGS.opt, trainable=True)
-    logits = model.inference(inputs)
-    logits  = tf.identity(logits, name="output_logits")
-    train_loss = model.loss(logits, labels)
 
-    opt_op = model.optimize(train_loss, global_step)
-    update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-    train_op = tf.group([opt_op] + update_ops)
-    predict = model.predict(logits)
-    correct_prediction = tf.equal(tf.argmax(logits,1), tf.argmax(labels, 1))
-    train_accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
-
-    #test
-    test_inputs, test_labels = data.load_test(data.x_test, data.y_test)
-    with tf.variable_scope(tf.get_variable_scope(), reuse=True):
-        logits = model.inference(test_inputs)
-    logits  = tf.identity(logits, name="test_logits")
-    test_loss = model.loss(logits, test_labels)
-    correct_prediction = tf.equal(tf.argmax(logits,1), tf.argmax(test_labels, 1))
-    test_accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
-
-
-    # logging for tensorboard
-    util = Utils(prefix='CNN')
-    util.conf_log()
-
-    tf.summary.scalar('test/loss', test_loss)
-    tf.summary.scalar('test/accuracy', test_accuracy)
-    tf.summary.image('test/image', test_inputs)
-
-    tf.summary.scalar('train/loss', train_loss)
-    tf.summary.scalar('train/accuracy', train_accuracy)
-    tf.summary.image('train/image', inputs)
-
-    def init_fn(scaffold, session):
-        session.run(iterator.initializer,feed_dict={data.features_placeholder: data.x_train,
-                                                    data.labels_placeholder: data.y_train})
-
-    # create saver
-    scaffold = tf.train.Scaffold(
-        init_fn=init_fn,
-        saver=tf.train.Saver(
-            max_to_keep=checkpoints_to_keep,
-            keep_checkpoint_every_n_hours=keep_checkpoint_every_n_hours))
-
-    # create hooks
-    hooks = []
-    tf.logging.set_verbosity(tf.logging.INFO)
-    signature_def_map = {
-                        'predict': tf.saved_model.signature_def_utils.build_signature_def(
-                            inputs={'inputs': tf.saved_model.utils.build_tensor_info(data.features_placeholder)},
-                            outputs={'predict':  tf.saved_model.utils.build_tensor_info(predict)},
-                            method_name=tf.saved_model.signature_constants.PREDICT_METHOD_NAME,)
-                        }
-    metrics = OrderedDict({
-        "global_step": global_step,
-        "train loss": train_loss,
-        "train accuracy":train_accuracy,
-        "test loss": test_loss,
-        "test accuracy":test_accuracy})
-    hooks.append(MyLoggerHook(message, util.log_dir, metrics, every_n_iter=100))
-    hooks.append(tf.train.NanTensorHook(train_loss))
-    hooks.append(SavedModelBuilderHook(util.saved_model_path, signature_def_map))
-    if max_steps:
-        hooks.append(tf.train.StopAtStepHook(last_step=max_steps))
-
-    # training
-    session = tf.train.MonitoredTrainingSession(
-        checkpoint_dir=util.model_path,
-        hooks=hooks,
-        scaffold=scaffold,
-        save_checkpoint_steps=save_checkpoint_steps,
-        summary_dir=util.tf_board)
-        
-    with session:
-        while not session.should_stop():
-            session.run([train_op, labels, predict])
+    #training
+    trainer = Train(FLAGS, message, data, model)
+    trainer.train()
 
 
 if __name__ == '__main__':

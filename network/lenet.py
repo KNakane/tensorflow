@@ -26,5 +26,6 @@ class LeNet(DNN):
             features = tf.layers.dense(features, units=1024, activation=tf.nn.relu, name="fc3")
             features = tf.layers.dropout(features, rate=0.5, training=self._trainable)
             logits = tf.layers.dense(features, units=self.out_dim, name="fc4")
+            logits  = tf.identity(logits, name="output_logits")
 
             return logits
