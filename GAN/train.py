@@ -5,18 +5,18 @@ import tensorflow as tf
 from gan import GAN
 from utils import Utils
 from load import Load
+from collections import OrderedDict
 from hooks import SavedModelBuilderHook, MyLoggerHook
 
 
 def main(args):
-    print("---Start Learning------")
-    print("Network : {}".format(FLAGS.network))
-    print("data : {}".format(FLAGS.data))
-    print("epoch : {}".format(FLAGS.n_epoch))
-    print("batch_size : {}".format(FLAGS.batch_size))
-    print("Optimizer : {}".format(FLAGS.opt))
-    print("learning rate : {}".format(FLAGS.lr))
-    print("-----------------------")
+    message = OrderedDict({
+        "Network": FLAGS.network,
+        "data": FLAGS.data,
+        "epoch":FLAGS.n_epoch,
+        "batch_size": FLAGS.batch_size,
+        "Optimizer":FLAGS.opt,
+        "learning_rate":FLAGS.lr})
 
     # Setting
     checkpoints_to_keep = FLAGS.checkpoints_to_keep
@@ -37,15 +37,14 @@ def main(args):
 
     model = eval(FLAGS.network)(z_dim=100, name=FLAGS.network, lr=FLAGS.lr, opt=FLAGS.opt, interval=5, trainable=True)
     dis_true, dis_fake, fake_image = model.inference(inputs, batch_size)
-    #logits  = tf.identity(dis_true, dis_fake, name="output_logits")
     dis_loss, gen_loss = model.loss(dis_true, dis_fake)
     
     opt_op = model.optimize(dis_loss, gen_loss, global_step)
     update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
     train_op = tf.group([opt_op] + update_ops)
     predict = model.predict()
-    correct_prediction = tf.equal(dis_true, 1) + tf.equal(dis_fake, 0)
-    accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+    #correct_prediction = tf.equal(dis_true, 1) + tf.equal(dis_fake, 0)
+    #accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
     # logging for tensorboard
     util = Utils(prefix='GAN')
@@ -53,7 +52,7 @@ def main(args):
     tf.summary.scalar('global_step', global_step)
     tf.summary.scalar('discriminator_loss', dis_loss)
     tf.summary.scalar('generator_loss', gen_loss)
-    tf.summary.scalar('accuracy', accuracy)
+    #tf.summary.scalar('accuracy', accuracy)
     tf.summary.image('image', inputs)
     tf.summary.image('image', fake_image)
 
@@ -74,9 +73,9 @@ def main(args):
     metrics = {
         "global_step": global_step,
         "discriminator_loss": dis_loss,
-        "generator_loss": gen_loss,
-        "accuracy": accuracy}
-    hooks.append(MyLoggerHook(util.log_dir, metrics, every_n_iter=50))
+        "generator_loss": gen_loss}
+        #"accuracy": accuracy}
+    hooks.append(MyLoggerHook(message, util.log_dir, metrics, every_n_iter=50))
     hooks.append(tf.train.NanTensorHook(dis_loss))
     if max_steps:
         hooks.append(tf.train.StopAtStepHook(last_step=max_steps))

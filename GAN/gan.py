@@ -59,18 +59,18 @@ class GAN(CNN):
         return self.generator.inference(self.z)
 
     def loss(self, true, fake):
-        dis_loss = tf.reduce_mean(tf.nn.relu(1 - true))
-        dis_loss += tf.reduce_mean(tf.nn.relu(1 + fake))
 
-        gen_loss = -tf.reduce_mean(fake)
+        dis_loss = -tf.reduce_mean(tf.log(true) + tf.log(1. - fake))
+        gen_loss = -tf.reduce_mean(tf.log(fake))
 
         return dis_loss, gen_loss
 
     def optimize(self, dis_loss, gen_loss, global_step=None):
-        def gen_train(gen_loss):
-            return self.optimizer.optimize(loss=gen_loss, global_step=global_steps)
+        def gen_train(loss):
+            return self.optimizer.optimize(loss=loss, global_step=global_steps)
 
         global_steps = tf.train.get_or_create_global_step()
-        gen_train_op = tf.cond(global_steps % self.gen_train_interval == 0, lambda: gen_train, lambda: tf.no_op())
+        judge = tf.cast(global_steps % self.gen_train_interval == 0, tf.bool)
+        gen_train_op = tf.cond(judge, lambda: gen_train(gen_loss), lambda: tf.no_op())
         with tf.control_dependencies([gen_train_op]):
             return self.optimizer.optimize(loss=dis_loss, global_step=global_steps)
