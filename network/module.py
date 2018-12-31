@@ -88,6 +88,10 @@ class Module(object):
         with tf.variable_scope('Leaky_ReLU'):
             return tf.nn.leaky_relu(x)
 
+    def tanh(self, x, args):
+        with tf.variable_scope('tanh'):
+            return tf.nn.tanh(x)
+
     def sigmoid(self, x, args):
         with tf.variable_scope('Sigmoid'):
             return tf.nn.sigmoid(x)

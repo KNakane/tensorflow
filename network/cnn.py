@@ -22,8 +22,10 @@ class CNN(Module):
         if self._trainable:
             self.optimizer = eval(opt)(learning_rate=lr)
 
-    def inference(self, outputs):
+    def inference(self, outputs, reuse=False):
         with tf.variable_scope(self.name):
+            if reuse:
+                tf.get_variable_scope().reuse_variables()
             for l in range(len(self.model)):
                 outputs = (eval('self.' + self.model[l][0])(outputs, self.model[l][1:]))
             outputs  = tf.identity(outputs, name="output_logits")

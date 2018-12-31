@@ -49,8 +49,7 @@ class Train():
 
         #test
         test_inputs, test_labels = self.data.load_test(self.data.x_test, self.data.y_test)
-        with tf.variable_scope(tf.get_variable_scope(), reuse=True):
-            logits = self.model.inference(test_inputs)
+        logits = self.model.inference(test_inputs, reuse=True)
         test_loss = self.model.loss(logits, test_labels)
         test_accuracy = self.model.evaluate(logits, test_labels)
 

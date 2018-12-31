@@ -15,8 +15,10 @@ class LeNet(CNN):
                  trainable=False):
         super().__init__(name=name,opt=opt,lr=lr,trainable=trainable, out_dim=out_dim)
         
-    def inference(self, images):
+    def inference(self, images, reuse=False):
         with tf.variable_scope(self.name):
+            if reuse:
+                tf.get_variable_scope().reuse_variables()
             featmap = tf.layers.conv2d(images, 32, [5, 5], activation=tf.nn.relu, name="conv1")
             featmap = tf.layers.max_pooling2d(featmap, pool_size=2, strides=2,  name="pool1")
             featmap = tf.layers.conv2d(featmap, 64, [5, 5], activation=tf.nn.relu, name="conv2")
