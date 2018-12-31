@@ -84,6 +84,14 @@ class Module(object):
         with tf.variable_scope('ReLU'):
             return tf.nn.relu(x)
 
+    def Leaky_ReLU(self, x, args):
+        with tf.variable_scope('Leaky_ReLU'):
+            return tf.nn.leaky_relu(x)
+
+    def sigmoid(self, x, args):
+        with tf.variable_scope('Sigmoid'):
+            return tf.nn.sigmoid(x)
+
     def fc(self, x, args): # args = [units, activation=tf.nn.relu]
         assert len(args) == 2, '[FC] Not enough Argument -> [units, activation]'
         if len(x.shape) > 2:

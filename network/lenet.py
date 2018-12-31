@@ -2,10 +2,10 @@
 import sys
 sys.path.append('./utility')
 import tensorflow as tf
-from model import DNN
+from cnn import CNN
 from optimizer import *
 
-class LeNet(DNN):
+class LeNet(CNN):
     def __init__(self, 
                  model=None,
                  name='LeNet',
