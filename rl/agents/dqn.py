@@ -5,7 +5,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '../../network'))
 import numpy as np
 import tensorflow as tf
 from optimizer import *
-from model import DNN
+from cnn import CNN
 from writer import Writer
 
 class DQN():
@@ -62,7 +62,7 @@ class DQN():
         self.q_target = tf.placeholder(tf.float32, [None, self.n_actions], name='Q_target')  # for calculating loss
         
         with tf.variable_scope('eval_net'):
-            self.q_eval_model = DNN(model=self.model, name='Q_net', opt=self._optimizer, lr=self.lr, trainable=True)
+            self.q_eval_model = CNN(model=self.model, name='Q_net', opt=self._optimizer, lr=self.lr, trainable=True)
             self.q_eval = self.q_eval_model.inference(self.s)
 
             with tf.variable_scope('loss'):
@@ -80,7 +80,7 @@ class DQN():
             except:
                 self.s_ = tf.placeholder(tf.float32, [None, self.n_features], name='s_')    # input
         with tf.variable_scope('target_net'):
-            self.q_next = DNN(model=self.model, name='target_net', trainable=False).inference(self.s_)
+            self.q_next = CNN(model=self.model, name='target_net', trainable=False).inference(self.s_)
 
     def choose_action(self, observation):
         # to have batch dimension when feed into tf placeholder
