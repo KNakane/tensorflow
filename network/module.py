@@ -11,23 +11,23 @@ class Module(object):
             if args[3]:
                 x = self.BN(x=x, args=[1])
                 x = self.ReLU(x=x, args=None)
-                x = self.conv(x=x, args=[1, args[1],1])
+                x = self.conv(x=x, args=[1, args[1], 1, None])
                 x = self.BN(x=x, args=[2])
                 x = self.ReLU(x=x, args=None)
-                x = self.conv(x=x, args=args[:3])
+                x = self.conv(x=x, args=[args[0], args[1], args[2], None])
                 x = self.BN(x=x, args=[3])
                 x = self.ReLU(x=x, args=None)
-                x = self.conv(x=x, args=[1, args[1],1])
+                x = self.conv(x=x, args=[1, args[1],1, None])
             else:
                 x = self.BN(x=x, args=[1])
                 x = self.ReLU(x=x, args=None)
-                x = self.conv(x=x, args=[args[0], args[1],1])
+                x = self.conv(x=x, args=[args[0], args[1], 1, None])
                 x = self.BN(x=x, args=[2])
                 x = self.ReLU(x=x, args=None)
-                x = self.conv(x=x, args=args[:3])
+                x = self.conv(x=x, args=[args[0], args[1], args[2], None])
 
             if input.shape[1] != x.shape[1] or input.shape[3] != x.shape[3]:
-                input = self.conv(x=input, args=[1, args[1], args[2]])
+                input = self.conv(x=input, args=[1, args[1], args[2], None])
             
             return x + input
 

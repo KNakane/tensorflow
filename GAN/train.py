@@ -35,13 +35,13 @@ def main(args):
     # build train operation
     global_step = tf.train.get_or_create_global_step()
 
-    model = eval(FLAGS.network)(z_dim=100, name=FLAGS.network, lr=FLAGS.lr, opt=FLAGS.opt, interval=5, trainable=True)
-    dis_true, dis_fake, fake_image = model.inference(inputs, batch_size)
-    dis_loss, gen_loss = model.loss(dis_true, dis_fake)
+    model = eval(FLAGS.network)(z_dim=100, name=FLAGS.network, lr=FLAGS.lr, opt=FLAGS.opt, interval=2, trainable=True)
+    D, D_logits, D_, D_logits_, G = model.inference(inputs, batch_size)
+    dis_loss, gen_loss = model.loss(D, D_logits, D_, D_logits_)
     
-    opt_op = model.optimize(dis_loss, gen_loss, global_step)
+    g_opt, d_opt = model.optimize(dis_loss, gen_loss, global_step)
     update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-    train_op = tf.group([opt_op] + update_ops)
+    train_op = tf.group(g_opt,d_opt,update_ops)
     predict = model.predict()
     #correct_prediction = tf.equal(dis_true, 1) + tf.equal(dis_fake, 0)
     #accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
@@ -54,7 +54,7 @@ def main(args):
     tf.summary.scalar('generator_loss', gen_loss)
     #tf.summary.scalar('accuracy', accuracy)
     tf.summary.image('image', inputs)
-    tf.summary.image('image', fake_image)
+    tf.summary.image('fake_image', G)
 
     def init_fn(scaffold, session):
         session.run(iterator.initializer,feed_dict={data.features_placeholder: data.x_train,
@@ -90,7 +90,7 @@ def main(args):
         
     with session:
         while not session.should_stop():
-            session.run([train_op])
+            session.run([g_opt, d_opt, update_ops])
 
     return
 

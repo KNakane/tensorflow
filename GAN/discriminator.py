@@ -2,7 +2,7 @@ import os,sys
 sys.path.append('./network')
 sys.path.append('./utility')
 import tensorflow as tf
-from model import CNN
+from cnn import CNN
 from optimizer import *
 
 class Discriminator(CNN):
@@ -13,9 +13,10 @@ class Discriminator(CNN):
                  trainable=False):
         super().__init__(model=model, name=name, opt=opt, trainable=trainable)
 
-    def inference(self, outputs):
-        with tf.variable_scope(self.name):
+    def inference(self, logits, reuse=False):
+        with tf.variable_scope("discriminator") as scope:
+            if reuse:
+                tf.get_variable_scope().reuse_variables()
             for l in range(len(self.model)):
-                outputs = (eval('self.' + self.model[l][0])(outputs, self.model[l][1:]))
-            outputs  = tf.identity(outputs, name="output_logits")
-            return outputs
+                logits = (eval('self.' + self.model[l][0])(logits, self.model[l][1:]))
+            return tf.nn.sigmoid(logits) ,logits

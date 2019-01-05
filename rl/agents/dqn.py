@@ -57,7 +57,7 @@ class DQN():
             try:
                 self.s = tf.placeholder(tf.float32, [None] + list(self.n_features), name='s')  # input
             except:
-                self.s = tf.placeholder(tf.float32, [None, self.n_features], name='s_')    # input
+                self.s = tf.placeholder(tf.float32, [None, self.n_features], name='s')    # input
 
         self.q_target = tf.placeholder(tf.float32, [None, self.n_actions], name='Q_target')  # for calculating loss
         

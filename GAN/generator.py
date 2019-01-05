@@ -2,7 +2,7 @@ import os,sys
 sys.path.append('./network')
 sys.path.append('./utility')
 import tensorflow as tf
-from model import CNN
+from cnn import CNN
 from optimizer import *
 
 class Generator(CNN):

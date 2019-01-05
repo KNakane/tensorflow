@@ -13,3 +13,4 @@ dataset/k49*
 GAN/__pycache__
 network/__pycache__
 GAN/__pycache__
+segmentation/util/__pycache__

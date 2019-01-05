@@ -9,21 +9,25 @@ import gym.spaces
 import numpy as np
 import tensorflow as tf
 from optimizer import *
-from dqn import DQN,DDQN
+from ddpg import DDPG
 from trainer import Trainer
 
 
 def set_model(outdim):
-    model_set = [['fc', 10, tf.nn.relu],
-                 ['fc', 10, tf.nn.relu],
-                 ['fc', outdim, None]]
-    return model_set
+    actor = [['fc', 10, tf.nn.relu],
+             ['fc', 10, tf.nn.relu],
+             ['fc', outdim, None]]
+
+    critic = [['fc', 10, tf.nn.relu],
+             ['fc', 10, tf.nn.relu],
+             ['fc', outdim, None]]
+    return actor, critic
 
 
 def main(argv):
     env = gym.make(FLAGS.env)
     env = env.unwrapped
-    agent = DDQN(model=set_model(outdim=env.action_space.shape[0]),
+    agent = DDPG(model=set_model(outdim=env.action_space.shape[0]),
                  n_actions=env.action_space.shape[0],
                  n_features=env.observation_space.shape,
                  learning_rate=0.01, e_greedy=0.9,
