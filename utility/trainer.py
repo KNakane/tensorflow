@@ -34,9 +34,7 @@ class Train():
         return inputs, labels
 
     def train(self):
-        util = Utils(prefix=self.name)
-        util.conf_log()
-
+        
         #train
         inputs, corrects = self.load()
         logits = self.model.inference(inputs)
@@ -90,20 +88,38 @@ class Train():
             "test loss": test_loss,
             "test accuracy":test_accuracy})
 
-        hooks = []
-        hooks.append(MyLoggerHook(self.message, util.log_dir, metrics, every_n_iter=100))
-        hooks.append(tf.train.NanTensorHook(train_loss))
-        hooks.append(SavedModelBuilderHook(util.saved_model_path, signature_def_map))
-        if self.max_steps:
-            hooks.append(tf.train.StopAtStepHook(last_step=self.max_steps))
-        
-        session = tf.train.MonitoredTrainingSession(
-            checkpoint_dir=util.model_path,
-            hooks=hooks,
-            scaffold=scaffold,
-            save_checkpoint_steps=self.save_checkpoint_steps,
-            summary_dir=util.tf_board)
+        if self.name == 'tuning':
+            hooks = []
+            hooks.append(tf.train.NanTensorHook(train_loss))
+            if self.max_steps:
+                hooks.append(tf.train.StopAtStepHook(last_step=self.max_steps))
+
+            # training
+            session = tf.train.MonitoredTrainingSession(
+                hooks=hooks,
+                scaffold=scaffold)
+
+        else:
+
+            util = Utils(prefix=self.name)
+            util.conf_log()
+
+            hooks = []
+            hooks.append(MyLoggerHook(self.message, util.log_dir, metrics, every_n_iter=100))
+            hooks.append(tf.train.NanTensorHook(train_loss))
+            hooks.append(SavedModelBuilderHook(util.saved_model_path, signature_def_map))
+            if self.max_steps:
+                hooks.append(tf.train.StopAtStepHook(last_step=self.max_steps))
+            
+            session = tf.train.MonitoredTrainingSession(
+                checkpoint_dir=util.model_path,
+                hooks=hooks,
+                scaffold=scaffold,
+                save_checkpoint_steps=self.save_checkpoint_steps,
+                summary_dir=util.tf_board)
         
         with session:
             while not session.should_stop():
-                session.run([train_op])
+                _, loss, train_acc, test_acc = session.run([train_op, train_loss, train_accuracy, test_accuracy])
+        
+        return loss, train_acc, test_acc

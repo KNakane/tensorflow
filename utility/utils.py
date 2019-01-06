@@ -7,7 +7,7 @@ class Utils():
     def __init__(self, sess=None, prefix=None):
         dt_now = datetime.datetime.now()
         self.sess = sess
-        self.res_dir = "./results/"+dt_now.strftime("%y%m%d_%H%M%S")
+        self.res_dir = "results/"+dt_now.strftime("%y%m%d_%H%M%S")
         if prefix is not None:
             self.res_dir = self.res_dir + "_{}".format(prefix)
         self.log_dir = self.res_dir + "/log"

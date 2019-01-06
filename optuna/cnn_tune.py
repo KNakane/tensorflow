@@ -13,7 +13,6 @@ from utils import Utils
 from functools import partial
 
 def objective(args, trial):
-    tf.reset_default_graph()
     param = {
         'opt' : trial.suggest_categorical('opt', ['SGD','Momentum','Adadelta','Adagrad','Adam','RMSProp']),
         'lr' : trial.suggest_loguniform('lr', 1e-2, 1e-5),

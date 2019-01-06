@@ -67,13 +67,16 @@ class MyLoggerHook(tf.train.SessionRunHook):
         self._opening()
 
     def _opening(self):
-        print("------Learning Details------")
-        self.f.write("------Learning Details------\n")
-        for key, info in self.message.items():
-            print("%s : %s"%(key, info))
-            self.f.write("%s : %s\n"%(key, info))
-        print("----------------------------")
-        self.f.write("----------------------------\n")
+        if len(self.message) or self.message is not None:
+            print("------Learning Details------")
+            self.f.write("------Learning Details------\n")
+            for key, info in self.message.items():
+                print("%s : %s"%(key, info))
+                self.f.write("%s : %s\n"%(key, info))
+            print("----------------------------")
+            self.f.write("----------------------------\n")
+        else:
+            pass
 
     def before_run(self, run_context):  # pylint: disable=unused-argument
         self._should_trigger = self._timer.should_trigger_for_step(self._iter_count)
