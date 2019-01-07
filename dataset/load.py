@@ -3,9 +3,10 @@ import numpy as np
 import tensorflow as tf
 from keras.datasets import *
 from keras.utils import np_utils
+from keras.preprocessing.image import ImageDataGenerator
 
 class Load():
-    def __init__(self,name):
+    def __init__(self, name):
         if name == "kuzushiji":
             self.get_kuzushiji()
         else:
