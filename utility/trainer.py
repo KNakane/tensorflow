@@ -29,7 +29,7 @@ class Train():
     def load(self):
         # Load Dataset
         dataset = self.data.load(self.data.x_train, self.data.y_train, batch_size=self.batch_size, is_training=True)
-        valid = self.data.load(self.data.x_test, self.data.y_test, batch_size=self.batch_size*3, is_training=True)
+        valid = self.data.load(self.data.x_test, self.data.y_test, batch_size=self.batch_size*3, is_training=False)
         self.iterator = dataset.make_initializable_iterator()
         self.valid_iter = valid.make_initializable_iterator()
         inputs, labels = self.iterator.get_next()
