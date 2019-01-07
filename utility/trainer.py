@@ -29,14 +29,17 @@ class Train():
     def load(self):
         # Load Dataset
         dataset = self.data.load(self.data.x_train, self.data.y_train, batch_size=self.batch_size, is_training=True)
+        valid = self.data.load(self.data.x_test, self.data.y_test, batch_size=self.batch_size*3, is_training=True)
         self.iterator = dataset.make_initializable_iterator()
+        self.valid_iter = valid.make_initializable_iterator()
         inputs, labels = self.iterator.get_next()
-        return inputs, labels
+        valid_inputs, valid_labels = self.valid_iter.get_next()
+        return inputs, labels, valid_inputs, valid_labels
 
     def train(self):
         
         #train
-        inputs, corrects = self.load()
+        inputs, corrects, valid_inputs, valid_labels = self.load()
         logits = self.model.inference(inputs)
         train_loss = self.model.loss(logits, corrects)
         predict = self.model.predict(inputs)
@@ -46,24 +49,26 @@ class Train():
         train_accuracy = self.model.evaluate(logits, corrects)
 
         #test
-        test_inputs, test_labels = self.data.load_test(self.data.x_test, self.data.y_test)
-        logits = self.model.inference(test_inputs, reuse=True)
-        test_loss = self.model.loss(logits, test_labels)
-        test_accuracy = self.model.evaluate(logits, test_labels)
+        logits = self.model.inference(valid_inputs, reuse=True)
+        test_loss = self.model.loss(logits, valid_labels)
+        test_accuracy = self.model.evaluate(logits, valid_labels)
 
         tf.summary.scalar('train/loss', train_loss)
         tf.summary.scalar('train/accuracy', train_accuracy)
         tf.summary.image('train/image', inputs)
         tf.summary.scalar('test/loss', test_loss)
         tf.summary.scalar('test/accuracy', test_accuracy)
-        tf.summary.image('test/image', test_inputs)
+        tf.summary.image('test/image', valid_inputs)
         if self.name == 'AutoEncoder':
             tf.summary.image('test/encode_image', logits)
 
 
         def init_fn(scaffold, session):
-            session.run(self.iterator.initializer,feed_dict={self.data.features_placeholder: self.data.x_train,
-                                                             self.data.labels_placeholder: self.data.y_train})
+            session.run([self.iterator.initializer,self.valid_iter.initializer],
+                        feed_dict={self.data.features_placeholder: self.data.x_train,
+                                   self.data.labels_placeholder: self.data.y_train,
+                                   self.data.valid_placeholder: self.data.x_test,
+                                   self.data.valid_labels_placeholder: self.data.y_test})
 
         # create saver
         scaffold = tf.train.Scaffold(
@@ -73,6 +78,7 @@ class Train():
                 keep_checkpoint_every_n_hours=self.keep_checkpoint_every_n_hours))
 
         tf.logging.set_verbosity(tf.logging.INFO)
+        config = tf.ConfigProto(allow_soft_placement=True, log_device_placement=False)
 
         signature_def_map = {
                         'predict': tf.saved_model.signature_def_utils.build_signature_def(
@@ -97,6 +103,7 @@ class Train():
 
             # training
             session = tf.train.MonitoredTrainingSession(
+                config=config,
                 hooks=hooks,
                 scaffold=scaffold)
 
@@ -113,6 +120,7 @@ class Train():
                 hooks.append(tf.train.StopAtStepHook(last_step=self.max_steps))
             
             session = tf.train.MonitoredTrainingSession(
+                config=config,
                 checkpoint_dir=util.model_path,
                 hooks=hooks,
                 scaffold=scaffold,
@@ -121,6 +129,6 @@ class Train():
         
         with session:
             while not session.should_stop():
-                _, loss, train_acc, test_acc = session.run([train_op, train_loss, train_accuracy, test_accuracy])
-        
+                _, loss, train_acc, test_acc, dsf = session.run([train_op, train_loss, train_accuracy, test_accuracy])
+            
         return loss, train_acc, test_acc
