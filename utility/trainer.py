@@ -90,6 +90,7 @@ class Train():
 
         if self.name == 'tuning':
             hooks = []
+            hooks.append(tf.train.LoggingTensorHook(metrics, every_n_iter=100))
             hooks.append(tf.train.NanTensorHook(train_loss))
             if self.max_steps:
                 hooks.append(tf.train.StopAtStepHook(last_step=self.max_steps))
