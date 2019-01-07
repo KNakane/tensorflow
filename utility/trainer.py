@@ -129,6 +129,6 @@ class Train():
         
         with session:
             while not session.should_stop():
-                _, loss, train_acc, test_acc, dsf = session.run([train_op, train_loss, train_accuracy, test_accuracy])
+                _, loss, train_acc, test_acc = session.run([train_op, train_loss, train_accuracy, test_accuracy])
             
         return loss, train_acc, test_acc
