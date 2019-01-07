@@ -14,3 +14,4 @@ GAN/__pycache__
 network/__pycache__
 GAN/__pycache__
 segmentation/util/__pycache__
+optuna/__pycache__
