@@ -2,14 +2,14 @@ import os,sys
 import numpy as np
 import tensorflow as tf
 from keras.datasets import *
-from keras.utils import np_utils
+from Augmentation import Augment
 
 class Load():
     def __init__(self, name):
         if name == "kuzushiji":
             self.get_kuzushiji()
         else:
-            self.name = 'tf.keras.datasets.'+name
+            self.name = 'tf.keras.datasets.'+ name
             self.datasets = eval(self.name)
             (self.x_train, self.y_train), (self.x_test, self.y_test) = self.get()
             if name == 'mnist':
@@ -42,7 +42,7 @@ class Load():
         self.size, self.channel = 28, 1
         self.output_dim = 49
 
-    def load(self, images, labels, batch_size, buffer_size=1000, is_training=False):
+    def load(self, images, labels, batch_size, buffer_size=1000, is_training=False, is_augment=False):
         def preprocess_fn(image, label):
             '''A transformation function to preprocess raw data
             into trainable input. '''
@@ -51,6 +51,10 @@ class Load():
             return x, y
 
         labels = labels.reshape(labels.shape[0])
+
+        if is_augment:
+            augment = Augment(images, labels)
+            images, labels = augment.shift(v=-3, h=0)
 
         if is_training: # training dataset
             self.features_placeholder = tf.placeholder(images.dtype, images.shape, name='input_images')
@@ -62,7 +66,7 @@ class Load():
             dataset = tf.data.Dataset.from_tensor_slices((self.valid_placeholder, self.valid_labels_placeholder))
 
         # Transform and batch data at the same time
-        dataset = dataset.apply(tf.data.experimental.map_and_batch( #tf.contrib.data.map_and_batch(
+        dataset = dataset.apply(tf.data.experimental.map_and_batch(
             preprocess_fn, batch_size,
             num_parallel_batches=4,  # cpu cores
             drop_remainder=True if is_training else False))
@@ -76,3 +80,8 @@ class Load():
         x = tf.reshape(tf.cast(images, tf.float32), (-1, self.size, self.size, self.channel)) / 255.0
         y = tf.one_hot(tf.cast(labels, tf.uint8), self.output_dim)
         return x, y
+
+
+if __name__ == '__main__':
+    data = Load('mnist')
+    dataset = data.load(data.x_train, data.y_train, batch_size=32, is_training=True, is_augment=True)
