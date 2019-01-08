@@ -2,7 +2,7 @@ CNN
 ====
 
 # Overview
-tensorflowの練習用
+tensorflowの練習用  
 使用するデータはmnistやcifarを想定
 
 # Description
@@ -19,14 +19,24 @@ LeNetの他に、
 listである**model_set**にlayerごとの情報をlistとしてappendする  
 定義の方法は以下の通り  
 ### 基本設計：[`layer種類`,`args`]
-- argsの設計
-    - **fc**:[units, activation]
-    - **dropout**:[units, activation, rate]
-    - **ReLU**:なし
-    - **conv**:[kernel, filter, strides]
-    - **max_pool**:[pool_size, strides]
-    - **avg_pool**:[pool_size, strides]
-    - **BN**:なし
+#### argsの設計
+| layer | args | 
+|:-----------:|:-----------:|
+| fc | [units, activation] |
+| dropout | [units, activation, rate] | 
+| ReLU | [] |
+| Leaky_ReLU | [] |
+| tanh | [] |
+| sigmoid | [] |
+| conv | [kernel, filter, strides, activation] |
+| deconv | [kernel, filter, strides, activation] |
+| Residual | [kernel, filter, strides, bottleneck, No] |
+| max_pool | [pool_size, strides] |
+| avg_pool | [pool_size, strides] |
+| BN | [] |
+| gap | [] |
+詳細は[module.py](https://github.com/KNakane/tensorflow/blob/master/network/module.py)参照のこと
+
 ### Example
 ```
 def set_model(outdim):
@@ -42,12 +52,14 @@ def set_model(outdim):
 
 ## Learning
 ```bash
+$ cd tensorflow
 $ python CNN/main.py --data (データ名) \
                      --network (ネットワーク名) \
                      --n_epoch (学習回数) \
                      --batch_size (batch size) \
                      --lr (学習率) \
                      --opt (optimizer) \
+                     --aug (augmentationをするかしないか) \
                      --checkpoints_to_keep \
                      --keep_checkpoint_every_n_hours \
                      --save_checkpoint_steps
@@ -67,7 +79,8 @@ $ tensorboard --logdir=/path/to/logdir
 # Sample Result
 ```bash
 ---Start Learning------
-data : mnistepoch : 1000
+data : mnist
+epoch : 1000
 batch_size : 32
 learning rate : 0.1
 Optimizer : SGD
