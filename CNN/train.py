@@ -10,11 +10,10 @@ from trainer import Train
 from collections import OrderedDict
 
 def set_model(outdim):
-    model_set = [['conv', 5, 32, 1, tf.nn.relu],
-                 ['max_pool', 2, 2],
-                 ['conv', 5, 64, 1, tf.nn.relu],
-                 ['max_pool', 2, 2],
-                 ['dropout', 1024, tf.nn.relu, 0.5],
+    model_set = [['Residual', 3, 32, 2, False, 1],
+                 ['Residual', 3, 32, 2, False, 2],
+                 ['Residual', 3, 32, 2, False, 3],
+                 ['fc', 200, tf.nn.relu],
                  ['fc', outdim, None]]
     return model_set
 
@@ -50,5 +49,5 @@ if __name__ == '__main__':
     flags.DEFINE_string('opt', 'SGD', 'Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]')
     flags.DEFINE_integer('checkpoints_to_keep', 5,'checkpoint keep count')
     flags.DEFINE_integer('keep_checkpoint_every_n_hours', 1, 'checkpoint create ')
-    flags.DEFINE_integer('save_checkpoint_steps', 1000,'save checkpoint step')
+    flags.DEFINE_integer('save_checkpoint_steps', None,'save checkpoint step')
     tf.app.run()

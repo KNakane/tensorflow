@@ -18,7 +18,7 @@ class Train():
         self.checkpoints_to_keep = FLAGS.checkpoints_to_keep
         self.keep_checkpoint_every_n_hours = FLAGS.keep_checkpoint_every_n_hours
         self.max_steps = FLAGS.n_epoch
-        self.save_checkpoint_steps = FLAGS.save_checkpoint_steps
+        self.save_checkpoint_steps = self.max_steps / 10 if FLAGS.save_checkpoint_steps is None else FLAGS.save_checkpoint_steps
         self.batch_size = FLAGS.batch_size
         self.name = name
         self.message = message

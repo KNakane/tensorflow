@@ -6,8 +6,8 @@ class Module(object):
 
     def Residual(self, x, args):
         input = x
-        assert len(args) == 4, '[Residual] Not enough Argument -> [kernel, filter, strides, bottleneck]'
-        with tf.variable_scope('Residual'):
+        assert len(args) == 5, '[Residual] Not enough Argument -> [kernel, filter, strides, bottleneck, No]'
+        with tf.variable_scope('Residual_{}'.format(args[4])):
             if args[3]:
                 x = self.BN(x=x, args=[1])
                 x = self.ReLU(x=x, args=None)

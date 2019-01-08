@@ -10,11 +10,11 @@ from lenet import LeNet
 from train import set_model
 
 def main(args):
-    print("---------Start Evaluation--------")
+    print("------------Start Evaluation-----------")
     print("CheckPoint : {}".format(FLAGS.ckpt_dir))
     print("Network : {}".format(FLAGS.network))
     print("data : {}".format(FLAGS.data))
-    print("---------------------------------")
+    print("---------------------------------------")
 
     # load dataset
     data = Load(FLAGS.data)

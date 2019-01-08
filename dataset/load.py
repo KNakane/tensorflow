@@ -43,38 +43,39 @@ class Load():
         self.output_dim = 49
 
     def load(self, images, labels, batch_size, buffer_size=1000, is_training=False, is_augment=False):
-        def preprocess_fn(image, label):
-            '''A transformation function to preprocess raw data
-            into trainable input. '''
-            x = tf.reshape(tf.cast(image, tf.float32), (self.size, self.size, self.channel)) / 255.0
-            y = tf.one_hot(tf.cast(label, tf.uint8), self.output_dim)
-            return x, y
+        with tf.variable_scope('{}_dataset'.format('training' if is_training is True else 'validation')):
+            def preprocess_fn(image, label):
+                '''A transformation function to preprocess raw data
+                into trainable input. '''
+                x = tf.reshape(tf.cast(image, tf.float32), (self.size, self.size, self.channel)) / 255.0
+                y = tf.one_hot(tf.cast(label, tf.uint8), self.output_dim)
+                return x, y
 
-        labels = labels.reshape(labels.shape[0])
+            labels = labels.reshape(labels.shape[0])
 
-        if is_augment:
-            augment = Augment(images, labels)
-            images, labels = augment.shift(v=-3, h=0)
+            if is_augment:
+                augment = Augment(images, labels)
+                images, labels = augment.shift(v=-3, h=0)
 
-        if is_training: # training dataset
-            self.features_placeholder = tf.placeholder(images.dtype, images.shape, name='input_images')
-            self.labels_placeholder = tf.placeholder(labels.dtype, labels.shape, name='labels')
-            dataset = tf.data.Dataset.from_tensor_slices((self.features_placeholder, self.labels_placeholder))
-        else:           # validation dataset
-            self.valid_placeholder = tf.placeholder(images.dtype, images.shape, name='valid_inputs')
-            self.valid_labels_placeholder = tf.placeholder(labels.dtype, labels.shape, name='valid_labels')
-            dataset = tf.data.Dataset.from_tensor_slices((self.valid_placeholder, self.valid_labels_placeholder))
+            if is_training: # training dataset
+                self.features_placeholder = tf.placeholder(images.dtype, images.shape, name='input_images')
+                self.labels_placeholder = tf.placeholder(labels.dtype, labels.shape, name='labels')
+                dataset = tf.data.Dataset.from_tensor_slices((self.features_placeholder, self.labels_placeholder))
+            else:           # validation dataset
+                self.valid_placeholder = tf.placeholder(images.dtype, images.shape, name='valid_inputs')
+                self.valid_labels_placeholder = tf.placeholder(labels.dtype, labels.shape, name='valid_labels')
+                dataset = tf.data.Dataset.from_tensor_slices((self.valid_placeholder, self.valid_labels_placeholder))
 
-        # Transform and batch data at the same time
-        dataset = dataset.apply(tf.data.experimental.map_and_batch(
-            preprocess_fn, batch_size,
-            num_parallel_batches=4,  # cpu cores
-            drop_remainder=True if is_training else False))
+            # Transform and batch data at the same time
+            dataset = dataset.apply(tf.data.experimental.map_and_batch(
+                preprocess_fn, batch_size,
+                num_parallel_batches=4,  # cpu cores
+                drop_remainder=True if is_training else False))
 
-        dataset = dataset.shuffle(buffer_size).repeat()  # depends on sample size
-        dataset = dataset.prefetch(tf.contrib.data.AUTOTUNE)
+            dataset = dataset.shuffle(buffer_size).repeat()  # depends on sample size
+            dataset = dataset.prefetch(tf.contrib.data.AUTOTUNE)
 
-        return dataset
+            return dataset
 
     def load_test(self, images, labels):
         x = tf.reshape(tf.cast(images, tf.float32), (-1, self.size, self.size, self.channel)) / 255.0
