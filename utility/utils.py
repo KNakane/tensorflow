@@ -32,9 +32,10 @@ class Utils():
             self.saver = tf.train.import_meta_graph("{}.meta".format(ckpt.model_checkpoint_path))
             self.saver.restore(self.sess, ckpt.model_checkpoint_path)
             print("Restore : {}.meta".format(ckpt.model_checkpoint_path))
+            return True
         else:
             print ('Not Restore model in "{}"'.format(log_dir))
-            return
+            return False
 
     def saved_model(self, x, y):
         '''
