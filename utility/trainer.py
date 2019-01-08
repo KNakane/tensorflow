@@ -53,16 +53,6 @@ class Train():
         test_loss = self.model.loss(logits, valid_labels)
         test_accuracy = self.model.evaluate(logits, valid_labels)
 
-        tf.summary.scalar('train/loss', train_loss)
-        tf.summary.scalar('train/accuracy', train_accuracy)
-        tf.summary.image('train/image', inputs)
-        tf.summary.scalar('test/loss', test_loss)
-        tf.summary.scalar('test/accuracy', test_accuracy)
-        tf.summary.image('test/image', valid_inputs)
-        if self.name == 'AutoEncoder':
-            tf.summary.image('test/encode_image', logits)
-
-
         def init_fn(scaffold, session):
             session.run([self.iterator.initializer,self.valid_iter.initializer],
                         feed_dict={self.data.features_placeholder: self.data.x_train,
@@ -108,6 +98,15 @@ class Train():
                 scaffold=scaffold)
 
         else:
+            # tensorboard
+            tf.summary.scalar('train/loss', train_loss)
+            tf.summary.scalar('train/accuracy', train_accuracy)
+            tf.summary.image('train/image', inputs)
+            tf.summary.scalar('test/loss', test_loss)
+            tf.summary.scalar('test/accuracy', test_accuracy)
+            tf.summary.image('test/image', valid_inputs)
+            if self.name == 'AutoEncoder':
+                tf.summary.image('test/encode_image', logits)
 
             util = Utils(prefix=self.name)
             util.conf_log()
