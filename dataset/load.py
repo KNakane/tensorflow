@@ -53,17 +53,19 @@ class Load():
 
             labels = labels.reshape(labels.shape[0])
 
-            if is_augment:
+            if is_augment and is_training:
                 augment = Augment(images, labels)
-                images, labels = augment.shift(v=-3, h=0)
+                images, labels = augment.shift(v=3, h=3) #上下左右に3ピクセルずつランダムにずらす
 
             if is_training: # training dataset
-                self.features_placeholder = tf.placeholder(images.dtype, images.shape, name='input_images')
-                self.labels_placeholder = tf.placeholder(labels.dtype, labels.shape, name='labels')
+                self.x_train, self.y_train = images, labels
+                self.features_placeholder = tf.placeholder(self.x_train.dtype, self.x_train.shape, name='input_images')
+                self.labels_placeholder = tf.placeholder(self.y_train.dtype, self.y_train.shape, name='labels')
                 dataset = tf.data.Dataset.from_tensor_slices((self.features_placeholder, self.labels_placeholder))
             else:           # validation dataset
-                self.valid_placeholder = tf.placeholder(images.dtype, images.shape, name='valid_inputs')
-                self.valid_labels_placeholder = tf.placeholder(labels.dtype, labels.shape, name='valid_labels')
+                self.x_test, self.y_test = images, labels
+                self.valid_placeholder = tf.placeholder(self.x_test.dtype, self.x_test.shape, name='valid_inputs')
+                self.valid_labels_placeholder = tf.placeholder(self.y_test.dtype, self.y_test.shape, name='valid_labels')
                 dataset = tf.data.Dataset.from_tensor_slices((self.valid_placeholder, self.valid_labels_placeholder))
 
             # Transform and batch data at the same time

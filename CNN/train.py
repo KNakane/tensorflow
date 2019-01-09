@@ -24,7 +24,8 @@ def main(argv):
         "epoch":FLAGS.n_epoch,
         "batch_size": FLAGS.batch_size,
         "Optimizer":FLAGS.opt,
-        "learning_rate":FLAGS.lr})
+        "learning_rate":FLAGS.lr,
+        "Augmentation": FLAGS.aug})
 
     # prepare training
     ## load dataset
@@ -47,6 +48,7 @@ if __name__ == '__main__':
     flags.DEFINE_integer('batch_size', '32', 'Input batch size')
     flags.DEFINE_float('lr', '0.001', 'Input learning rate')
     flags.DEFINE_string('opt', 'SGD', 'Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]')
+    flags.DEFINE_boolean('aug','False','Need Augmentation')
     flags.DEFINE_integer('checkpoints_to_keep', 5,'checkpoint keep count')
     flags.DEFINE_integer('keep_checkpoint_every_n_hours', 1, 'checkpoint create ')
     flags.DEFINE_integer('save_checkpoint_steps', None,'save checkpoint step')

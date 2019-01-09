@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import sys
+sys.path.append('./CNN')
 sys.path.append('./utility')
 sys.path.append('./network')
 sys.path.append('./dataset')
@@ -11,7 +12,9 @@ from lenet import LeNet
 from load import Load
 from trainer import Train
 from search import Optuna
+from train import set_model
 from functools import partial
+
 
 def objective(args, trial):
     tf.reset_default_graph()
@@ -25,9 +28,8 @@ def objective(args, trial):
     data = Load(FLAGS.data)
 
     ## setting models
-    #model_set = set_model(data.output_dim)
-    #model = eval(FLAGS.network)(model=model_set, name=FLAGS.network, out_dim=data.output_dim, lr=FLAGS.lr, opt=FLAGS.opt, trainable=True)
-    model = LeNet(model=None, name='LeNet', out_dim=data.output_dim, lr=param['lr'], opt=param['opt'], trainable=True)
+    model_set = set_model(data.output_dim)
+    model = eval(FLAGS.network)(model=model_set, name=FLAGS.network, out_dim=data.output_dim, lr=param['lr'], opt=param['opt'], trainable=True)
 
     #training
     trainer = Train(FLAGS=FLAGS, message=None, data=data, model=model, name='tuning')
