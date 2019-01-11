@@ -41,11 +41,28 @@ class AutoEncoder(CNN):
     def inference(self, outputs):
         with tf.variable_scope(self.name):
             outputs = self.Encode(outputs)
-            if self.name == 'VAE':
-                outputs = self.varialble(outputs)
             outputs = self.Decode(outputs)
             return outputs
         
     def loss(self, logits, labels):
         loss = tf.reduce_mean(tf.square(logits - labels))
         return loss
+
+
+class VAE(AutoEncoder):
+    def __init__(self, 
+                 encode=None,
+                 decode=None,
+                 name='VAE',
+                 out_dim=10,
+                 opt=Adam,   # Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]
+                 lr=0.001,
+                 trainable=False
+                 ):
+        super().__init__(encode=encode, decode=decode, name=name, out_dim=out_dim, opt=opt, lr=lr, trainable=trainable)
+
+    def inference(self, outputs):
+        with tf.variable_scope(self.name):
+            outputs = self.Encode(outputs)
+            outputs = self.Decode(outputs)
+            return outputs
