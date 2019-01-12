@@ -43,6 +43,9 @@ class Module(object):
     
     def deconv(self, x, args):
         assert len(args) == 4, '[deconv] Not enough Argument -> [kernel, filter, strides, activation]'
+        if len(x.shape) < 4:
+            size = tf.sqrt(tf.cast(x.shape[1], tf.float32))
+            x = tf.reshape(x, [-1, size, size, 1])
         return tf.layers.conv2d_transpose(inputs=x,
                                           filters=args[1],
                                           kernel_size=[args[0], args[0]],

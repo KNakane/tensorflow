@@ -42,7 +42,7 @@ class Load():
         self.size, self.channel = 28, 1
         self.output_dim = 49
 
-    def load(self, images, labels, batch_size, buffer_size=1000, is_training=False, is_augment=False):
+    def load(self, images, labels, batch_size, buffer_size=1000, is_training=False, augmentation=None):
         with tf.variable_scope('{}_dataset'.format('training' if is_training is True else 'validation')):
             def preprocess_fn(image, label):
                 '''A transformation function to preprocess raw data
@@ -53,9 +53,10 @@ class Load():
 
             labels = labels.reshape(labels.shape[0])
 
-            if is_augment and is_training:
+            if augmentation is not None and is_training:
                 augment = Augment(images, labels)
-                images, labels = augment.shift(v=3, h=3) #上下左右に3ピクセルずつランダムにずらす
+                images, labels = eval('augment.'+augmentation)()
+                #images, labels = augment.shift(v=3, h=3) #上下左右に3ピクセルずつランダムにずらす
 
             if is_training: # training dataset
                 self.x_train, self.y_train = images, labels
@@ -91,5 +92,5 @@ if __name__ == '__main__':
     augment = Augment(data.x_train, data.y_train)
     images, labels = augment.shift(v=3, h=3) #上下左右に3ピクセルずつランダムにずらす
     import matplotlib.pyplot as plt
-    plt.imshow(im_list)
+    plt.imshow(images)
     plt.show()

@@ -20,7 +20,7 @@ class Train():
         self.max_steps = FLAGS.n_epoch
         self.save_checkpoint_steps = self.max_steps / 10 if FLAGS.save_checkpoint_steps is None else FLAGS.save_checkpoint_steps
         self.batch_size = FLAGS.batch_size
-        self.aug = FLAGS.aug
+        self.aug = FLAGS.aug if hasattr(FLAGS, 'aug') else None
         self.name = name
         self.message = message
         self.data = data
@@ -29,7 +29,7 @@ class Train():
 
     def load(self):
         # Load Dataset
-        dataset = self.data.load(self.data.x_train, self.data.y_train, batch_size=self.batch_size, is_training=True, is_augment=self.aug)
+        dataset = self.data.load(self.data.x_train, self.data.y_train, batch_size=self.batch_size, is_training=True, augmentation=self.aug)
         valid = self.data.load(self.data.x_test, self.data.y_test, batch_size=self.batch_size*3, is_training=False)
         self.iterator = dataset.make_initializable_iterator()
         self.valid_iter = valid.make_initializable_iterator()
@@ -106,7 +106,7 @@ class Train():
             tf.summary.scalar('test/loss', test_loss)
             tf.summary.scalar('test/accuracy', test_accuracy)
             tf.summary.image('test/image', valid_inputs)
-            if self.name == 'AutoEncoder':
+            if self.name == 'AutoEncoder' or self.name == 'VAE':
                 tf.summary.image('test/encode_image', logits)
 
             util = Utils(prefix=self.name)

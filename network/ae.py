@@ -23,14 +23,18 @@ class AutoEncoder(CNN):
         self.encode = encode
         self.decode = decode
 
-    def Encode(self, outputs):
+    def Encode(self, outputs, reuse=False):
         with tf.variable_scope('Encode'):
+            if reuse:
+                tf.get_variable_scope().reuse_variables()
             for l in range(len(self.encode)):
                 outputs = (eval('self.' + self.encode[l][0])(outputs, self.encode[l][1:]))
             return outputs
     
-    def Decode(self, outputs):
+    def Decode(self, outputs, reuse=False):
         with tf.variable_scope('Decode'):
+            if reuse:
+                tf.get_variable_scope().reuse_variables()
             for l in range(len(self.decode)):
                 outputs = (eval('self.' + self.decode[l][0])(outputs, self.decode[l][1:]))
             return outputs
@@ -38,10 +42,10 @@ class AutoEncoder(CNN):
     def variable(self, outputs):
         return outputs
 
-    def inference(self, outputs):
+    def inference(self, outputs, reuse=False):
         with tf.variable_scope(self.name):
-            outputs = self.Encode(outputs)
-            outputs = self.Decode(outputs)
+            outputs = self.Encode(outputs, reuse)
+            outputs = self.Decode(outputs, reuse)
             return outputs
         
     def loss(self, logits, labels):
@@ -61,8 +65,25 @@ class VAE(AutoEncoder):
                  ):
         super().__init__(encode=encode, decode=decode, name=name, out_dim=out_dim, opt=opt, lr=lr, trainable=trainable)
 
-    def inference(self, outputs):
+    def Encode(self, outputs, reuse=False):
+        with tf.variable_scope('Encode'):
+            if reuse:
+                tf.get_variable_scope().reuse_variables()
+            for l in range(len(self.encode)):
+                outputs = (eval('self.' + self.encode[l][0])(outputs, self.encode[l][1:]))
+            size = tf.cast(outputs.shape[1].value/2, tf.int32)
+            return outputs[:,:size], outputs[:,size:]
+
+    def inference(self, outputs, reuse=False):
         with tf.variable_scope(self.name):
-            outputs = self.Encode(outputs)
-            outputs = self.Decode(outputs)
+            self.mu, self.var = self.Encode(outputs, reuse)
+            outputs = self.Decode(self.re_parameterization(self.mu, self.var), reuse)
             return outputs
+    
+    def re_parameterization(self, mu, var):
+        return mu + var * tf.random_normal(tf.shape(mu), 0, 1, dtype=tf.float32)
+
+    def loss(self, logits, labels):
+        KL_divergence = tf.reduce_mean(0.5 * tf.reduce_sum(tf.square(self.mu) + tf.square(self.var) - tf.log(1e-8 + tf.square(self.var)) - 1, 1))
+        loss = tf.reduce_mean(tf.reduce_sum(labels * tf.log(logits) + (1 - labels) * tf.log(1 - logits), 1))
+        return loss - KL_divergence
