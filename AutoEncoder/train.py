@@ -10,6 +10,7 @@ from collections import OrderedDict
 
 
 def set_model(outdim):
+    """
     encode = [['conv', 5, 32, 1, tf.nn.relu],
               ['max_pool', 2, 2],
               ['conv', 5, 64, 1, tf.nn.relu],
@@ -19,6 +20,15 @@ def set_model(outdim):
     decode = [['fc', 49, tf.nn.relu],
               ['deconv',  5, 32, 2, tf.nn.relu],
               ['deconv',  5, outdim, 2, None]]
+    """
+    encode = [['fc', 500, tf.nn.relu],
+              ['fc', 100, tf.nn.relu],
+              ['fc', 10, None]]
+
+    decode = [['fc', 49, tf.nn.relu],
+              ['deconv',  3, 64, 2, tf.nn.relu],
+              ['deconv',  3, 32, 1, tf.nn.relu],
+              ['deconv',  3, outdim, 2, tf.nn.sigmoid]]      
     return encode, decode
 
 def main(argv):

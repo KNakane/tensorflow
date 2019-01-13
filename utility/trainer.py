@@ -41,18 +41,18 @@ class Train():
         
         #train
         inputs, corrects, valid_inputs, valid_labels = self.load()
-        logits = self.model.inference(inputs)
-        train_loss = self.model.loss(logits, corrects)
+        train_logits = self.model.inference(inputs)
+        train_loss = self.model.loss(train_logits, corrects)
         predict = self.model.predict(inputs)
         opt_op = self.model.optimize(train_loss, self.global_step)
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
         train_op = tf.group([opt_op] + update_ops)
-        train_accuracy = self.model.evaluate(logits, corrects)
+        train_accuracy = self.model.evaluate(train_logits, corrects)
 
         #test
-        logits = self.model.inference(valid_inputs, reuse=True)
-        test_loss = self.model.loss(logits, valid_labels)
-        test_accuracy = self.model.evaluate(logits, valid_labels)
+        test_logits = self.model.inference(valid_inputs, reuse=True)
+        test_loss = self.model.loss(test_logits, valid_labels)
+        test_accuracy = self.model.evaluate(test_logits, valid_labels)
 
         def init_fn(scaffold, session):
             session.run([self.iterator.initializer,self.valid_iter.initializer],
@@ -107,7 +107,8 @@ class Train():
             tf.summary.scalar('test/accuracy', test_accuracy)
             tf.summary.image('test/image', valid_inputs)
             if self.name == 'AutoEncoder' or self.name == 'VAE':
-                tf.summary.image('test/encode_image', logits)
+                tf.summary.image('train/encode_image', train_logits)
+                tf.summary.image('test/encode_image', test_logits)
 
             util = Utils(prefix=self.name)
             util.conf_log()

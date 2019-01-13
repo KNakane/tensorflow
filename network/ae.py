@@ -72,7 +72,8 @@ class VAE(AutoEncoder):
             for l in range(len(self.encode)):
                 outputs = (eval('self.' + self.encode[l][0])(outputs, self.encode[l][1:]))
             size = tf.cast(outputs.shape[1].value/2, tf.int32)
-            return outputs[:,:size], outputs[:,size:]
+            #return outputs[:,:size], outputs[:,size:]
+            return outputs[:,:size], 1e-6 + tf.nn.softplus(outputs[:, size:])
 
     def inference(self, outputs, reuse=False):
         with tf.variable_scope(self.name):
@@ -84,6 +85,8 @@ class VAE(AutoEncoder):
         return mu + var * tf.random_normal(tf.shape(mu), 0, 1, dtype=tf.float32)
 
     def loss(self, logits, labels):
+        #loss = - tf.reduce_sum(labels * tf.log(logits) + (1.-self.x) * tf.log( tf.clip_by_value(1.-self.y,1e-20,1e+20)))
         KL_divergence = tf.reduce_mean(0.5 * tf.reduce_sum(tf.square(self.mu) + tf.square(self.var) - tf.log(1e-8 + tf.square(self.var)) - 1, 1))
-        loss = tf.reduce_mean(tf.reduce_sum(labels * tf.log(logits) + (1 - labels) * tf.log(1 - logits), 1))
-        return loss - KL_divergence
+        loss = tf.reduce_mean(tf.square(logits - labels))
+        #loss = tf.reduce_mean(tf.reduce_sum(labels * tf.log(tf.clip_by_value(logits, 1e-10,1.0)) + (1 - labels) * tf.log(1 - tf.clip_by_value(logits, 1e-10,1.0)),1))
+        return KL_divergence - loss 
