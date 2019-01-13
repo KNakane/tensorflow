@@ -26,7 +26,8 @@ class Utils():
     def save_model(self, episode):
         self.saver.save(self.sess, self.log_dir + "/model.ckpt"%episode)
 
-    def restore_model(self, log_dir):
+    def restore_model(self, log_dir=None):
+        assert log_dir is not None, 'Please set log_dir to restore checkpoint'
         ckpt = tf.train.get_checkpoint_state(log_dir)
         if ckpt and ckpt.model_checkpoint_path:
             self.saver = tf.train.import_meta_graph("{}.meta".format(ckpt.model_checkpoint_path))

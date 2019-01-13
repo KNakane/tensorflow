@@ -19,7 +19,9 @@ $ pip install tensorflow or pip install tensorflow-gpu
 
 # Directory
 ディレクトリ構造は以下の通り  
-tensorflow  
+tensorflow 
+┃  
+┣ AutoEncoder : AutoEncoderが使用できるディレクトリ    
 ┃  
 ┣ CNN : CNNで学習するディレクトリ  
 ┃   
