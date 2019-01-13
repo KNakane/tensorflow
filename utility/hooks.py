@@ -30,10 +30,32 @@ class SavedModelBuilderHook(tf.train.SessionRunHook):
         )
         builder.save()
 
+class OptunaHook(tf.train.SessionRunHook):
+    """optuna用のHook"""
+    def __init__(self, tensors, formatter=None):
+        self._tensors = tensors
+        self._tag_order = tensors.keys()
+        
+    def begin(self):
+        self._iter_count = 0
+        self._current_tensors = {tag: _as_graph_element(tensor)
+                                 for (tag, tensor) in self._tensors.items()}
+        return
+
+    def before_run(self, run_context):
+        return tf.train.SessionRunArgs(self._current_tensors)
+
+    def end(self, session):
+        values = session.run(self._current_tensors)
+        stats = []
+        for tag in self._tag_order:
+            stats.append("%s = %s" % (tag, values[tag]))
+        logging.info("%s", ", ".join(stats))
+
 class MyLoggerHook(tf.train.SessionRunHook):
     """terminalとlogファイルに学習過程を出力をする"""
     def __init__(self, message, log_dir, tensors, every_n_iter=None, every_n_secs=None,
-                 at_end=False, formatter=None):
+                 at_end=True, formatter=None):
         self.log_dir = log_dir
         self.message = message
         tf.gfile.MakeDirs(self.log_dir)

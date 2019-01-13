@@ -5,7 +5,7 @@ sys.path.append('./dataset')
 import tensorflow as tf
 from utils import Utils
 from collections import OrderedDict
-from hooks import SavedModelBuilderHook, MyLoggerHook
+from hooks import SavedModelBuilderHook, MyLoggerHook, OptunaHook
 
 class Train():
     def __init__(self,
@@ -87,7 +87,7 @@ class Train():
 
         if self.name == 'tuning':
             hooks = []
-            hooks.append(tf.train.LoggingTensorHook(metrics, every_n_iter=100))
+            hooks.append(OptunaHook(metrics))
             hooks.append(tf.train.NanTensorHook(train_loss))
             if self.max_steps:
                 hooks.append(tf.train.StopAtStepHook(last_step=self.max_steps))

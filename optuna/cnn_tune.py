@@ -50,6 +50,7 @@ if __name__ == '__main__':
     flags.DEFINE_integer('n_epoch', '3000', 'Input max epoch')
     flags.DEFINE_integer('n_trials', '1000', 'Input trial epoch')
     flags.DEFINE_integer('batch_size', '32', 'Input batch size')
+    flags.DEFINE_string('aug','None','Choice the Augmentation -> ["shift","mirror","rotate","shift_rotate","cutout"]')
     flags.DEFINE_integer('checkpoints_to_keep', 5,'checkpoint keep count')
     flags.DEFINE_integer('keep_checkpoint_every_n_hours', 1, 'checkpoint create ')
     flags.DEFINE_integer('save_checkpoint_steps', 1000,'save checkpoint step')
