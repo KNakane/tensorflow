@@ -53,10 +53,9 @@ class Load():
 
             labels = labels.reshape(labels.shape[0])
 
-            if augmentation is not None and is_training:
+            if augmentation != 'None' and is_training:
                 augment = Augment(images, labels)
                 images, labels = eval('augment.'+augmentation)()
-                #images, labels = augment.shift(v=3, h=3) #上下左右に3ピクセルずつランダムにずらす
 
             if is_training: # training dataset
                 self.x_train, self.y_train = images, labels
