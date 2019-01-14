@@ -39,18 +39,7 @@ class DQN():
 
         # consist of [target_net, evaluate_net]
         self._build_net()
-        e_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='eval_net/Q_net')
-        assert len(e_params) > 0
-        t_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='target_net/target_net')
-        assert len(t_params) > 0
-
-        with tf.variable_scope('replace_op'):
-            self.replace_target_op = [tf.assign(t, e) for t, e in zip(t_params, e_params)]
-
-        self.sess = tf.Session()
-        self.sess.run(tf.global_variables_initializer())
-        self.writer = Writer(self.sess)
-
+        
     def _build_net(self):
         # ------------------ build evaluate_net ------------------
         with tf.variable_scope('qeval_input'):
@@ -81,6 +70,18 @@ class DQN():
                 self.s_ = tf.placeholder(tf.float32, [None, self.n_features], name='s_')    # input
         with tf.variable_scope('target_net'):
             self.q_next = CNN(model=self.model, name='target_net', trainable=False).inference(self.s_)
+
+        e_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='eval_net/Q_net')
+        assert len(e_params) > 0
+        t_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='target_net/target_net')
+        assert len(t_params) > 0
+
+        with tf.variable_scope('replace_op'):
+            self.replace_target_op = [tf.assign(t, e) for t, e in zip(t_params, e_params)]
+
+        self.sess = tf.Session()
+        self.sess.run(tf.global_variables_initializer())
+        self.writer = Writer(self.sess,self.__class__.__name__)
 
     def choose_action(self, observation):
         # to have batch dimension when feed into tf placeholder
@@ -114,8 +115,9 @@ class DQN():
         eval_act_index = ba
         reward = br
         done = done
+        print(q_target.shape)
 
-        q_target[batch_index, eval_act_index] = reward + self.gamma * np.max(q_next, axis=1) * (1. - done)
+        q_target[batch_index, 0] = reward + self.gamma * np.max(q_next, axis=1) * (1. - done)
 
         self.merged = tf.summary.merge_all()
         

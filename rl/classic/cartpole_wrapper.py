@@ -26,7 +26,9 @@ def main(argv):
     agent = eval(FLAGS.agent)(model=set_model(outdim=env.action_space.n),
                               n_actions=env.action_space.n,
                               n_features=env.observation_space.shape[0],
-                              learning_rate=0.01, e_greedy=0.9,
+                              learning_rate=0.01,
+                              batch_size=FLAGS.batch_size, 
+                              e_greedy=0.9,
                               replace_target_iter=100,
                               e_greedy_increment=0.001,
                               optimizer=FLAGS.opt

@@ -6,11 +6,12 @@ import datetime
 import tensorflow as tf
 
 class Writer(Utils):
-    def __init__(self, sess):
+    def __init__(self, sess, prefix=None):
         super().__init__(sess=sess)
         dt_now = datetime.datetime.now()
         self.res_dir = './results/'+dt_now.strftime("%y%m%d_%H%M%S")
-
+        if prefix is not None:
+            self.res_dir = self.res_dir + "_{}".format(prefix)
         if tf.gfile.Exists(self.res_dir):
             tf.gfile.DeleteRecursively(self.res_dir)
         tf.gfile.MakeDirs(self.res_dir)

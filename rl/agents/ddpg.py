@@ -14,16 +14,41 @@ from OU_noise import OrnsteinUhlenbeckProcess
 
 class DDPG(DQN):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
         self.actor_model, self.critic_model = kwargs['model']
-        self.actor = Actor(model=self.actor_model, )
-        self.critic = Critic()
+        super().__init__(model=self.actor_model,
+                         n_actions=kwargs['n_actions'],
+                         n_features=kwargs['n_features'],
+                         learning_rate=kwargs['learning_rate'],
+                         reward_decay=kwargs['reward_decay'] if 'reward_decay' in kwargs else 0.9,
+                         e_greedy=kwargs['e_greedy'],
+                         replace_target_iter=kwargs['replace_target_iter'],
+                         batch_size=kwargs['batch_size'],
+                         e_greedy_increment=kwargs['e_greedy_increment'],
+                         optimizer=kwargs['optimizer'])
+
+        self.actor = Actor(model=self.actor_model, 
+                           n_actions=kwargs['n_actions'],
+                           n_features=kwargs['n_features'],
+                           learning_rate=kwargs['learning_rate'],
+                           reward_decay=kwargs['reward_decay'] if 'reward_decay' in kwargs else 0.9,
+                           e_greedy=kwargs['e_greedy'],
+                           replace_target_iter=kwargs['replace_target_iter'],
+                           batch_size=kwargs['batch_size'],
+                           e_greedy_increment=kwargs['e_greedy_increment'],
+                           optimizer=kwargs['optimizer'])
+
+        self.critic = Critic(model=self.critic_model, 
+                             n_actions=kwargs['n_actions'],
+                             n_features=kwargs['n_features'],
+                             learning_rate=kwargs['learning_rate'],
+                             reward_decay=kwargs['reward_decay'] if 'reward_decay' in kwargs else 0.9,
+                             e_greedy=kwargs['e_greedy'],
+                             replace_target_iter=kwargs['replace_target_iter'],
+                             batch_size=kwargs['batch_size'],
+                             e_greedy_increment=kwargs['e_greedy_increment'],
+                             optimizer=kwargs['optimizer'])
 
         self.noise = OrnsteinUhlenbeckProcess(num_actions=self.n_actions)
-
-        self.sess = tf.Session()
-        self.sess.run(tf.global_variables_initializer())
-        self.writer = Writer(self.sess)
 
     def choose_action(self, observation):
         # to have batch dimension when feed into tf placeholder
@@ -31,7 +56,7 @@ class DDPG(DQN):
 
         if np.random.uniform() < self.epsilon:
             # forward feed the observation and get q value for every actions
-            actions_value = self.sess.run(self.q_eval, feed_dict={self.s: observation})
+            actions_value = self.sess.run(self.actor.q_eval, feed_dict={self.s: observation})
             action = np.argmax(actions_value)
         else:
             action = np.random.randint(0, self.n_actions)
@@ -91,6 +116,28 @@ class Actor(DQN):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        self.policy_gradients()
+
+    def _build_net(self):
+        with tf.variable_scope('Actor_qeval_input'):
+            try:
+                self.s = tf.placeholder(tf.float32, [None] + list(self.n_features), name='s')  # input
+            except:
+                self.s = tf.placeholder(tf.float32, [None, self.n_features], name='s')    # input
+
+        self.q_target = tf.placeholder(tf.float32, [None, self.n_actions], name='Q_target')  # for calculating loss
+
+        with tf.variable_scope('eval_net'):
+            self.q_eval_model = CNN(model=self.model, name='Actor', opt=self._optimizer, lr=self.lr, trainable=True)
+            self.q_eval = self.q_eval_model.inference(self.s)
+
+        with tf.variable_scope('target_net'):
+            try:
+                self.s_ = tf.placeholder(tf.float32, [None] + list(self.n_features), name='s_')    # input
+            except:
+                self.s_ = tf.placeholder(tf.float32, [None, self.n_features], name='s_')    # input
+            self.q_next = CNN(model=self.model, name='target_Actor', trainable=False).inference(self.s_)
+
         e_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='eval_net/Actor')
         self.eval_param = e_params
         assert len(e_params) > 0
@@ -100,38 +147,31 @@ class Actor(DQN):
         with tf.variable_scope('replace_op'):
             self.replace_target_op = [tf.assign(t, e) for t, e in zip(t_params, e_params)]
 
-    def _build_net(self):
+    def policy_gradients(self):
         with tf.variable_scope('eval_net'):
-            self.q_eval_model = CNN(model=self.model, name='Actor', opt=self._optimizer, lr=self.lr, trainable=True)
-
             with tf.variable_scope('parameters_gradients'):
                 self.parameters_gradients = tf.gradients(self.q_eval, self.eval_param, -self.q_target)
             
             with tf.variable_scope('train'):
-                self.update_q_net = self.q_eval_model.optimizer.apply_gradients(zip(self.parameters_gradients,self.eval_param))
-
-        with tf.variable_scope('target_net'):
-            self.q_next = CNN(model=self.model, name='target_Actor', trainable=False).inference(self.s_)
+                self.update_q_net = self.q_eval_model.optimizer.method.apply_gradients(zip(self.parameters_gradients,self.eval_param))
 
 
 class Critic(DQN):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.tau = 0.001
-        self.a = tf.placeholder(tf.float32, [None, self.n_actions], name='a')
-        self.a_ = tf.placeholder(tf.float32, [None, self.n_actions], name='a_') #target action
-
-        e_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='eval_net/Critic')
-        assert len(e_params) > 0
-        t_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='target_net/target_Critic')
-        assert len(t_params) > 0
-
-        with tf.variable_scope('replace_op'):
-            self.replace_target_op = [tf.assign(t, self.tau * e + (1 - self.tau) * t) for t, e in zip(t_params, e_params)]
-
 
     def _build_net(self):
+        self.tau = 0.001
+        with tf.variable_scope('qeval_input'):
+            try:
+                self.s = tf.placeholder(tf.float32, [None] + list(self.n_features), name='s')  # input
+            except:
+                self.s = tf.placeholder(tf.float32, [None, self.n_features], name='s')    # input
+        
+        self.q_target = tf.placeholder(tf.float32, [None, self.n_actions], name='Q_target')  # for calculating loss
+
         with tf.variable_scope('eval_net'):
+            self.a = tf.placeholder(tf.float32, [None, self.n_actions], name='a')
             self.q_eval_model = Critic_Net(model=self.model, name='Critic', opt=self._optimizer, lr=self.lr, trainable=True)
             self.q_eval = self.q_eval_model.inference(self.s, self.a)
 
@@ -147,5 +187,18 @@ class Critic(DQN):
                 self.update_q_net = self.q_eval_model.optimize(self.loss)
 
         with tf.variable_scope('target_net'):
+            try:
+                self.s_ = tf.placeholder(tf.float32, [None] + list(self.n_features), name='s_')    # input
+            except:
+                self.s_ = tf.placeholder(tf.float32, [None, self.n_features], name='s_')    # input
+            self.a_ = tf.placeholder(tf.float32, [None, self.n_actions], name='a_') #target action
             self.q_next = Critic_Net(model=self.model, name='target_Critic', trainable=False).inference(self.s_, self.a_)
+
+        e_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='eval_net/Critic')
+        assert len(e_params) > 0
+        t_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='target_net/target_Critic')
+        assert len(t_params) > 0
+
+        with tf.variable_scope('replace_op'):
+            self.replace_target_op = [tf.assign(t, self.tau * e + (1 - self.tau) * t) for t, e in zip(t_params, e_params)]
             

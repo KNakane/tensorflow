@@ -17,7 +17,7 @@ class Critic_Net(CNN):
                 tf.get_variable_scope().reuse_variables()
             for l in range(len(self.model)):
                 if self.model[l][0] == 'fc':
-                    states = tf.concat(1, [states, actions])
+                    states = tf.concat([states, actions],1)
                 states = (eval('self.' + self.model[l][0])(states, self.model[l][1:]))
 
         return states

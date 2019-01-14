@@ -42,14 +42,15 @@ class Trainer():
                     self.env.render()
 
                 action = self.agent.choose_action(state)
-                state_, _, done, _ = self.env.step(action)
+                state_, reward, done, _ = self.env.step(action)
 
                 # the smaller theta and closer to center the better
+                """
                 x, x_dot, theta, theta_dot = state_
                 r1 = (self.env.x_threshold - abs(x))/self.env.x_threshold - 0.8
                 r2 = (self.env.theta_threshold_radians - abs(theta))/self.env.theta_threshold_radians - 0.5
                 reward = r1 + r2
-                
+                """
                 self.replay_buf.push(state, action, done, state_, reward)
 
                 total_reward += reward
