@@ -21,9 +21,9 @@ def set_model(outdim):
               ['deconv',  5, 32, 2, tf.nn.relu],
               ['deconv',  5, outdim, 2, None]]
     """
-    encode = [['fc', 500, tf.nn.relu],
-              ['fc', 100, tf.nn.relu],
-              ['fc', 10, None]]
+    encode = [['fc', 500, tf.nn.elu],
+              ['fc', 100, tf.nn.elu],
+              ['fc', 40, None]]
 
     decode = [['fc', 49, tf.nn.relu],
               ['deconv',  3, 64, 2, tf.nn.relu],
