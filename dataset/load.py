@@ -89,7 +89,10 @@ if __name__ == '__main__':
     data = Load('mnist')
     #dataset = data.load(data.x_train, data.y_train, batch_size=32, is_training=True, is_augment=True)
     augment = Augment(data.x_train, data.y_train)
-    images, labels = augment.shift(v=3, h=3) #上下左右に3ピクセルずつランダムにずらす
+    #images, labels = augment.shift(v=3, h=3) #上下左右に3ピクセルずつランダムにずらす
+    images, labels = augment.cutout() #上下左右に3ピクセルずつランダムにずらす
     import matplotlib.pyplot as plt
-    plt.imshow(images)
+    plt.imshow(images[0])
+    plt.show()
+    plt.imshow(images[60000])
     plt.show()

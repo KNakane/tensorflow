@@ -54,7 +54,29 @@ class Augment():
         self.aug_label = np.hstack((self.aug_label, self.label))
         return self.aug_img, self.aug_label
 
-    def cutout(self):
-        #reference : https://arxiv.org/abs/1708.04552 or http://kenbo.hatenablog.com/entry/2017/11/28/211932
-        pass
-        return
+    def cutout(self, mask_size=7):
+        # reference : https://arxiv.org/abs/1708.04552 or http://kenbo.hatenablog.com/entry/2017/11/28/211932
+        # 実装 : https://www.kumilog.net/entry/numpy-data-augmentation#Cutout
+        aug = []
+        for i in trange(self.img.shape[0], desc="Augmentation -> Cutout"):
+            origin_img = np.copy(self.img[i])
+            mask_value = np.mean(origin_img)
+
+            h, w = origin_img.shape[0], origin_img.shape[1]
+            top = np.random.randint(0 - mask_size // 2, h - mask_size)
+            left = np.random.randint(0 - mask_size // 2, w - mask_size)
+            bottom = top + mask_size
+            right = left + mask_size
+
+            # はみ出した場合の処理
+            if top < 0:
+                top = 0
+            if left < 0:
+                left = 0
+
+            # マスク部分の画素値を平均値で埋める
+            origin_img[top:bottom, left:right].fill(mask_value)
+            aug.append(origin_img)
+        self.aug_img = np.vstack((self.aug_img, np.asarray(aug)))
+        self.aug_label = np.hstack((self.aug_label, self.label))
+        return self.aug_img, self.aug_label
