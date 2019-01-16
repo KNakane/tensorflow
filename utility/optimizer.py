@@ -4,7 +4,9 @@ import tensorflow as tf
 
 class SGD():
     def __init__(self, learning_rate=0.1):
-        self.lr = learning_rate
+        #self.lr = learning_rate
+        global_step = tf.train.get_or_create_global_step()
+        self.lr = tf.train.exponential_decay(learning_rate,global_step,20,0.95,staircase=True)
         self.method = tf.train.GradientDescentOptimizer(self.lr)
 
     def optimize(self, global_step, loss=None):

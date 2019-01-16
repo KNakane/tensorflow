@@ -13,7 +13,7 @@ def set_model(outdim):
     model_set = [['Residual', 3, 32, 2, False, 1],
                  ['Residual', 3, 32, 2, False, 2],
                  ['Residual', 3, 32, 2, False, 3],
-                 ['fc', 200, tf.nn.relu],
+                 ['fc', 100, tf.nn.relu],
                  ['fc', outdim, None]]
     return model_set
 

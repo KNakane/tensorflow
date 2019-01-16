@@ -100,6 +100,7 @@ class Train():
 
         else:
             # tensorboard
+            tf.summary.scalar('Learning rate', self.model.optimizer.lr)
             tf.summary.scalar('train/loss', train_loss)
             tf.summary.scalar('train/accuracy', train_accuracy)
             tf.summary.image('train/image', inputs)
