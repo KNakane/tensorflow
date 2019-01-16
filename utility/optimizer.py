@@ -3,10 +3,9 @@ import tensorflow as tf
 
 
 class SGD():
-    def __init__(self, learning_rate=0.1):
-        #self.lr = learning_rate
+    def __init__(self, learning_rate=0.1, decay_step=1000, decay_rate=0.95):
         global_step = tf.train.get_or_create_global_step()
-        self.lr = tf.train.exponential_decay(learning_rate,global_step,20,0.95,staircase=True)
+        self.lr = tf.train.exponential_decay(learning_rate,global_step,decay_step,decay_rate,staircase=True)
         self.method = tf.train.GradientDescentOptimizer(self.lr)
 
     def optimize(self, global_step, loss=None):
@@ -17,8 +16,8 @@ class SGD():
 
 
 class Momentum(SGD):
-    def __init__(self, learning_rate=0.1):
-        super().__init__(learning_rate=learning_rate)
+    def __init__(self, learning_rate=0.1, decay_step=1000, decay_rate=0.95):
+        super().__init__(learning_rate=learning_rate, decay_step=decay_step, decay_rate=decay_rate)
         self.method = tf.train.MomentumOptimizer(learning_rate=self.lr, momentum=0.9)
 
     def optimize(self, global_step, loss=None):
@@ -26,8 +25,8 @@ class Momentum(SGD):
 
 
 class Adadelta(SGD):
-    def __init__(self, learning_rate=0.001):
-        super().__init__(learning_rate=learning_rate)
+    def __init__(self, learning_rate=0.1, decay_step=1000, decay_rate=0.95):
+        super().__init__(learning_rate=learning_rate, decay_step=decay_step, decay_rate=decay_rate)
         self.method = tf.train.AdadeltaOptimizer(self.lr)
 
     def optimize(self, global_step, loss=None):
@@ -35,8 +34,8 @@ class Adadelta(SGD):
 
 
 class Adagrad(SGD):
-    def __init__(self, learning_rate=0.1):
-        super().__init__(learning_rate=learning_rate)
+    def __init__(self, learning_rate=0.1, decay_step=1000, decay_rate=0.95):
+        super().__init__(learning_rate=learning_rate, decay_step=decay_step, decay_rate=decay_rate)
         self.method = tf.train.AdagradOptimizer(self.lr)
 
     def optimize(self, global_step, loss=None):
@@ -44,8 +43,8 @@ class Adagrad(SGD):
 
 
 class Adam(SGD):
-    def __init__(self, learning_rate=0.1):
-        super().__init__(learning_rate=learning_rate)
+    def __init__(self, learning_rate=0.1, decay_step=1000, decay_rate=0.95):
+        super().__init__(learning_rate=learning_rate, decay_step=decay_step, decay_rate=decay_rate)
         self.method = tf.train.AdamOptimizer(self.lr)
 
     def optimize(self, global_step, loss=None):
@@ -53,8 +52,8 @@ class Adam(SGD):
 
 
 class RMSProp(SGD):
-    def __init__(self, learning_rate=0.1):
-        super().__init__(learning_rate=learning_rate)
+    def __init__(self, learning_rate=0.1, decay_step=1000, decay_rate=0.95):
+        super().__init__(learning_rate=learning_rate, decay_step=decay_step, decay_rate=decay_rate)
         self.method = tf.train.RMSPropOptimizer(self.lr)
 
     def optimize(self, global_step, loss=None):
