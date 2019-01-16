@@ -14,7 +14,7 @@ class Discriminator(CNN):
         super().__init__(model=model, name=name, opt=opt, trainable=trainable)
 
     def inference(self, logits, reuse=False):
-        with tf.variable_scope("discriminator") as scope:
+        with tf.variable_scope("discriminator"):
             if reuse:
                 tf.get_variable_scope().reuse_variables()
             for l in range(len(self.model)):

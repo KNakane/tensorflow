@@ -4,6 +4,7 @@ GAN
 # Overview
 tensorflowの練習用
 使用するデータはmnistやcifarを想定  
+[参考URL](https://github.com/yihui-he/GAN-MNIST)
 [参考URL](https://github.com/katsugeneration/sngan-with-projection-tensorflow/tree/master/models)
 [公式](https://github.com/carpedm20/DCGAN-tensorflow)
 

@@ -71,7 +71,8 @@ class GAN(CNN):
 
     def inference(self, inputs, batch_size):
         with tf.variable_scope(self.name):
-            self.z = tf.random_normal((batch_size, self._z_dim), dtype=tf.float32)
+            z = tf.random_normal((batch_size, self._z_dim), dtype=tf.float32)
+            self.z = tf.reshape(z, [self.batch_size, 1, 1, self._z_dim])
             self.G = self.generator.inference(self.z)
             
             self.D, self.D_logits = self.discriminator.inference(inputs)
