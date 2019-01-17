@@ -12,8 +12,10 @@ class LeNet(CNN):
                  out_dim=10,
                  opt=Adam,   # Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]
                  lr=0.001,
+                 l2_reg=False,
+                 l2_reg_scale=0.0001,
                  trainable=False):
-        super().__init__(name=name,opt=opt,lr=lr,trainable=trainable, out_dim=out_dim)
+        super().__init__(name=name,opt=opt,lr=lr,l2_reg=l2_reg,l2_reg_scale=l2_reg_scale,trainable=trainable, out_dim=out_dim)
         
     def inference(self, images, reuse=False):
         with tf.variable_scope(self.name):

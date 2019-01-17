@@ -80,3 +80,40 @@ class Augment():
         self.aug_img = np.vstack((self.aug_img, np.asarray(aug)))
         self.aug_label = np.hstack((self.aug_label, self.label))
         return self.aug_img, self.aug_label
+
+    def random_erace(self, p=0.8, s=(0.02, 0.4), r=(0.3, 3)):
+        aug = []
+        for i in trange(self.img.shape[0], desc="Augmentation -> Cutout"):
+            # マスクするかしないか
+            if np.random.rand() > p:
+                aug.append(self.img[i])
+                continue
+            image = np.copy(self.img[i])
+
+            # マスクする画素値をランダムで決める
+            mask_value = np.random.randint(0, 256)
+            h, w = image.shape[0], image.shape[1]
+            # マスクのサイズを元画像のs(0.02~0.4)倍の範囲からランダムに決める
+            mask_area = np.random.randint(h * w * s[0], h * w * s[1])
+
+            # マスクのアスペクト比をr(0.3~3)の範囲からランダムに決める
+            mask_aspect_ratio = np.random.rand() * r[1] + r[0]
+
+            # マスクのサイズとアスペクト比からマスクの高さと幅を決める
+            # 算出した高さと幅(のどちらか)が元画像より大きくなることがあるので修正する
+            mask_height = int(np.sqrt(mask_area / mask_aspect_ratio))
+            if mask_height > h - 1:
+                mask_height = h - 1
+            mask_width = int(mask_aspect_ratio * mask_height)
+            if mask_width > w - 1:
+                mask_width = w - 1
+
+            top = np.random.randint(0, h - mask_height)
+            left = np.random.randint(0, w - mask_width)
+            bottom = top + mask_height
+            right = left + mask_width
+            image[top:bottom, left:right].fill(mask_value)
+            aug.append(image)
+        self.aug_img = np.vstack((self.aug_img, np.asarray(aug)))
+        self.aug_label = np.hstack((self.aug_label, self.label))
+        return self.aug_img, self.aug_label

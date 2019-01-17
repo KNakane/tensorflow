@@ -32,7 +32,7 @@ def main(argv):
     data = Load(FLAGS.data)
     ## setting models
     model_set = set_model(data.output_dim)
-    model = eval(FLAGS.network)(model=model_set, name=FLAGS.network, out_dim=data.output_dim, lr=FLAGS.lr, opt=FLAGS.opt, trainable=True)
+    model = eval(FLAGS.network)(model=model_set, name=FLAGS.network, out_dim=data.output_dim, lr=FLAGS.lr, opt=FLAGS.opt, l2_reg=FLAGS.l2_norm, trainable=True)
 
     #training
     trainer = Train(FLAGS, message, data, model, FLAGS.network)
@@ -49,6 +49,7 @@ if __name__ == '__main__':
     flags.DEFINE_float('lr', '0.001', 'Input learning rate')
     flags.DEFINE_string('opt', 'SGD', 'Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]')
     flags.DEFINE_string('aug','None','Choice the Augmentation -> ["shift","mirror","rotate","shift_rotate","cutout"]')
+    flags.DEFINE_bool('l2_norm', 'False', 'Input learning rate')
     flags.DEFINE_integer('checkpoints_to_keep', 5,'checkpoint keep count')
     flags.DEFINE_integer('keep_checkpoint_every_n_hours', 1, 'checkpoint create ')
     flags.DEFINE_integer('save_checkpoint_steps', 100,'save checkpoint step')
