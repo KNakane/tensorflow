@@ -102,7 +102,7 @@ class Train():
             # tensorboard
             tf.summary.scalar('train/loss', train_loss)
             tf.summary.scalar('train/accuracy', train_accuracy)
-            tf.summary.scalar('train/Learning rate', self.model.optimizer.lr)
+            tf.summary.scalar('train/Learning_rate', self.model.optimizer.lr)
             tf.summary.image('train/image', inputs)
             tf.summary.scalar('test/loss', test_loss)
             tf.summary.scalar('test/accuracy', test_accuracy)

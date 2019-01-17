@@ -83,7 +83,7 @@ class Augment():
 
     def random_erace(self, p=0.8, s=(0.02, 0.4), r=(0.3, 3)):
         aug = []
-        for i in trange(self.img.shape[0], desc="Augmentation -> Cutout"):
+        for i in trange(self.img.shape[0], desc="Augmentation -> Random Erace"):
             # マスクするかしないか
             if np.random.rand() > p:
                 aug.append(self.img[i])
