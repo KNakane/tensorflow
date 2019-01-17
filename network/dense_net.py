@@ -27,8 +27,25 @@ class DenseNet(CNN):
         with tf.name_scope(name):
             layers_concat = list()
             layers_concat.append(x)
-            if bottle_neck:
-                x = tf.layers.batch_normalization(inputs=x,trainable=self._trainable,name='BN{}'.format(index),reuse=self._reuse)
-                x = tf.nn.relu(x)
-                x = tf.layers.conv2d(x, 32, [1, 1], (2,2), activation=tf.nn.relu, name="init_conv")
+            for i in range(n_layers):
+                if bottle_neck:
+                    x = tf.layers.batch_normalization(inputs=x,trainable=self._trainable,name='BN{}'.format(index),reuse=self._reuse)
+                    x = tf.nn.relu(x)
+                    x = tf.layers.conv2d(x, 32, [1, 1], activation=None, name="conv")
+                    x = tf.layers.batch_normalization(inputs=x,trainable=self._trainable,name='BN{}'.format(index),reuse=self._reuse)
+                    x = tf.nn.relu(x)
+                    x = tf.layers.conv2d(x, 32, [3, 3], activation=None, name="conv")
+
+                else:
+                    x = tf.layers.batch_normalization(inputs=x,trainable=self._trainable,name='BN{}'.format(index),reuse=self._reuse)
+                    x = tf.nn.relu(x)
+                    x = tf.layers.conv2d(x, 32, [3, 3], activation=None, name="init_conv")
+                layers_concat.append(x)
+                x = tf.concat(layers_concat, axis=3)
+        return x
+
+    def transition(self, x):
+        x = tf.layers.batch_normalization(inputs=x,trainable=self._trainable,name='BN{}'.format(index),reuse=self._reuse)
+        x = tf.layers.conv2d(x, 32, [1, 1], activation=None, name="conv")
+        x = tf.layers.average_pooling2d(x, pool_size=[2,2], strides=2)
         return x
