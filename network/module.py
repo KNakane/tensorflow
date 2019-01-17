@@ -1,7 +1,10 @@
 import tensorflow as tf
 
 class Module(object):
-    def __init__(self, trainable=False):
+    def __init__(self, l2_reg=False, l2_reg_scale=0.0001, trainable=False):
+        self._l2_reg = l2_reg
+        if self._l2_reg:
+            self._l2_reg_scale = l2_reg_scale
         self._trainable = trainable
 
     def Residual(self, x, args):
@@ -33,12 +36,14 @@ class Module(object):
 
     def conv(self, x, args):
         assert len(args) == 4, '[conv] Not enough Argument -> [kernel, filter, strides, activation]'
+        regularizer = tf.contrib.layers.l2_regularizer(scale=self._l2_reg_scale) if self._l2_reg else None
         return tf.layers.conv2d(inputs=x,
                                 filters=args[1],
                                 kernel_size=[args[0], args[0]],
                                 strides=[args[2], args[2]],
                                 padding='same',
                                 activation=args[3],
+                                kernel_regularizer=regularizer,
                                 trainable=self._trainable)
     
     def deconv(self, x, args):
@@ -46,12 +51,14 @@ class Module(object):
         if len(x.shape) < 4:
             size = tf.sqrt(tf.cast(x.shape[1], tf.float32))
             x = tf.reshape(x, [-1, size, size, 1])
+        regularizer = tf.contrib.layers.l2_regularizer(scale=self._l2_reg_scale) if self._l2_reg else None
         return tf.layers.conv2d_transpose(inputs=x,
                                           filters=args[1],
                                           kernel_size=[args[0], args[0]],
                                           strides=[args[2], args[2]],
                                           padding='same',
                                           activation=args[3],
+                                          kernel_regularizer=regularizer,
                                           trainable=self._trainable)
 
     def reshape(self, x, args):
@@ -103,7 +110,8 @@ class Module(object):
         assert len(args) == 2, '[FC] Not enough Argument -> [units, activation]'
         if len(x.shape) > 2:
             x = tf.layers.flatten(x, name='flatten')
-        x = tf.layers.dense(inputs=x, units=args[0], activation=args[1], use_bias=True)
+        regularizer = tf.contrib.layers.l2_regularizer(scale=self._l2_reg_scale) if self._l2_reg else None
+        x = tf.layers.dense(inputs=x, units=args[0], activation=args[1], kernel_regularizer=regularizer, use_bias=True)
         return x
 
     def dropout(self, x, args):

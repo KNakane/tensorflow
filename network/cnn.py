@@ -12,9 +12,11 @@ class CNN(Module):
                  out_dim=10,
                  opt=Adam,   # Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]
                  lr=0.001,
+                 l2_reg=False,
+                 l2_reg_scale=0.0001,
                  trainable=False
                  ):
-        super().__init__(trainable=trainable)
+        super().__init__(l2_reg=l2_reg,l2_reg_scale=l2_reg_scale, trainable=trainable)
         self.model = model
         self._layers = []
         self.name = name
