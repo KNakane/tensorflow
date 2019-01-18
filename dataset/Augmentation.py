@@ -24,7 +24,7 @@ class Augment():
     def mirror(self):
         aug = []
         for i in trange(self.img.shape[0], desc="Augmentation -> Mirror"):
-            aug.append(self.img[i, :, ::-1, :])
+            aug.append(self.img[i, :, ::-1])
         self.aug_img = np.vstack((self.aug_img, np.asarray(aug)))
         self.aug_label = np.hstack((self.aug_label, self.label))
         return self.aug_img, self.aug_label
