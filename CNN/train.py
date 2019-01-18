@@ -10,11 +10,10 @@ from trainer import Train
 from collections import OrderedDict
 
 def set_model(outdim):
-    model_set = [['Residual', 3, 32, 2, False, 1],
+    model_set = [['Residual', 3, 16, 2, False, 1],
                  ['Residual', 3, 32, 2, False, 2],
-                 ['Residual', 3, 32, 2, False, 3],
-                 ['fc', 100, tf.nn.relu],
-                 ['fc', outdim, None]]
+                 ['Residual', 3, 64, 2, False, 3],
+                 ['gap', outdim]]
     return model_set
 
 def main(argv):

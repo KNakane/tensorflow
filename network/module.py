@@ -12,20 +12,20 @@ class Module(object):
         assert len(args) == 5, '[Residual] Not enough Argument -> [kernel, filter, strides, bottleneck, No]'
         with tf.variable_scope('Residual_{}'.format(args[4])):
             if args[3]:
-                x = self.BN(x=x, args=[1])
+                x = self.BN(x=x)
                 x = self.ReLU(x=x, args=None)
                 x = self.conv(x=x, args=[1, args[1], 1, None])
-                x = self.BN(x=x, args=[2])
+                x = self.BN(x=x)
                 x = self.ReLU(x=x, args=None)
                 x = self.conv(x=x, args=[args[0], args[1], args[2], None])
-                x = self.BN(x=x, args=[3])
+                x = self.BN(x=x)
                 x = self.ReLU(x=x, args=None)
                 x = self.conv(x=x, args=[1, args[1],1, None])
             else:
-                x = self.BN(x=x, args=[1])
+                x = self.BN(x=x)
                 x = self.ReLU(x=x, args=None)
                 x = self.conv(x=x, args=[args[0], args[1], 1, None])
-                x = self.BN(x=x, args=[2])
+                x = self.BN(x=x)
                 x = self.ReLU(x=x, args=None)
                 x = self.conv(x=x, args=[args[0], args[1], args[2], None])
 
@@ -79,16 +79,15 @@ class Module(object):
                                            padding='same')
 
     def gap(self, x, args): #global_average_pooling
+        assert len(args) == 1, '[gap] Not enough Argument -> [output_dim]'
         with tf.variable_scope('GAP'):
+            x = self.conv(x,[1, args[0], 1, None])
             for _ in range(2):
                 x = tf.reduce_mean(x, axis=1)
             return x
 
-    def BN(self, x, args): #Batch Normalization
-        assert len(args) == 1, '[BN] Not enough Argument -> [No]'
-        with tf.variable_scope('BatchNorm_{}'.format(args[0])):
-            return tf.layers.batch_normalization(inputs=x,
-                                                 trainable=self._trainable)
+    def BN(self, x):
+        return tf.layers.batch_normalization(inputs=x, trainable=self._trainable)
     
     def ReLU(self, x, args):
         with tf.variable_scope('ReLU'):
