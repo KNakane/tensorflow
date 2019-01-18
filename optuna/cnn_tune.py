@@ -16,7 +16,7 @@ from train import set_model
 from functools import partial
 
 
-def objective(args, trial):
+def objective(trial):
     tf.reset_default_graph()
     param = {
         'opt' : trial.suggest_categorical('opt', ['SGD','Momentum','Adadelta','Adagrad','Adam','RMSProp']),
@@ -24,7 +24,7 @@ def objective(args, trial):
         'aug': trial.suggest_categorical('aug', ['None','shift','mirror','rotate','shift_rotate','cutout']),
         'l2': trial.suggest_categorical('l2', ['True','False'])
     }
-    
+
     FLAGS.aug = param['aug']
     FLAGS.l2_norm = param['l2']
 
@@ -44,7 +44,7 @@ def objective(args, trial):
 
 def main(argv):
     op = Optuna('example-study')
-    op.search(objective, objective, FLAGS.n_trials)
+    op.search(objective, FLAGS.n_trials)
     return
 
 if __name__ == '__main__':

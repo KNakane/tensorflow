@@ -11,13 +11,12 @@ class Optuna():
     def __init__(self, db_name=None):
         self.name = db_name if db_name is not None else 'example'
 
-    def search(self, obj, para, trials):
+    def search(self, obj, trials):
         assert trials > 0, "trial is bigger than 0"
         util = Utils(prefix='optuna')
         util.conf_log()
         study = optuna.create_study(study_name=self.name, storage='sqlite:///{}/hypara_search.db'.format(util.res_dir))
-        f = partial(obj, para)
-        study.optimize(f, n_trials=trials)
+        study.optimize(obj, n_trials=trials)
         return
 
     def confirm(self, directory):
