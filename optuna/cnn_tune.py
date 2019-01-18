@@ -21,7 +21,12 @@ def objective(args, trial):
     param = {
         'opt' : trial.suggest_categorical('opt', ['SGD','Momentum','Adadelta','Adagrad','Adam','RMSProp']),
         'lr' : trial.suggest_loguniform('lr', 8e-5, 8e-2),
+        'aug': trial.suggest_categorical('aug', ['None','shift','mirror','rotate','shift_rotate','cutout']),
+        'l2': trial.suggest_categorical('l2', ['True','False'])
     }
+    
+    FLAGS.aug = param['aug']
+    FLAGS.l2_norm = param['l2']
 
     # prepare training
     ## load dataset
@@ -51,6 +56,7 @@ if __name__ == '__main__':
     flags.DEFINE_integer('n_trials', '1000', 'Input trial epoch')
     flags.DEFINE_integer('batch_size', '32', 'Input batch size')
     flags.DEFINE_string('aug','None','Choice the Augmentation -> ["shift","mirror","rotate","shift_rotate","cutout"]')
+    flags.DEFINE_bool('l2_norm', 'False', 'Input learning rate')
     flags.DEFINE_integer('checkpoints_to_keep', 5,'checkpoint keep count')
     flags.DEFINE_integer('keep_checkpoint_every_n_hours', 1, 'checkpoint create ')
     flags.DEFINE_integer('save_checkpoint_steps', 1000,'save checkpoint step')
