@@ -4,41 +4,14 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '../../utility'))
 sys.path.append(os.path.join(os.path.dirname(__file__), '../../network'))
 import numpy as np
 import tensorflow as tf
-from optimizer import *
+from agent import Agent
 from cnn import CNN
+from optimizer import *
 from writer import Writer
 
-class DQN():
-    def __init__(
-            self,
-            model,
-            n_actions,
-            n_features,
-            learning_rate=0.01,
-            reward_decay=0.9,
-            e_greedy=0.9,
-            replace_target_iter=300,
-            batch_size=32,
-            e_greedy_increment=None,
-            optimizer=Adam
-    ):
-        self.model = model
-        self.n_actions = n_actions
-        self.n_features = n_features
-        self.lr = learning_rate
-        self.gamma = reward_decay
-        self.epsilon_max = e_greedy
-        self.replace_target_iter = replace_target_iter
-        self.batch_size = batch_size
-        self._optimizer = optimizer
-        self.epsilon_increment = e_greedy_increment
-        self.epsilon = 0 if e_greedy_increment is not None else self.epsilon_max
-
-        # total learning step
-        self._iteration = 0
-
-        # consist of [target_net, evaluate_net]
-        self._build_net()
+class DQN(Agent):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         
     def _build_net(self):
         # ------------------ build evaluate_net ------------------
@@ -115,7 +88,6 @@ class DQN():
         eval_act_index = ba
         reward = br
         done = done
-        print(q_target.shape)
 
         q_target[batch_index, 0] = reward + self.gamma * np.max(q_next, axis=1) * (1. - done)
 
