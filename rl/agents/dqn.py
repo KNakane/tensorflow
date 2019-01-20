@@ -14,95 +14,53 @@ class DQN(Agent):
         super().__init__(*args, **kwargs)
         
     def _build_net(self):
-        # ------------------ build evaluate_net ------------------
-        with tf.variable_scope('qeval_input'):
-            try:
-                self.s = tf.placeholder(tf.float32, [None] + list(self.n_features), name='s')  # input
-            except:
-                self.s = tf.placeholder(tf.float32, [None, self.n_features], name='s')    # input
-
-        self.q_target = tf.placeholder(tf.float32, [None, self.n_actions], name='Q_target')  # for calculating loss
-        
+        # ------------------ build eval_net ------------------
         with tf.variable_scope('eval_net'):
-            self.q_eval_model = CNN(model=self.model, name='Q_net', opt=self._optimizer, lr=self.lr, trainable=True)
-            self.q_eval = self.q_eval_model.inference(self.s)
-
-            with tf.variable_scope('loss'):
-                self.loss = tf.losses.huber_loss(labels=self.q_target, predictions=self.q_eval)
-                #self.loss = tf.reduce_mean(tf.squared_difference(self.q_target, self.q_eval))
-                self.loss_summary = tf.summary.scalar("loss", self.loss)
-            
-            with tf.variable_scope('train'):
-                self._train_op = self.q_eval_model.optimize(self.loss)
+            self.q_eval = CNN(model=self.model, name='Q_net', opt=self._optimizer, lr=self.lr, trainable=True)
 
         # ------------------ build target_net ------------------
-        with tf.variable_scope('target_input'):
-            try:
-                self.s_ = tf.placeholder(tf.float32, [None] + list(self.n_features), name='s_')    # input
-            except:
-                self.s_ = tf.placeholder(tf.float32, [None, self.n_features], name='s_')    # input
         with tf.variable_scope('target_net'):
-            self.q_next = CNN(model=self.model, name='target_net', trainable=False).inference(self.s_)
+            self.q_next = CNN(model=self.model, name='target_net', trainable=False)
 
-        e_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='eval_net/Q_net')
-        assert len(e_params) > 0
-        t_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='target_net/target_net')
-        assert len(t_params) > 0
+        self.e_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='eval_net/Q_net')
+        assert len(self.e_params) > 0
+        self.t_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='target_net/target_net')
+        assert len(self.t_params) > 0
 
-        with tf.variable_scope('replace_op'):
-            self.replace_target_op = [tf.assign(t, e) for t, e in zip(t_params, e_params)]
+    def inference(self, state):
+        return self.q_eval.inference(state)
 
-        self.sess = tf.Session()
-        self.sess.run(tf.global_variables_initializer())
-        self.writer = Writer(self.sess,self.__class__.__name__)
-
-    def choose_action(self, observation):
-        # to have batch dimension when feed into tf placeholder
-        observation = observation[np.newaxis, :]
-
-        if np.random.uniform() < self.epsilon:
-            # forward feed the observation and get q value for every actions
-            actions_value = self.sess.run(self.q_eval, feed_dict={self.s: observation})
-            action = np.argmax(actions_value)
-        else:
-            action = np.random.randint(0, self.n_actions)
-        return action
 
     def update_q_net(self, replay_data):
-        # check to replace target parameters
-        if self._iteration % self.replace_target_iter == 0:
-            self.sess.run(self.replace_target_op)
-
         bs, ba, done, bs_, br = replay_data
-
-        q_next, q_eval = self.sess.run(
-            [self.q_next, self.q_eval],
-            feed_dict={
-                self.s_: bs_,  # fixed params
-                self.s: bs,  # newest params
-            })
-
-        q_target = q_eval.copy()
-
         batch_index = np.arange(self.batch_size, dtype=np.int32)
         eval_act_index = ba
         reward = br
         done = done
 
-        q_target[batch_index, 0] = reward + self.gamma * np.max(q_next, axis=1) * (1. - done)
+        # check to replace target parameters
+        if self._iteration % self.replace_target_iter == 0:
+            self.update_target_net()
 
-        self.merged = tf.summary.merge_all()
+        with tf.GradientTape() as tape:
+            q_next, q_eval = self.q_next.inference(bs_), self.q_eval.inference(bs)
+            q_target = q_eval.copy()
+            q_target[batch_index, 0] = reward + self.gamma * np.max(q_next, axis=1) * (1. - done)
+            self.loss = tf.losses.huber_loss(labels=q_target, predictions=q_eval)
         
-        # train eval network
-        merged, _, self.cost = self.sess.run([self.merged, self._train_op, self.loss],
-                                     feed_dict={self.s: bs,
-                                                self.q_target: q_target})
-
+        grads = tape.gradient(self.loss, self.e_params)
+        self.q_eval.method.optimizer.apply_gradients(zip(grads, self.e_params))
+        
         # increasing epsilon
         self.epsilon = self.epsilon + self.epsilon_increment if self.epsilon < self.epsilon_max else self.epsilon_max
 
         self._iteration += 1
-        self.writer.add(merged, self._iteration)
+
+    def update_target_net(self):
+        with tf.GradientTape() as tape:
+            [tf.assign(t, e) for t, e in zip(self.t_params, self.e_params)]
+        return
+
 
 
 class DDQN(DQN):

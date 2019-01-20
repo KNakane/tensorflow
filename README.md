@@ -4,7 +4,9 @@ tensorflow
 # Overview
 tensorflowの勉強用  
 CNNと強化学習について触れる  
+強化学習に関しては、Eagerモードを使用するように作成していく(未作成部分多数)  
 使い方などは各ディレクトリのREADME.mdを見てください  
+[Eagerモード参考URL](https://www.hellocybernetics.tech/entry/2018/12/04/231714)  
 
 # Installation
 ```

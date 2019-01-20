@@ -30,7 +30,7 @@ class ReplayBuffer(object):
         """
 
 
-class PrioritizeMemory(ReplayMemory):
+class PrioritizeMemory(ReplayBuffer):
     def __init__(self, capacity):
         super().__init__(capacity=capacity)
 
