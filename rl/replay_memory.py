@@ -4,7 +4,7 @@ import numpy as np
 import tensorflow as tf
 from collections import namedtuple
 
-class ReplayMemory(object):
+class ReplayBuffer(object):
 
     def __init__(self, capacity):
         self.capacity = capacity
