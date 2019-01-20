@@ -4,7 +4,7 @@ import numpy as np
 import tensorflow as tf
 from collections import namedtuple
 
-class ReplayMemory(object):
+class ReplayBuffer(object):
 
     def __init__(self, capacity):
         self.capacity = capacity
@@ -30,7 +30,7 @@ class ReplayMemory(object):
         """
 
 
-class PrioritizeMemory(ReplayMemory):
+class PrioritizeExperienceReplay(ReplayBuffer):
     def __init__(self, capacity):
         super().__init__(capacity=capacity)
 

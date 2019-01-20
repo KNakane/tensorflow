@@ -5,7 +5,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '../../utility'))
 import random
 import numpy as np
 import tensorflow as tf
-from replay_memory import ReplayMemory
+from replay_memory import ReplayBuffer
 from display_as_gif import display_frames_as_gif
 
 class Trainer():
@@ -30,7 +30,7 @@ class Trainer():
         self.replay_size = replay_size  # batch_size
         self.test = test
         self.test_episode = test_episode
-        self.replay_buf = ReplayMemory(self.data_size)
+        self.replay_buf = ReplayBuffer(self.data_size)
 
     
     def train(self):
