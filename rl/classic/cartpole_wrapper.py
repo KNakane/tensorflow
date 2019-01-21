@@ -10,7 +10,7 @@ import numpy as np
 import tensorflow as tf
 from optimizer import *
 from dqn import DQN,DDQN
-from trainer import Trainer
+from rl_trainer import Trainer
 
 
 def set_model(outdim):

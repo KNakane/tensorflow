@@ -26,15 +26,16 @@ class EagerCNN(EagerModule):
 
     def _build(self):
         for l in range(len(self.model)):
-            layer = eval('self.' + self.model[l][0])(self.model[l][1:])
-            self._layers.append(layer)
+            my_layer = eval('self.' + self.model[l][0])(self.model[l][1:])
+            self._layers.append(my_layer)
 
     def inference(self, x):
-        for layer in self.layers:
+        for my_layer in self._layers:
+            x = tf.convert_to_tensor(x)
             try:
-                x = layer(x, training=self._trainable)
+                x = my_layer(x, training=self._trainable)
             except:
-                x = layer(x)
+                x = my_layer(x)
         return x
 
     def loss(self, logits, labels):
