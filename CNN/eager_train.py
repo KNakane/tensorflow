@@ -24,9 +24,10 @@ def main(argv):
 
     model_set = set_model(10)
     model = EagerCNN(model=model_set, name=FLAGS.network, out_dim=10, lr=FLAGS.lr, opt=FLAGS.opt, l2_reg=FLAGS.l2_norm, trainable=True)
+    print("---start training-----")
     for j in range(FLAGS.n_epoch):
         running_loss = 0
-        for (batch, (images, labels)) in enumerate(dataset):
+        for (batch, (images, labels)) in enumerate(dataset.take(1000)):
             with tf.GradientTape() as tape:
                 y_pre = model.inference(images)
                 loss = model.loss(labels, y_pre)
