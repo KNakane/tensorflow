@@ -27,9 +27,8 @@ def main(argv):
     for j in range(FLAGS.n_epoch):
         running_loss = 0
         for (batch, (images, labels)) in enumerate(dataset):
-            x = tf.transpose(images, perm=[0, 2, 3, 1])
             with tf.GradientTape() as tape:
-                y_pre = model.inference(x)
+                y_pre = model.inference(images)
                 loss = model.loss(labels, y_pre)
             model.optimize(loss, global_steps, tape)
             running_loss += loss
