@@ -3,44 +3,38 @@ sys.path.append('./dataset')
 sys.path.append('./network')
 import tensorflow as tf
 import numpy as np
-from load import Load
+from eager_load import Load
 from eager_cnn import EagerCNN
 # Eager Mode
 tf.enable_eager_execution()
 
 def set_model(outdim):
-    model_set = [['flat'],
-                 ['fc', 500,tf.nn.relu],
+    model_set = [['conv', 3, 32, 1, tf.nn.relu],
+                 ['conv', 3, 32, 1, tf.nn.relu],
+                 ['flat'],
                  ['fc', 50, tf.nn.relu],
                  ['fc', outdim, tf.nn.softmax]]
     return model_set
 
 def main(argv):
     ## load dataset
-    (x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar10.load_data()
-    train_dataset = (
-    tf.data.Dataset.from_tensor_slices((x_train, y_train))
-    .batch(FLAGS.batch_size)
-    .shuffle(10000))
+    global_steps=tf.train.get_or_create_global_step()
+    data = Load(FLAGS.data)
+    dataset = data.load(data.x_train, data.y_train, batch_size=FLAGS.batch_size, is_training=True, augmentation=FLAGS.aug)
 
-    train_dataset = (
-        train_dataset.map(lambda x, y: 
-                        (tf.div_no_nan(tf.cast(x, tf.float32), 255.0), 
-                        tf.reshape(tf.one_hot(y, 10), (-1, 10))))
-    )
     model_set = set_model(10)
     model = EagerCNN(model=model_set, name=FLAGS.network, out_dim=10, lr=FLAGS.lr, opt=FLAGS.opt, l2_reg=FLAGS.l2_norm, trainable=True)
     for j in range(FLAGS.n_epoch):
         running_loss = 0
-        for i, (x_, y_) in enumerate(train_dataset):
-            x = tf.transpose(x_, perm=[0, 2, 3, 1])
+        for (batch, (images, labels)) in enumerate(dataset):
+            x = tf.transpose(images, perm=[0, 2, 3, 1])
             with tf.GradientTape() as tape:
                 y_pre = model.inference(x)
-                loss = model.loss(y_, y_pre)
-            model.optimize(loss,tape)
+                loss = model.loss(labels, y_pre)
+            model.optimize(loss, global_steps, tape)
             running_loss += loss
         print("-----epoch {} -----".format(j + 1))
-        print("loss: ", running_loss.numpy()/(i + 1))
+        print("loss: ", running_loss.numpy()/(batch + 1))
     return
 
 if __name__ == '__main__':

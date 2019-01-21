@@ -41,7 +41,7 @@ class EagerCNN(EagerModule):
         loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=logits, labels=labels))
         return loss
 
-    def optimize(self, loss, tape=None):
+    def optimize(self, loss, global_step, tape=None):
         assert tape is not None, 'please set tape in opmize'
         grads = tape.gradient(loss, self.trainable_variables)
-        self.optimizer.method.apply_gradients(zip(grads, self.trainable_variables))
+        self.optimizer.method.apply_gradients(zip(grads, self.trainable_variables),global_step)
