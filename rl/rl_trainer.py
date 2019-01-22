@@ -5,8 +5,10 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '../../utility'))
 import random
 import numpy as np
 import tensorflow as tf
-from replay_memory import ReplayBuffer,PrioritizeReplayBuffer
+from utils import Utils
 from display_as_gif import display_frames_as_gif
+from replay_memory import ReplayBuffer,PrioritizeReplayBuffer
+
 
 class Trainer():
     def __init__(self, 
@@ -30,10 +32,16 @@ class Trainer():
         self.replay_size = replay_size  # batch_size
         self.test = test
         self.test_episode = test_episode
-        #self.replay_buf = ReplayBuffer(self.data_size)
-        self.replay_buf = PrioritizeReplayBuffer(self.data_size)
+        self.util = Utils(prefix=self.agent.__class__.__name__)
+        self.util.conf_log()
+        self.replay_buf = ReplayBuffer(self.data_size)
+        #self.replay_buf = PrioritizeReplayBuffer(self.data_size)
+        writer = tf.contrib.summary.create_file_writer(self.util.tf_board)
+        writer.set_as_default()
     
     def train(self):
+        global_step = tf.train.get_or_create_global_step()
+        #with tf.contrib.summary.always_record_summaries():
         for episode in range(self.n_episode):    
             state = self.env.reset()
             total_reward = 0
@@ -51,8 +59,8 @@ class Trainer():
                     r2 = (self.env.theta_threshold_radians - abs(theta))/self.env.theta_threshold_radians - 0.5
                     reward = r1 + r2
                 
-                #self.replay_buf.push(state, action, done, state_, reward)
-                self.replay_buf.push(state, action, done, state_, reward, self.agent.loss)
+                self.replay_buf.push(state, action, done, state_, reward)
+                #self.replay_buf.push(state, action, done, state_, reward, self.agent.loss)
 
                 total_reward += reward
                 if len(self.replay_buf) > self.replay_size and len(self.replay_buf) > self.n_warmup:
@@ -61,17 +69,14 @@ class Trainer():
                     self.agent.update_q_net(train_data)
 
                 if done or step == self.max_steps - 1:
-                    record_dict = dict(step = step,
-                                       total_reward = total_reward,
-                                       average_reward = total_reward / step)
-                    #self.agent.writer.add_list(record_dict, episode)
+                    #tf.contrib.summary.scalar("steps", step, family="step")
+                    #tf.contrib.summary.scalar("total_reward", total_reward, family="reward")
+                    #tf.contrib.summary.scalar("average_reward", total_reward / step, family="reward")
                     print("episode: %d  total_steps: %d  total_reward: %0.2f"%(episode, step, total_reward))
                     break
 
                 state = state_
             pass
-
-        #self.agent.writer.save_model(episode)
 
         if self.test:
             #self.agent.writer.restore_model()
@@ -86,8 +91,8 @@ class Trainer():
 
                 if done:
                     record_dict = dict(step = step,
-                                       total_reward = total_reward,
-                                       average_reward = total_reward / step)
+                                    total_reward = total_reward,
+                                    average_reward = total_reward / step)
                     #self.agent.writer.add_list(record_dict, episode, True)
                     print("episode: %d  total_steps: %d  total_reward: %0.2f"%(episode, step, total_reward))
                     #display_frames_as_gif(frames,"gif_image", './')

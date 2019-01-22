@@ -30,7 +30,7 @@ class ReplayBuffer(object):
         """
 
 
-class PrioritizeMemory(ReplayBuffer):
+class PrioritizeReplayBuffer(ReplayBuffer):
     def __init__(self, capacity):
         super().__init__(capacity=capacity)
         self.td_error_epsilon = 0.0001
@@ -43,16 +43,18 @@ class PrioritizeMemory(ReplayBuffer):
         self.index = (self.index + 1) % self.capacity
 
     def sample(self, batch_size):
-        sum_absolute_td_error = np.sum(np.absolute(self.memory[:][5])) + self.td_error_epsilon * len(self.memory)
-        rand_list = np.sort(np.random.uniform(0, sum_absolute_td_error, batch_size))
-        indexes = []
-        idx = 0
-        tmp_sum_absolute_td_error = 0
-        for rand_num in rand_list:
-            tmp_sum_absolute_td_error += abs(self.memory[idx][5]) + self.td_error_epsilon
-            idx += 1
-            if idx >= len(self.memory):
-                idx = len(self.memory) -1
-            indexes.append(idx)
-
-        return random.sample(self.memory, batch_size)
+        if len(self.memory) < self.capacity:
+            sum_absolute_td_error = np.sum(np.absolute(self.memory[:][5])) + self.td_error_epsilon * len(self.memory)
+            rand_list = np.sort(np.random.uniform(0, sum_absolute_td_error, batch_size))
+            indexes = []
+            idx = 0
+            tmp_sum_absolute_td_error = 0
+            for rand_num in rand_list:
+                tmp_sum_absolute_td_error += abs(self.memory[idx][5]) + self.td_error_epsilon
+                idx += 1
+                if idx >= len(self.memory):
+                    idx = len(self.memory) -1
+                indexes.append(idx)
+            return self.memory[np.arange(indexes, dtype=np.int32)]
+        else:
+            return random.sample(self.memory, batch_size)
