@@ -2,6 +2,7 @@
 import random
 import numpy as np
 import tensorflow as tf
+from sum_tree import SumTree
 from collections import namedtuple
 
 class ReplayBuffer(object):
@@ -22,39 +23,54 @@ class ReplayBuffer(object):
         self.memory[self.index] = self.Transition(state, action, done, next_state, reward) #data
         self.index = (self.index + 1) % self.capacity
 
-    def sample(self, batch_size):
-        return random.sample(self.memory, batch_size)
-        """
-        idxes = [random.randint(0, len(self.memory) - 1) for _ in range(batch_size)]
-        return self._encode_sample(idxes)
-        """
+    def sample(self, batch_size, _=None):
+        return (None, random.sample(self.memory, batch_size), None)
+
+    def update(self, idx, td_error):
+        pass
 
 
 class PrioritizeReplayBuffer(ReplayBuffer):
+    # Based on https://github.com/y-kamiya/machine-learning-samples/blob/7b6792ce37cc69051e9053afeddc6d485ad34e79/python3/reinforcement/dqn/agent.py
+    EPSILON = 0.0001
+    ALPHA = 0.6
+    BETA = 0.4
+    size = 0
+
     def __init__(self, capacity):
         super().__init__(capacity=capacity)
         self.td_error_epsilon = 0.0001
+        self.tree = SumTree(capacity)
 
-    def push(self, state, action, done, next_state, reward, td_error):
-        data = [state, action, done, next_state, reward, td_error]
-        if len(self.memory) < self.capacity:
-            self.memory.append(None)
-        self.memory[self.index] = data
-        self.index = (self.index + 1) % self.capacity
+    def __len__(self):
+        return self.size
+    
+    def _getPriority(self, td_error):
+        return (td_error + self.EPSILON) ** self.ALPHA
 
-    def sample(self, batch_size):
-        if len(self.memory) < self.capacity:
-            sum_absolute_td_error = np.sum(np.absolute(self.memory[:][5])) + self.td_error_epsilon * len(self.memory)
-            rand_list = np.sort(np.random.uniform(0, sum_absolute_td_error, batch_size))
-            indexes = []
-            idx = 0
-            tmp_sum_absolute_td_error = 0
-            for rand_num in rand_list:
-                tmp_sum_absolute_td_error += abs(self.memory[idx][5]) + self.td_error_epsilon
-                idx += 1
-                if idx >= len(self.memory):
-                    idx = len(self.memory) -1
-                indexes.append(idx)
-            return self.memory[np.arange(indexes, dtype=np.int32)]
-        else:
-            return random.sample(self.memory, batch_size)
+    def push(self, state, action, done, next_state, reward):
+        self.size += 1
+        transition = self.Transition(state, action, done, next_state, reward)
+        priority = self.tree.max()
+        if priority <= 0:
+            priority = 1
+        self.tree.add(priority, transition)
+
+    def sample(self, batch_size, episode):
+        list = []
+        indexes = []
+        weights = np.empty(batch_size, dtype='float32')
+        total = self.tree.total()
+        beta = self.BETA + (1 - self.BETA) * episode #episode / self.config.num_episodes
+
+        for i, rand in enumerate(np.random.uniform(0, total, batch_size)):
+            (idx, priority, data) = self.tree.get(rand)
+            list.append(data)
+            indexes.append(idx)
+            weights[i] = (self.capacity * priority / total) ** (-beta)
+
+        return (indexes, list, weights / weights.max())
+
+    def update(self, idx, td_error):
+        priority = self._getPriority(td_error)
+        self.tree.update(idx, priority)

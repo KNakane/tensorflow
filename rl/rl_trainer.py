@@ -64,9 +64,14 @@ class Trainer():
 
                 total_reward += reward
                 if len(self.replay_buf) > self.replay_size and len(self.replay_buf) > self.n_warmup:
-                    transitions = self.replay_buf.sample(self.agent.batch_size)
+                    indexes, transitions, _ = self.replay_buf.sample(self.agent.batch_size, episode/self.n_episode)
                     train_data = map(np.array, zip(*transitions))
                     self.agent.update_q_net(train_data)
+
+                    if (indexes != None):
+                        for i, value in enumerate(self.agent.td_error):
+                            td_error = value
+                            self.replay_buf.update(indexes[i], td_error)
 
                 if done or step == self.max_steps - 1:
                     #tf.contrib.summary.scalar("steps", step, family="step")
