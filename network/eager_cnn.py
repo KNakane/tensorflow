@@ -31,7 +31,7 @@ class EagerCNN(EagerModule):
 
     def inference(self, x):
         for my_layer in self._layers:
-            x = tf.convert_to_tensor(x)
+            x = tf.convert_to_tensor(x, dtype=tf.float32)
             try:
                 x = my_layer(x, training=self._trainable)
             except:

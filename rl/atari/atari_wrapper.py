@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 #tensorboard --logdir ./logs
 import sys,os
+sys.path.append(os.path.join(os.path.dirname(__file__), '../'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '../agents'))
 sys.path.append(os.path.join(os.path.dirname(__file__), '../../utility'))
 import tensorflow as tf
 from optimizer import *
@@ -9,7 +11,7 @@ os.environ.setdefault('PATH', '')
 from collections import deque
 import gym
 from gym import spaces
-from trainer import Trainer
+from rl_trainer import Trainer
 from dqn import DQN,DDQN
 import cv2
 cv2.ocl.setUseOpenCL(False)
@@ -240,9 +242,10 @@ def wrap_deepmind(env, episode_life=True, clip_rewards=True, frame_stack=False, 
     return env
 
 def set_model(outdim):
-    model_set = [['conv', 8, 32, 4],
-                 ['conv', 4, 64, 2],
-                 ['conv', 3, 64, 1],
+    model_set = [['conv', 8, 32, 4, tf.nn.relu],
+                 ['conv', 4, 64, 2, tf.nn.relu],
+                 ['conv', 3, 64, 1, tf.nn.relu],
+                 ['flat'],
                  ['fc', 512, tf.nn.relu],
                  ['fc', outdim, None]]
     return model_set
