@@ -37,50 +37,50 @@ class Trainer():
         self.util.conf_log() 
         self.replay_buf = PrioritizeReplayBuffer(self.data_size) if priority else ReplayBuffer(self.data_size)
         self.global_step = tf.train.get_or_create_global_step()
-        writer = tf.contrib.summary.create_file_writer(self.util.tf_board)
-        writer.set_as_default()
     
     def train(self):
+        writer = tf.contrib.summary.create_file_writer(self.util.tf_board)
+        writer.set_as_default()
         for episode in range(self.n_episode):
             self.global_step.assign_add(1)
-            #with tf.contrib.summary.always_record_summaries():
-            state = self.env.reset()
-            total_reward = 0
-            for step in range(self.max_steps):
-                if self.render:
-                    self.env.render()
+            with tf.contrib.summary.always_record_summaries():
+                state = self.env.reset()
+                total_reward = 0
+                for step in range(self.max_steps):
+                    if self.render:
+                        self.env.render()
 
-                action = self.agent.choose_action(state)
-                state_, reward, done, _ = self.env.step(action)
+                    action = self.agent.choose_action(state)
+                    state_, reward, done, _ = self.env.step(action)
 
-                # the smaller theta and closer to center the better
-                if self.env.__class__.__name__ == 'CartPoleEnv':
-                    x, x_dot, theta, theta_dot = state_
-                    r1 = (self.env.x_threshold - abs(x))/self.env.x_threshold - 0.8
-                    r2 = (self.env.theta_threshold_radians - abs(theta))/self.env.theta_threshold_radians - 0.5
-                    reward = r1 + r2
-                
-                self.replay_buf.push(state, action, done, state_, reward)
+                    # the smaller theta and closer to center the better
+                    if self.env.__class__.__name__ == 'CartPoleEnv':
+                        x, x_dot, theta, theta_dot = state_
+                        r1 = (self.env.x_threshold - abs(x))/self.env.x_threshold - 0.8
+                        r2 = (self.env.theta_threshold_radians - abs(theta))/self.env.theta_threshold_radians - 0.5
+                        reward = r1 + r2
+                    
+                    self.replay_buf.push(state, action, done, state_, reward)
 
-                total_reward += reward
-                if len(self.replay_buf) > self.replay_size and len(self.replay_buf) > self.n_warmup:
-                    indexes, transitions, _ = self.replay_buf.sample(self.agent.batch_size, episode/self.n_episode)
-                    train_data = map(np.array, zip(*transitions))
-                    self.agent.update_q_net(train_data)
+                    total_reward += reward
+                    if len(self.replay_buf) > self.replay_size and len(self.replay_buf) > self.n_warmup:
+                        indexes, transitions, _ = self.replay_buf.sample(self.agent.batch_size, episode/self.n_episode)
+                        train_data = map(np.array, zip(*transitions))
+                        self.agent.update_q_net(train_data)
 
-                    if (indexes != None):
-                        for i, value in enumerate(self.agent.td_error):
-                            td_error = value
-                            self.replay_buf.update(indexes[i], td_error)
+                        if (indexes != None):
+                            for i, value in enumerate(self.agent.td_error):
+                                td_error = value
+                                self.replay_buf.update(indexes[i], td_error)
 
-                if done or step == self.max_steps - 1:
-                    tf.contrib.summary.scalar('global_step', self.global_step)
-                    tf.contrib.summary.scalar('total_reward', total_reward)
-                    tf.contrib.summary.scalar('average_reward', total_reward / step)
-                    print("episode: %d  total_steps: %d  total_reward: %0.2f"%(episode, step, total_reward))
-                    break
+                    if done or step == self.max_steps - 1:
+                        tf.contrib.summary.scalar('global_step', self.global_step)
+                        tf.contrib.summary.scalar('total_reward', total_reward)
+                        tf.contrib.summary.scalar('average_reward', total_reward / step)
+                        print("episode: %d  total_steps: %d  total_reward: %0.2f"%(episode, step, total_reward))
+                        break
 
-                state = state_
+                    state = state_
             pass
 
         if self.test:

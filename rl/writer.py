@@ -6,7 +6,7 @@ import datetime
 import tensorflow as tf
 
 class Writer(Utils):
-    def __init__(self, sess, prefix=None):
+    def __init__(self, sess=None, prefix=None):
         super().__init__(sess=sess)
         dt_now = datetime.datetime.now()
         self.res_dir = './results/'+dt_now.strftime("%y%m%d_%H%M%S")
