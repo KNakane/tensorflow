@@ -271,6 +271,7 @@ def main(argv):
                       replay_size=FLAGS.batch_size, 
                       data_size=10**6,
                       n_warmup=FLAGS.n_warmup,
+                      priority=FLAGS.priority,
                       render=FLAGS.render)
 
     print()
@@ -281,6 +282,7 @@ def main(argv):
     print("batch_size : {}".format(FLAGS.batch_size))
     print("learning rate : {}".format(FLAGS.lr))
     print("Optimizer : {}".format(FLAGS.opt))
+    print("priority : {}".format(FLAGS.priority))
     print("-----------------------")
 
     trainer.train()
@@ -297,6 +299,7 @@ if __name__ == '__main__':
     flags.DEFINE_integer('n_warmup', '5000', 'n_warmup value')
     flags.DEFINE_integer('model_update', '1000', 'target_model_update_freq')
     flags.DEFINE_boolean('render', 'False', 'render')
+    flags.DEFINE_boolean('priority', 'False', 'prioritized Experience Replay')
     flags.DEFINE_float('lr', '1e-4', 'Input learning rate')
     flags.DEFINE_string('opt','RMSProp','Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]')
     tf.app.run()

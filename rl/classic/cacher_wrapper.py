@@ -2,27 +2,33 @@
 #tensorboard --logdir ./logs
 import sys,os
 sys.path.append(os.path.join(os.path.dirname(__file__), '../'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '../env'))
 sys.path.append(os.path.join(os.path.dirname(__file__), '../agents'))
 sys.path.append(os.path.join(os.path.dirname(__file__), '../../utility'))
 import gym
 import gym.spaces
+import gym_ple
 import numpy as np
 import tensorflow as tf
 from optimizer import *
 from dqn import DQN,DDQN
 from rl_trainer import Trainer
+from cacher_env import CatcherObserver
 
 
 def set_model(outdim):
-    model_set = [['fc', 10, tf.nn.relu],
-                 ['fc', 10, tf.nn.relu],
+    model_set = [['conv', 8, 32, 4, tf.nn.relu],
+                 ['conv', 4, 64, 2, tf.nn.relu],
+                 ['conv', 3, 64, 1, tf.nn.relu],
+                 ['flat'],
+                 ['fc', 256, tf.nn.relu],
                  ['fc', outdim, None]]
     return model_set
 
 
 def main(argv):
-    env = gym.make('CartPole-v0')
-    env = env.unwrapped
+    env = gym.make('Catcher-v0')
+    env = CatcherObserver(env, 80, 80, 4)
     agent = eval(FLAGS.agent)(model=set_model(outdim=env.action_space.n),
                               n_actions=env.action_space.n,
                               n_features=env.observation_space.shape[0],

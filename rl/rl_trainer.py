@@ -21,6 +21,7 @@ class Trainer():
                  n_warmup=5*10**4,
                  test=False,
                  test_episode=5,
+                 priority=False,
                  render=False):
         self.agent = agent
         self.env = env
@@ -33,9 +34,8 @@ class Trainer():
         self.test = test
         self.test_episode = test_episode
         self.util = Utils(prefix=self.agent.__class__.__name__)
-        self.util.conf_log()
-        #self.replay_buf = ReplayBuffer(self.data_size)
-        self.replay_buf = PrioritizeReplayBuffer(self.data_size)
+        self.util.conf_log() 
+        self.replay_buf = PrioritizeReplayBuffer(self.data_size) if priority else ReplayBuffer(self.data_size) 
         writer = tf.contrib.summary.create_file_writer(self.util.tf_board)
         writer.set_as_default()
     
