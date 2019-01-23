@@ -67,6 +67,7 @@ class Trainer():
                         indexes, transitions, _ = self.replay_buf.sample(self.agent.batch_size, episode/self.n_episode)
                         train_data = map(np.array, zip(*transitions))
                         self.agent.update_q_net(train_data)
+                        tf.contrib.summary.scalar('loss', self.agent.loss)
 
                         if (indexes != None):
                             for i, value in enumerate(self.agent.td_error):
