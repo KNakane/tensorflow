@@ -43,6 +43,7 @@ class Trainer():
     def train(self):
         for episode in range(self.n_episode):
             self.global_step.assign_add(1)
+            #with tf.contrib.summary.always_record_summaries():
             state = self.env.reset()
             total_reward = 0
             for step in range(self.max_steps):
@@ -74,10 +75,9 @@ class Trainer():
                             self.replay_buf.update(indexes[i], td_error)
 
                 if done or step == self.max_steps - 1:
-                    with tf.contrib.summary.always_record_summaries():
-                        tf.contrib.summary.scalar('global_step', self.global_step)
-                        tf.contrib.summary.scalar('total_reward', total_reward)
-                        tf.contrib.summary.scalar('average_reward', total_reward / step)
+                    tf.contrib.summary.scalar('global_step', self.global_step)
+                    tf.contrib.summary.scalar('total_reward', total_reward)
+                    tf.contrib.summary.scalar('average_reward', total_reward / step)
                     print("episode: %d  total_steps: %d  total_reward: %0.2f"%(episode, step, total_reward))
                     break
 
