@@ -35,14 +35,14 @@ class Trainer():
         self.test_episode = test_episode
         self.util = Utils(prefix=self.agent.__class__.__name__)
         self.util.conf_log() 
-        self.replay_buf = PrioritizeReplayBuffer(self.data_size) if priority else ReplayBuffer(self.data_size) 
+        self.replay_buf = PrioritizeReplayBuffer(self.data_size) if priority else ReplayBuffer(self.data_size)
+        self.global_step = tf.train.get_or_create_global_step()
         writer = tf.contrib.summary.create_file_writer(self.util.tf_board)
         writer.set_as_default()
     
     def train(self):
-        global_step = tf.train.get_or_create_global_step()
-        #with tf.contrib.summary.always_record_summaries():
-        for episode in range(self.n_episode):    
+        for episode in range(self.n_episode):
+            self.global_step.assign_add(1)
             state = self.env.reset()
             total_reward = 0
             for step in range(self.max_steps):
@@ -74,9 +74,10 @@ class Trainer():
                             self.replay_buf.update(indexes[i], td_error)
 
                 if done or step == self.max_steps - 1:
-                    #tf.contrib.summary.scalar("steps", step, family="step")
-                    #tf.contrib.summary.scalar("total_reward", total_reward, family="reward")
-                    #tf.contrib.summary.scalar("average_reward", total_reward / step, family="reward")
+                    with tf.contrib.summary.always_record_summaries():
+                        tf.contrib.summary.scalar('global_step', self.global_step)
+                        tf.contrib.summary.scalar('total_reward', total_reward)
+                        tf.contrib.summary.scalar('average_reward', total_reward / step)
                     print("episode: %d  total_steps: %d  total_reward: %0.2f"%(episode, step, total_reward))
                     break
 

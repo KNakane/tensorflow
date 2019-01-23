@@ -23,7 +23,7 @@ class Agent():
         self.model = model
         self.on_policy = policy
         self.n_actions = n_actions
-        self.actions_list = list(range(self.n_actions))
+        self.actions_list = list(range(n_actions))
         self.n_features = n_features
         self.lr = learning_rate
         self.gamma = reward_decay
