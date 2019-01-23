@@ -61,7 +61,6 @@ class Trainer():
                     reward = r1 + r2
                 
                 self.replay_buf.push(state, action, done, state_, reward)
-                #self.replay_buf.push(state, action, done, state_, reward, self.agent.loss)
 
                 total_reward += reward
                 if len(self.replay_buf) > self.replay_size and len(self.replay_buf) > self.n_warmup:
@@ -101,7 +100,7 @@ class Trainer():
                                     average_reward = total_reward / step)
                     #self.agent.writer.add_list(record_dict, episode, True)
                     print("episode: %d  total_steps: %d  total_reward: %0.2f"%(episode, step, total_reward))
-                    #display_frames_as_gif(frames,"gif_image", './')
+                    display_frames_as_gif(frames, "gif_image", self.util.res_dir)
 
                 state = next_state
 
