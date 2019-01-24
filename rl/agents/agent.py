@@ -16,11 +16,13 @@ class Agent():
             batch_size=32,
             e_greedy_increment=None,
             optimizer=None,
+            network=None,
             policy=False # True : On-Policy   False : Off-policy
     ):
         # Eager Mode
         tf.enable_eager_execution()
         self.model = model
+        self.network = network
         self.on_policy = policy
         self.n_actions = n_actions
         self.actions_list = list(range(n_actions))

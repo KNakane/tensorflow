@@ -5,6 +5,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '../../utility'))
 import random
 import numpy as np
 import tensorflow as tf
+from collections import deque
 from utils import Utils
 from display_as_gif import display_frames_as_gif
 from replay_memory import ReplayBuffer,PrioritizeReplayBuffer
@@ -22,6 +23,7 @@ class Trainer():
                  test=False,
                  test_episode=5,
                  priority=False,
+                 multi_step=1,
                  render=False):
         self.agent = agent
         self.env = env
@@ -31,12 +33,16 @@ class Trainer():
         self.data_size = data_size
         self.n_warmup = n_warmup
         self.replay_size = replay_size  # batch_size
+        self.multi_step = multi_step
         self.test = test
         self.test_episode = test_episode
         self.util = Utils(prefix=self.agent.__class__.__name__)
         self.util.conf_log() 
         self.replay_buf = PrioritizeReplayBuffer(self.data_size) if priority else ReplayBuffer(self.data_size)
         self.global_step = tf.train.get_or_create_global_step()
+        self.state_deque = deque(maxlen=self.multi_step)
+        self.reward_deque = deque(maxlen=self.multi_step)
+        self.action_deque = deque(maxlen=self.multi_step)
     
     def train(self):
         writer = tf.contrib.summary.create_file_writer(self.util.tf_board)
@@ -53,14 +59,22 @@ class Trainer():
                     action = self.agent.choose_action(state)
                     state_, reward, done, _ = self.env.step(action)
 
+                    self.state_deque.append(state)
+                    self.reward_deque.append(reward)
+                    self.action_deque.append(action)
+
                     # the smaller theta and closer to center the better
                     if self.env.__class__.__name__ == 'CartPoleEnv':
                         x, x_dot, theta, theta_dot = state_
                         r1 = (self.env.x_threshold - abs(x))/self.env.x_threshold - 0.8
                         r2 = (self.env.theta_threshold_radians - abs(theta))/self.env.theta_threshold_radians - 0.5
                         reward = r1 + r2
-                    
-                    self.replay_buf.push(state, action, done, state_, reward)
+
+                    if len(self.state_deque) == self.multi_step or done:
+                        reward = self.multi_step_reward(self.reward_deque, self.agent.gamma)
+                        state = self.state_deque[0]
+                        action = self.action_deque[0]
+                        self.replay_buf.push(state, action, done, state_, reward)
 
                     total_reward += reward
                     if len(self.replay_buf) > self.replay_size and len(self.replay_buf) > self.n_warmup:
@@ -68,6 +82,7 @@ class Trainer():
                         train_data = map(np.array, zip(*transitions))
                         self.agent.update_q_net(train_data)
                         tf.contrib.summary.scalar('loss', self.agent.loss)
+                        tf.contrib.summary.scalar('e_greedy', self.agent.epsilon)
 
                         if (indexes != None):
                             for i, value in enumerate(self.agent.td_error):
@@ -79,6 +94,9 @@ class Trainer():
                         tf.contrib.summary.scalar('total_reward', total_reward)
                         tf.contrib.summary.scalar('average_reward', total_reward / step)
                         print("episode: %d  total_steps: %d  total_reward: %0.2f"%(episode, step, total_reward))
+                        self.state_deque.clear()
+                        self.action_deque.clear()
+                        self.reward_deque.clear()
                         break
 
                     state = state_
@@ -106,3 +124,9 @@ class Trainer():
                 state = next_state
 
         self.env.close()
+
+    def multi_step_reward(self, rewards, gamma):
+        ret = 0.
+        for idx, reward in enumerate(rewards):
+            ret += reward * (gamma ** idx)
+        return ret

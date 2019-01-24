@@ -260,8 +260,9 @@ def main(argv):
                 n_features=env.observation_space.shape,
                 learning_rate=0.01, e_greedy=0.9,
                 replace_target_iter=100,
-                e_greedy_increment=0.001,
-                optimizer=FLAGS.opt
+                e_greedy_increment=0.0001,
+                optimizer=FLAGS.opt,
+                network=FLAGS.network
                 )
 
     trainer = Trainer(agent=agent, 
@@ -272,17 +273,20 @@ def main(argv):
                       data_size=10**6,
                       n_warmup=FLAGS.n_warmup,
                       priority=FLAGS.priority,
+                      multi_step=FLAGS.multi_step,
                       render=FLAGS.render)
 
     print()
     print("---Start Learning------")
     print("data : {}".format(FLAGS.env))
     print("Agent : {}".format(FLAGS.agent))
+    print("Network : {}".format(FLAGS.network))
     print("epoch : {}".format(FLAGS.n_episode))
     print("batch_size : {}".format(FLAGS.batch_size))
     print("learning rate : {}".format(FLAGS.lr))
     print("Optimizer : {}".format(FLAGS.opt))
     print("priority : {}".format(FLAGS.priority))
+    print("multi_step : {}".format(FLAGS.multi_step))
     print("-----------------------")
 
     trainer.train()
@@ -293,9 +297,11 @@ if __name__ == '__main__':
     FLAGS = flags.FLAGS
     flags.DEFINE_string('agent', 'DQN', 'Choise Agents -> [DQN, DDQN]')
     flags.DEFINE_string('env', 'BreakoutNoFrameskip-v4', 'Choice the environment')
+    flags.DEFINE_string('network', 'EagerCNN', 'Choise Network -> [EagerCNN, Dueling_Net]')
     flags.DEFINE_integer('n_episode', '100000', 'Input max episode')
     flags.DEFINE_integer('step', '10000', 'Input max steps')
     flags.DEFINE_integer('batch_size', '32', 'Input batch size')
+    flags.DEFINE_integer('multi_step', '3', 'how many multi_step')
     flags.DEFINE_integer('n_warmup', '5000', 'n_warmup value')
     flags.DEFINE_integer('model_update', '1000', 'target_model_update_freq')
     flags.DEFINE_boolean('render', 'False', 'render')

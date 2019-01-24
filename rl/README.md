@@ -27,3 +27,7 @@ masterブランチではDefine and Runで実行するように作成していた
 - [atari usage](atari/README.md)
 
 を参照のこと
+
+
+## reference
+- [multi-step learning](https://github.com/belepi93/pytorch-rainbow/blob/master/train.py)

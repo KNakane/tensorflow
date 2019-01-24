@@ -16,13 +16,11 @@ class DQN(Agent):
     def _build_net(self):
         # ------------------ build eval_net ------------------
         with tf.variable_scope('eval_net'):
-            #self.q_eval = EagerCNN(model=self.model, name='Q_net', opt=self._optimizer, lr=self.lr, trainable=True)
-            self.q_eval = Dueling_Net(model=self.model, out_dim=self.n_actions, name='Q_net', opt=self._optimizer, lr=self.lr, trainable=True)
+            self.q_eval = eval(self.network)(model=self.model, out_dim=self.n_actions, name='Q_net', opt=self._optimizer, lr=self.lr, trainable=True)
 
         # ------------------ build target_net ------------------
         with tf.variable_scope('target_net'):
-            #self.q_next = EagerCNN(model=self.model, name='target_net', trainable=False)
-            self.q_next = Dueling_Net(model=self.model, out_dim=self.n_actions, name='target_net', trainable=False)
+            self.q_next = eval(self.network)(model=self.model, out_dim=self.n_actions, name='target_net', trainable=False)
 
     def inference(self, state):
         return self.q_eval.inference(state)
