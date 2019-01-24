@@ -55,4 +55,4 @@ class SumTree:
         idx = self._retrieve(0, s)
         dataIdx = idx - self.capacity + 1
 
-        return (idx, self.tree[idx], self.data[dataIdx])
+        return (idx, self.tree[idx], self.data[dataIdx]) #idx, priority, transition
