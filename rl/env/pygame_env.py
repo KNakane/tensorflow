@@ -3,7 +3,7 @@ from PIL import Image
 from collections import deque
 from observer import Observer
 
-class CatcherObserver(Observer):
+class PygameObserver(Observer):
 
     def __init__(self, env, width, height, frame_count):
         super().__init__(env)

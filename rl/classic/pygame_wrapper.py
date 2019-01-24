@@ -13,7 +13,7 @@ import tensorflow as tf
 from optimizer import *
 from dqn import DQN,DDQN
 from rl_trainer import Trainer
-from cacher_env import CatcherObserver
+from pygame_env import PygameObserver
 
 
 def set_model(outdim):
@@ -27,8 +27,8 @@ def set_model(outdim):
 
 
 def main(argv):
-    env = gym.make('Catcher-v0')
-    env = CatcherObserver(env, 80, 80, 4)
+    env = gym.make(FLAGS.env)
+    env = PygameObserver(env, 84, 84, 4)
     agent = eval(FLAGS.agent)(model=set_model(outdim=env.action_space.n),
                               n_actions=env.action_space.n,
                               n_features=env.observation_space.shape[0],
@@ -52,7 +52,7 @@ def main(argv):
 
     print()
     print("---Start Learning------")
-    print("data : {}".format(env))
+    print("data : {}".format(FLAGS.env))
     print("Agent : {}".format(FLAGS.agent))
     print("epoch : {}".format(FLAGS.n_episode))
     print("step : {}".format(FLAGS.step))
@@ -69,6 +69,7 @@ def main(argv):
 if __name__ == '__main__':
     flags = tf.app.flags
     FLAGS = flags.FLAGS
+    flags.DEFINE_string('env', 'Catcher-v0', 'Choise Agents -> [Catcher-v0, FlappyBird-v0, Pong, PixelCopter-v0, MonsterKong-v0, PuckWorld-v0, RaycastMaze-v0, Snake-v0, WaterWorld-v0]')
     flags.DEFINE_string('agent', 'DQN', 'Choise Agents -> [DQN, DDQN]')
     flags.DEFINE_integer('n_episode', '100000', 'Input max episode')
     flags.DEFINE_integer('step', '10000', 'Input max steps')
