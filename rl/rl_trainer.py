@@ -47,6 +47,7 @@ class Trainer():
     def train(self):
         writer = tf.contrib.summary.create_file_writer(self.util.tf_board)
         writer.set_as_default()
+        total_steps = 0
         for episode in range(self.n_episode):
             self.global_step.assign_add(1)
             with tf.contrib.summary.always_record_summaries():
@@ -59,6 +60,7 @@ class Trainer():
                     action = self.agent.choose_action(state)
                     state_, reward, done, _ = self.env.step(action)
 
+                    # Multi-step learning
                     self.state_deque.append(state)
                     self.reward_deque.append(reward)
                     self.action_deque.append(action)
@@ -71,10 +73,10 @@ class Trainer():
                         reward = r1 + r2
 
                     if len(self.state_deque) == self.multi_step or done:
-                        reward = self.multi_step_reward(self.reward_deque, self.agent.gamma)
+                        t_reward, reward = self.multi_step_reward(self.reward_deque, self.agent.gamma)
                         state = self.state_deque[0]
                         action = self.action_deque[0]
-                        self.replay_buf.push(state, action, done, state_, reward)
+                        self.replay_buf.push(state, action, done, state_, t_reward)
 
                     total_reward += reward
                     if len(self.replay_buf) > self.replay_size and len(self.replay_buf) > self.n_warmup:
@@ -90,10 +92,12 @@ class Trainer():
                                 self.replay_buf.update(indexes[i], td_error)
 
                     if done or step == self.max_steps - 1:
-                        tf.contrib.summary.scalar('global_step', self.global_step)
+                        total_steps += step
+                        tf.contrib.summary.scalar('total_steps', total_steps)
+                        tf.contrib.summary.scalar('steps_per_episode', step)
                         tf.contrib.summary.scalar('total_reward', total_reward)
                         tf.contrib.summary.scalar('average_reward', total_reward / step)
-                        print("episode: %d  total_steps: %d  total_reward: %0.2f"%(episode, step, total_reward))
+                        print("episode: %d total_steps: %d  steps/episode: %d  total_reward: %0.2f"%(episode, total_steps, step, total_reward))
                         self.state_deque.clear()
                         self.action_deque.clear()
                         self.reward_deque.clear()
@@ -127,6 +131,8 @@ class Trainer():
 
     def multi_step_reward(self, rewards, gamma):
         ret = 0.
+        t_ret = 0.
         for idx, reward in enumerate(rewards):
             ret += reward * (gamma ** idx)
-        return ret
+            t_ret += reward
+        return ret, t_ret
