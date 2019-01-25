@@ -2,7 +2,6 @@
 #tensorboard --logdir ./logs
 import os,sys
 sys.path.append(os.path.join(os.path.dirname(__file__), '../../utility'))
-import Queue
 import random
 import threading
 import numpy as np
@@ -50,6 +49,7 @@ class Trainer():
         writer = tf.contrib.summary.create_file_writer(self.util.tf_board)
         writer.set_as_default()
         total_steps = 0
+        learning_flag = 0
         for episode in range(self.n_episode):
             self.global_step.assign_add(1)
             with tf.contrib.summary.always_record_summaries():
@@ -85,6 +85,7 @@ class Trainer():
                         indexes, transitions, _ = self.replay_buf.sample(self.agent.batch_size, episode/self.n_episode)
                         train_data = map(np.array, zip(*transitions))
                         self.agent.update_q_net(train_data)
+                        learning_flag = 1
                         if len(self.agent.bs[0].shape) == 4:
                             tf.contrib.summary.image('train/input_img', tf.expand_dims(self.agent.bs[:,:,:,0], 3))
                         tf.contrib.summary.scalar('train/loss', self.agent.loss)
@@ -108,8 +109,9 @@ class Trainer():
                         break
 
                     state = state_
+            """
             # test
-            if episode % self.test_interval:
+            if episode % self.test_interval == 0 and learning_flag:
                 frames = []
                 test_total_steps = 0
                 test_total_reward = 0
@@ -117,12 +119,14 @@ class Trainer():
                 for test_episode in range(self.test_episode):
                     state = self.env.reset()
                     for test_step in range(self.max_steps):
-                        frames.append(self.env.render(mode='rgb_array'))
+                        #img = self.env.render(mode='rgb_array')
+                        #if img is not None:
+                        #    frames.append(img)
                         action = self.agent.choose_action(state)
                         next_state, reward, done, _ = self.env.step(action)
                         test_total_reward += reward
                         
-                        if done:
+                        if done or step == self.max_steps - 1:
                             test_total_steps += test_step
                             display_frames_as_gif(frames, "test_{}_{}".format(episode, test_episode), self.util.res_dir)
                             tf.contrib.summary.scalar('test/total_steps_{}'.format(test_episode), test_total_steps)
@@ -130,9 +134,10 @@ class Trainer():
                             tf.contrib.summary.scalar('test/total_reward_{}'.format(test_episode), test_total_reward)
                             tf.contrib.summary.scalar('test/average_reward_{}'.format(test_episode), test_total_reward / test_step)
                             print("test_episode: %d total_steps: %d  steps/episode: %d  total_reward: %0.2f"%(test_episode, test_total_steps, test_step, test_total_reward))
-                            break                         
-                        state = next_state
-                print('--------------------------------------------------------------')
+                            break
+                        state = next_state                     
+                print('---------------------------------------------------------------')
+                """
 
         self.env.close()
 

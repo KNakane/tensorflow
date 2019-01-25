@@ -17,7 +17,8 @@ class Agent():
             e_greedy_increment=None,
             optimizer=None,
             network=None,
-            policy=False # True : On-Policy   False : Off-policy
+            policy=False,    # True : On-Policy   False : Off-policy
+            is_categorical=False
     ):
         # Eager Mode
         tf.enable_eager_execution()
@@ -33,6 +34,7 @@ class Agent():
         self.replace_target_iter = replace_target_iter
         self.batch_size = batch_size
         self._optimizer = optimizer
+        self.is_categorical = is_categorical
         self.epsilon_increment = e_greedy_increment
         self.epsilon = 0 if e_greedy_increment is not None else self.epsilon_max
 

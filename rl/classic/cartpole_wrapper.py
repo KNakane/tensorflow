@@ -23,6 +23,10 @@ def set_model(outdim):
 def main(argv):
     env = gym.make('CartPole-v0')
     env = env.unwrapped
+    if FLAGS.agent == 'Rainbow':
+        FLAGS.network = 'Dueling_Net'
+        FLAGS.priority = True
+        FLAGS.multi_step = 3
     agent = eval(FLAGS.agent)(model=set_model(outdim=env.action_space.n),
                               n_actions=env.action_space.n,
                               n_features=env.observation_space.shape[0],
@@ -32,7 +36,8 @@ def main(argv):
                               replace_target_iter=100,
                               e_greedy_increment=0.001,
                               optimizer=FLAGS.opt,
-                              network='Dueling_Net' if FLAGS.agent == 'Rainbow' else FLAGS.network
+                              network='Dueling_Net' if FLAGS.agent == 'Rainbow' else FLAGS.network,
+                              is_categorical=FLAGS.category
                               )
 
     trainer = Trainer(agent=agent, 
@@ -79,6 +84,8 @@ if __name__ == '__main__':
     flags.DEFINE_integer('model_update', '1000', 'target_model_update_freq')
     flags.DEFINE_boolean('render', 'False', 'render')
     flags.DEFINE_boolean('priority', 'False', 'prioritized Experience Replay')
+    flags.DEFINE_boolean('category', 'False', 'Categorical DQN')
+    flags.DEFINE_boolean('noise', 'False', 'Noisy Net')
     flags.DEFINE_float('lr', '1e-4', 'Input learning rate')
     flags.DEFINE_string('opt','RMSProp','Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]')
     tf.app.run()

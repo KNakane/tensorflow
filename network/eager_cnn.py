@@ -16,18 +16,25 @@ class EagerCNN(EagerModule):
                  l2_reg=False,
                  l2_reg_scale=0.0001,
                  trainable=False,
-                 is_noisy=False
+                 is_noisy=False,
+                 is_categorical=False
                  ):
         super().__init__(l2_reg=l2_reg,l2_reg_scale=l2_reg_scale, trainable=trainable)
+        self.out_dim = out_dim
         self.model = model
         self._layers = []
         self.is_noisy = is_noisy
+        self.is_categorical = is_categorical
+        self.N_atoms = 51 if is_categorical else None
         if self._trainable:
             self.optimizer = eval(opt)(learning_rate=lr)
         self._build()
 
     def _build(self):
         for l in range(len(self.model)):
+            # categorical DQN
+            if l == len(self.model) - 1 and self.is_categorical:
+                self.model[l][1] = self.out_dim * self.N_atoms   # 
             if self.is_noisy and self.model[l][0]=='fc':
                 my_layer = self.noisy_dense(self.model[l][1:]) #noisy_net
             else:
@@ -41,7 +48,12 @@ class EagerCNN(EagerModule):
                 x = my_layer(x, training=self._trainable)
             except:
                 x = my_layer(x)
-        return x
+                
+        if self.is_categorical:
+            x = tf.keras.activations.softmax(tf.reshape(x, [-1, self.N_atoms]), axis=1)
+            return tf.reshape(x, [-1, self.out_dim, self.N_atoms])
+        else:
+            return x
 
     def loss(self, logits, labels):
         loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=logits, labels=labels))
@@ -63,15 +75,16 @@ class Dueling_Net(EagerCNN):
                  l2_reg=False,
                  l2_reg_scale=0.0001,
                  trainable=False,
-                 is_noisy=False
+                 is_noisy=False,
+                 is_categorical=False
                  ):
-        self.out_dim = out_dim
-        super().__init__(model=model,name=name,opt=opt,lr=lr,l2_reg=l2_reg,l2_reg_scale=l2_reg_scale,trainable=trainable,is_noisy=is_noisy)
+        super().__init__(model=model,name=name,out_dim=out_dim,opt=opt,lr=lr,l2_reg=l2_reg,l2_reg_scale=l2_reg_scale,trainable=trainable,is_noisy=is_noisy,is_categorical=is_categorical)
 
     def _build(self):
         for l in range(len(self.model)):
             if l == len(self.model) - 1:
-                self.model[l][1] = self.out_dim + 1   # 状態価値V用に1unit追加
+                # 状態価値V用に1unit追加するが、categoricalの場合も考慮
+                self.model[l][1] = (self.out_dim + 1) * self.N_atoms if self.is_categorical else self.out_dim + 1
             if self.is_noisy and self.model[l][0]=='fc':
                 my_layer = self.noisy_dense(self.model[l][1:]) #noisy_net
             else:
@@ -90,4 +103,9 @@ class Dueling_Net(EagerCNN):
         V = tf.reshape(x[:,0], (x.shape[0], 1))
         V = tf.tile(V, [1, self.out_dim])
         x = x[:, 1:] + V - tf.tile(tf.reshape(np.average(x[:,1:], axis=1), (x.shape[0], 1)), [1, self.out_dim])
-        return x
+        
+        if self.is_categorical:
+            x = tf.keras.activations.softmax(tf.reshape(x, [-1, self.N_atoms]), axis=1)
+            return tf.reshape(x, [-1, self.out_dim, self.N_atoms])
+        else:
+            return x

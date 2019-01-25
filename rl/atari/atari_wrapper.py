@@ -268,7 +268,8 @@ def main(argv):
                 replace_target_iter=100,
                 e_greedy_increment=0.0001,
                 optimizer=FLAGS.opt,
-                network=FLAGS.network
+                network='Dueling_Net' if FLAGS.agent == 'Rainbow' else FLAGS.network,
+                is_categorical=FLAGS.category
                 )
 
     trainer = Trainer(agent=agent, 
@@ -278,8 +279,8 @@ def main(argv):
                       replay_size=FLAGS.batch_size, 
                       data_size=10**6,
                       n_warmup=FLAGS.n_warmup,
-                      priority=FLAGS.priority,
-                      multi_step=FLAGS.multi_step,
+                      priority=True if FLAGS.agent == 'Rainbow' else FLAGS.priority,
+                      multi_step=3 if FLAGS.agent == 'Rainbow' else FLAGS.multi_step,
                       render=FLAGS.render,
                       test_episode=5,
                       test_interval=1000)
@@ -314,6 +315,8 @@ if __name__ == '__main__':
     flags.DEFINE_integer('model_update', '1000', 'target_model_update_freq')
     flags.DEFINE_boolean('render', 'False', 'render')
     flags.DEFINE_boolean('priority', 'False', 'prioritized Experience Replay')
+    flags.DEFINE_boolean('category', 'False', 'Categorical DQN')
+    flags.DEFINE_boolean('noise', 'False', 'Noisy Net')
     flags.DEFINE_float('lr', '1e-4', 'Input learning rate')
     flags.DEFINE_string('opt','RMSProp','Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]')
     tf.app.run()
