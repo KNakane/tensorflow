@@ -48,3 +48,16 @@ class EagerModule(tf.keras.Model):
     def dropout(self, args):
         assert len(args) == 1, '[Dropout] Not enough Argument -> [rate]'
         return tf.keras.layers.Dropout (rate=args[2])
+
+    def noisy_dense(self, args): # 強化学習用
+        assert len(args) == 2, '[noisy_dense] Not enough Argument -> [units, activation]'
+        def f(e_list):
+            return tf.multiply(tf.sign(e_list), tf.pow(tf.abs(e_list), 0.5))
+        regularizer = tf.keras.regularizers.l2(self._l2_reg_scale) if self._l2_reg else None
+
+        noise_1 = f(tf.random_normal(tf.TensorShape([input_shape, 1]), dtype=tf.float32))
+        noise_2 = f(tf.random_normal(tf.TensorShape([1, args[0]]), dtype=tf.float32))
+        weights += tf.multiply(noise_1 * noise_2, w_noise)
+        
+        x = tf.keras.layers.Dense(units=args[0], activation=args[1], kernel_regularizer=regularizer, use_bias=True)
+        return x

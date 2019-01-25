@@ -12,7 +12,7 @@ from collections import deque
 import gym
 from gym import spaces
 from rl_trainer import Trainer
-from dqn import DQN,DDQN
+from dqn import DQN,DDQN,Rainbow
 import cv2
 cv2.ocl.setUseOpenCL(False)
 
@@ -255,6 +255,12 @@ def main(argv):
     env = make_atari(FLAGS.env)
     env = wrap_deepmind(env, frame_stack=True)
     #env = EnvWrap(env)
+    
+    if FLAGS.agent == 'Rainbow':
+        FLAGS.network = 'Dueling_Net'
+        FLAGS.priority = True
+        FLAGS.multi_step = 3
+
     agent = eval(FLAGS.agent)(model=set_model(outdim=env.action_space.n),
                 n_actions=env.action_space.n,
                 n_features=env.observation_space.shape,
@@ -274,7 +280,9 @@ def main(argv):
                       n_warmup=FLAGS.n_warmup,
                       priority=FLAGS.priority,
                       multi_step=FLAGS.multi_step,
-                      render=FLAGS.render)
+                      render=FLAGS.render,
+                      test_episode=5,
+                      test_interval=1000)
 
     print()
     print("---Start Learning------")
@@ -295,13 +303,13 @@ def main(argv):
 if __name__ == '__main__':
     flags = tf.app.flags
     FLAGS = flags.FLAGS
-    flags.DEFINE_string('agent', 'DQN', 'Choise Agents -> [DQN, DDQN]')
+    flags.DEFINE_string('agent', 'DQN', 'Choise Agents -> [DQN, DDQN, Rainbow]')
     flags.DEFINE_string('env', 'BreakoutNoFrameskip-v4', 'Choice the environment')
     flags.DEFINE_string('network', 'EagerCNN', 'Choise Network -> [EagerCNN, Dueling_Net]')
     flags.DEFINE_integer('n_episode', '100000', 'Input max episode')
     flags.DEFINE_integer('step', '10000', 'Input max steps')
     flags.DEFINE_integer('batch_size', '32', 'Input batch size')
-    flags.DEFINE_integer('multi_step', '3', 'how many multi_step')
+    flags.DEFINE_integer('multi_step', '1', 'how many multi_step')
     flags.DEFINE_integer('n_warmup', '5000', 'n_warmup value')
     flags.DEFINE_integer('model_update', '1000', 'target_model_update_freq')
     flags.DEFINE_boolean('render', 'False', 'render')

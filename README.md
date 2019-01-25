@@ -4,16 +4,17 @@ tensorflow
 # Overview
 tensorflowの勉強用  
 CNNと強化学習について触れる  
-強化学習に関しては、Eagerモードを使用するように作成していく(未作成部分多数)  
+強化学習に関しては、Eagerモードを使用するように作成していく  
 使い方などは各ディレクトリのREADME.mdを見てください  
 [Eagerモード参考URL](https://www.hellocybernetics.tech/entry/2018/12/04/231714)  
 
 # Installation
 ```
+$ brew install imagemagick
 $ brew install pyenv
 $ pyenv install 3.6.7
 $ pyenv global 3.6.7
-$ git clone https://github.com/KNakane/tensorflow.git
+$ git clone -b dev https://github.com/KNakane/tensorflow.git
 $ pip install -r requirements.txt
 $ pip install tensorflow or pip install tensorflow-gpu
 ```

@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 #tensorboard --logdir ./logs
-import sys,os
+import os,sys
 sys.path.append(os.path.join(os.path.dirname(__file__), '../../utility'))
+import Queue
 import random
+import threading
 import numpy as np
 import tensorflow as tf
 from collections import deque
@@ -20,11 +22,11 @@ class Trainer():
                  replay_size=32, 
                  data_size=10**6,
                  n_warmup=5*10**4,
-                 test=False,
-                 test_episode=5,
                  priority=False,
                  multi_step=1,
-                 render=False):
+                 render=False,
+                 test_episode=5,
+                 test_interval=1000):
         self.agent = agent
         self.env = env
         self.n_episode = n_episode
@@ -34,8 +36,8 @@ class Trainer():
         self.n_warmup = n_warmup
         self.replay_size = replay_size  # batch_size
         self.multi_step = multi_step
-        self.test = test
         self.test_episode = test_episode
+        self.test_interval = test_interval if test_interval is not None else 10000
         self.util = Utils(prefix=self.agent.__class__.__name__)
         self.util.conf_log() 
         self.replay_buf = PrioritizeReplayBuffer(self.data_size) if priority else ReplayBuffer(self.data_size)
@@ -83,8 +85,10 @@ class Trainer():
                         indexes, transitions, _ = self.replay_buf.sample(self.agent.batch_size, episode/self.n_episode)
                         train_data = map(np.array, zip(*transitions))
                         self.agent.update_q_net(train_data)
-                        tf.contrib.summary.scalar('loss', self.agent.loss)
-                        tf.contrib.summary.scalar('e_greedy', self.agent.epsilon)
+                        if len(self.agent.bs[0].shape) == 4:
+                            tf.contrib.summary.image('train/input_img', tf.expand_dims(self.agent.bs[:,:,:,0], 3))
+                        tf.contrib.summary.scalar('train/loss', self.agent.loss)
+                        tf.contrib.summary.scalar('train/e_greedy', self.agent.epsilon)
 
                         if (indexes != None):
                             for i, value in enumerate(self.agent.td_error):
@@ -93,10 +97,10 @@ class Trainer():
 
                     if done or step == self.max_steps - 1:
                         total_steps += step
-                        tf.contrib.summary.scalar('total_steps', total_steps)
-                        tf.contrib.summary.scalar('steps_per_episode', step)
-                        tf.contrib.summary.scalar('total_reward', total_reward)
-                        tf.contrib.summary.scalar('average_reward', total_reward / step)
+                        tf.contrib.summary.scalar('train/total_steps', total_steps)
+                        tf.contrib.summary.scalar('train/steps_per_episode', step)
+                        tf.contrib.summary.scalar('train/total_reward', total_reward)
+                        tf.contrib.summary.scalar('train/average_reward', total_reward / step)
                         print("episode: %d total_steps: %d  steps/episode: %d  total_reward: %0.2f"%(episode, total_steps, step, total_reward))
                         self.state_deque.clear()
                         self.action_deque.clear()
@@ -104,28 +108,31 @@ class Trainer():
                         break
 
                     state = state_
-            pass
-
-        if self.test:
-            #self.agent.writer.restore_model()
-            frames = []
-            for episode in range(self.test_episode):
-                self.env.reset()
-                for step in range(self.max_steps):
-                    frames.append(self.env.render(mode='rgb_array'))
-                    action = self.agent.get_action(state, episode)
-                    next_state, reward, done, _ = self.env.step(action)
-                    total_reward += reward
-
-                if done:
-                    record_dict = dict(step = step,
-                                    total_reward = total_reward,
-                                    average_reward = total_reward / step)
-                    #self.agent.writer.add_list(record_dict, episode, True)
-                    print("episode: %d  total_steps: %d  total_reward: %0.2f"%(episode, step, total_reward))
-                    display_frames_as_gif(frames, "gif_image", self.util.res_dir)
-
-                state = next_state
+            # test
+            if episode % self.test_interval:
+                frames = []
+                test_total_steps = 0
+                test_total_reward = 0
+                print('-------------------- test -------------------------------------')
+                for test_episode in range(self.test_episode):
+                    state = self.env.reset()
+                    for test_step in range(self.max_steps):
+                        frames.append(self.env.render(mode='rgb_array'))
+                        action = self.agent.choose_action(state)
+                        next_state, reward, done, _ = self.env.step(action)
+                        test_total_reward += reward
+                        
+                        if done:
+                            test_total_steps += test_step
+                            display_frames_as_gif(frames, "test_{}_{}".format(episode, test_episode), self.util.res_dir)
+                            tf.contrib.summary.scalar('test/total_steps_{}'.format(test_episode), test_total_steps)
+                            tf.contrib.summary.scalar('test/steps_per_episode_{}'.format(test_episode), test_step)
+                            tf.contrib.summary.scalar('test/total_reward_{}'.format(test_episode), test_total_reward)
+                            tf.contrib.summary.scalar('test/average_reward_{}'.format(test_episode), test_total_reward / test_step)
+                            print("test_episode: %d total_steps: %d  steps/episode: %d  total_reward: %0.2f"%(test_episode, test_total_steps, test_step, test_total_reward))
+                            break                         
+                        state = next_state
+                print('--------------------------------------------------------------')
 
         self.env.close()
 
@@ -135,4 +142,4 @@ class Trainer():
         for idx, reward in enumerate(rewards):
             ret += reward * (gamma ** idx)
             t_ret += reward
-        return ret, t_ret
+        return ret, t_ret/(idx+1)

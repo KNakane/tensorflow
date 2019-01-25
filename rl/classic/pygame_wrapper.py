@@ -11,7 +11,7 @@ import gym_ple
 import numpy as np
 import tensorflow as tf
 from optimizer import *
-from dqn import DQN,DDQN
+from dqn import DQN,DDQN,Rainbow
 from rl_trainer import Trainer
 from pygame_env import PygameObserver
 
@@ -38,7 +38,7 @@ def main(argv):
                               replace_target_iter=100,
                               e_greedy_increment=0.0005,
                               optimizer=FLAGS.opt,
-                              network=FLAGS.network
+                              network='Dueling_Net' if FLAGS.agent == 'Rainbow' else FLAGS.network
                               )
 
     trainer = Trainer(agent=agent, 
@@ -48,9 +48,11 @@ def main(argv):
                       replay_size=FLAGS.batch_size, 
                       data_size=10**6,
                       n_warmup=FLAGS.n_warmup,
-                      priority=FLAGS.priority,
-                      multi_step=FLAGS.multi_step,
-                      render=FLAGS.render)
+                      priority=True if FLAGS.agent == 'Rainbow' else FLAGS.priority,
+                      multi_step=3 if FLAGS.agent == 'Rainbow' else FLAGS.multi_step,
+                      render=FLAGS.render,
+                      test_episode=3,
+                      test_interval=1000)
 
     print()
     print("---Start Learning------")
@@ -79,7 +81,7 @@ if __name__ == '__main__':
     flags.DEFINE_string('network', 'EagerCNN', 'Choise Network -> [EagerCNN, Dueling_Net]')
     flags.DEFINE_integer('step', '10000', 'Input max steps')
     flags.DEFINE_integer('batch_size', '32', 'Input batch size')
-    flags.DEFINE_integer('multi_step', '3', 'how many multi_step')
+    flags.DEFINE_integer('multi_step', '1', 'how many multi_step')
     flags.DEFINE_integer('n_warmup', '1000', 'n_warmup value')
     flags.DEFINE_integer('model_update', '1000', 'target_model_update_freq')
     flags.DEFINE_boolean('render', 'False', 'render')
