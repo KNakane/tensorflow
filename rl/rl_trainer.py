@@ -109,7 +109,6 @@ class Trainer():
                         break
 
                     state = state_
-            """
             # test
             if episode % self.test_interval == 0 and learning_flag:
                 frames = []
@@ -137,7 +136,6 @@ class Trainer():
                             break
                         state = next_state                     
                 print('---------------------------------------------------------------')
-                """
 
         self.env.close()
 

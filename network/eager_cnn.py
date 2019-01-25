@@ -50,8 +50,8 @@ class EagerCNN(EagerModule):
                 x = my_layer(x)
                 
         if self.is_categorical:
-            x = tf.keras.activations.softmax(tf.reshape(x, [-1, self.N_atoms]), axis=1)
-            return tf.reshape(x, [-1, self.out_dim, self.N_atoms])
+            x = tf.reshape(x, (x.shape[0], self.out_dim + 1, self.N_atoms))
+            return tf.keras.activations.softmax(x, axis=2)
         else:
             return x
 
@@ -98,14 +98,16 @@ class Dueling_Net(EagerCNN):
                 x = my_layer(x, training=self._trainable)
             except:
                 x = my_layer(x)
-                
-        # Dueling part
-        V = tf.reshape(x[:,0], (x.shape[0], 1))
-        V = tf.tile(V, [1, self.out_dim])
-        x = x[:, 1:] + V - tf.tile(tf.reshape(np.average(x[:,1:], axis=1), (x.shape[0], 1)), [1, self.out_dim])
-        
+                    
         if self.is_categorical:
-            x = tf.keras.activations.softmax(tf.reshape(x, [-1, self.N_atoms]), axis=1)
-            return tf.reshape(x, [-1, self.out_dim, self.N_atoms])
+            # Dueling part
+            x = tf.reshape(x, (x.shape[0], self.out_dim + 1, self.N_atoms))
+            V = tf.reshape(x[:,0], (x.shape[0], 1, self.N_atoms))
+            V = tf.tile(V, [1, self.out_dim, 1])
+            x = x[:, 1:] + V - tf.tile(tf.reshape(np.average(x[:,1:], axis=1), (x.shape[0], 1, self.N_atoms)), [1, self.out_dim, 1])
+            return tf.keras.activations.softmax(x, axis=2)
         else:
-            return x
+            # Dueling part
+            V = tf.reshape(x[:,0], (x.shape[0], 1))
+            V = tf.tile(V, [1, self.out_dim])
+            return x[:, 1:] + V - tf.tile(tf.reshape(np.average(x[:,1:], axis=1), (x.shape[0], 1)), [1, self.out_dim])

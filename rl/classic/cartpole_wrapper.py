@@ -27,6 +27,7 @@ def main(argv):
         FLAGS.network = 'Dueling_Net'
         FLAGS.priority = True
         FLAGS.multi_step = 3
+        FLAGS.category = True
     agent = eval(FLAGS.agent)(model=set_model(outdim=env.action_space.n),
                               n_actions=env.action_space.n,
                               n_features=env.observation_space.shape[0],
@@ -65,6 +66,7 @@ def main(argv):
     print("Optimizer : {}".format(FLAGS.opt))
     print("priority : {}".format(FLAGS.priority))
     print("multi_step : {}".format(FLAGS.multi_step))
+    print("categorical : {}".format(FLAGS.category))
     print("n_warmup : {}".format(FLAGS.n_warmup))
     print("model_update : {}".format(FLAGS.model_update))
     print("-----------------------")
