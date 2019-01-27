@@ -3,6 +3,7 @@ CNN/__pycache__
 rl/__pycache__
 rl/atari/__pycache__
 rl/classic/__pycache__
+rl/pygame/__pycache__
 rl/agents/__pycache__
 segmentation/__pycache__
 segmentation/util/__pycache__

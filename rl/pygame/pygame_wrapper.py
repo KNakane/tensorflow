@@ -2,35 +2,37 @@
 #tensorboard --logdir ./logs
 import sys,os
 sys.path.append(os.path.join(os.path.dirname(__file__), '../'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '../env'))
 sys.path.append(os.path.join(os.path.dirname(__file__), '../agents'))
 sys.path.append(os.path.join(os.path.dirname(__file__), '../../utility'))
 import gym
 import gym.spaces
+import gym_ple
 import numpy as np
 import tensorflow as tf
 from optimizer import *
 from dqn import DQN,DDQN,Rainbow
-from policy_gradient import PolicyGradient
 from rl_trainer import Trainer
+from pygame_env import PygameObserver
 
 
 def set_model(outdim):
-    model_set = [['fc', 10, tf.nn.relu],
-                 ['fc', 10, tf.nn.relu],
+    model_set = [['conv', 8, 32, 4, tf.nn.relu],
+                 ['conv', 4, 64, 2, tf.nn.relu],
+                 ['conv', 3, 64, 1, tf.nn.relu],
+                 ['flat'],
+                 ['fc', 256, tf.nn.relu],
                  ['fc', outdim, None]]
     return model_set
 
 
 def main(argv):
-    env = gym.make('CartPole-v0')
-    env = env.unwrapped
+    env = gym.make(FLAGS.env)
+    env = PygameObserver(env, 84, 84, 4)
     if FLAGS.agent == 'Rainbow':
         FLAGS.network = 'Dueling_Net'
         FLAGS.priority = True
         FLAGS.multi_step = 3
-        FLAGS.category = True
-    elif FLAGS.agent == 'PolicyGradient':
-        FLAGS.multi_step = 30
     agent = eval(FLAGS.agent)(model=set_model(outdim=env.action_space.n),
                               n_actions=env.action_space.n,
                               n_features=env.observation_space.shape[0],
@@ -38,7 +40,7 @@ def main(argv):
                               batch_size=FLAGS.batch_size, 
                               e_greedy=0.9,
                               replace_target_iter=100,
-                              e_greedy_increment=0.001,
+                              e_greedy_increment=0.0005,
                               optimizer=FLAGS.opt,
                               network='Dueling_Net' if FLAGS.agent == 'Rainbow' else FLAGS.network,
                               is_categorical=FLAGS.category
@@ -54,22 +56,21 @@ def main(argv):
                       priority=True if FLAGS.agent == 'Rainbow' else FLAGS.priority,
                       multi_step=3 if FLAGS.agent == 'Rainbow' else FLAGS.multi_step,
                       render=FLAGS.render,
-                      test_episode=2,
-                      test_interval=50)
+                      test_episode=3,
+                      test_interval=1000)
 
     print()
     print("---Start Learning------")
-    print("data : {}".format(env))
+    print("data : {}".format(FLAGS.env))
     print("Agent : {}".format(FLAGS.agent))
-    print("epoch : {}".format(FLAGS.n_episode))
     print("Network : {}".format(FLAGS.network))
+    print("epoch : {}".format(FLAGS.n_episode))
     print("step : {}".format(FLAGS.step))
     print("batch_size : {}".format(FLAGS.batch_size))
     print("learning rate : {}".format(FLAGS.lr))
     print("Optimizer : {}".format(FLAGS.opt))
     print("priority : {}".format(FLAGS.priority))
     print("multi_step : {}".format(FLAGS.multi_step))
-    print("categorical : {}".format(FLAGS.category))
     print("n_warmup : {}".format(FLAGS.n_warmup))
     print("model_update : {}".format(FLAGS.model_update))
     print("-----------------------")
@@ -79,7 +80,8 @@ def main(argv):
 if __name__ == '__main__':
     flags = tf.app.flags
     FLAGS = flags.FLAGS
-    flags.DEFINE_string('agent', 'DQN', 'Choise Agents -> [DQN, DDQN, Rainbow, PolicyGradient]')
+    flags.DEFINE_string('env', 'Catcher-v0', 'Choise Agents -> [Catcher-v0, FlappyBird-v0, Pong-v0, PixelCopter-v0, MonsterKong-v0, PuckWorld-v0, RaycastMaze-v0, Snake-v0, WaterWorld-v0]')
+    flags.DEFINE_string('agent', 'DQN', 'Choise Agents -> [DQN, DDQN]')
     flags.DEFINE_integer('n_episode', '100000', 'Input max episode')
     flags.DEFINE_string('network', 'EagerCNN', 'Choise Network -> [EagerCNN, Dueling_Net]')
     flags.DEFINE_integer('step', '10000', 'Input max steps')

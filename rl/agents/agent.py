@@ -51,7 +51,7 @@ class Agent():
             raise Exception('please set Optimizer')
     
     def inference(self, s):
-        raise Exception('please set Optimizer')
+        raise Exception('please Write inference function')
 
     def choose_action(self, observation):
         # to have batch dimension when feed into tf placeholder
@@ -61,7 +61,7 @@ class Agent():
             # forward feed the observation and get q value for every actions
             actions_value = self.inference(observation)
             if self.on_policy:
-                action = np.random.choice(self.actions_list, size=1, p=actions_value)[0]
+                action = np.random.choice(self.actions_list, size=1, p=np.array(actions_value)[0])[0]
             else:
                 action = np.argmax(actions_value)
         else:

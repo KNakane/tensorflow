@@ -111,3 +111,46 @@ class Dueling_Net(EagerCNN):
             V = tf.reshape(x[:,0], (x.shape[0], 1))
             V = tf.tile(V, [1, self.out_dim])
             return x[:, 1:] + V - tf.tile(tf.reshape(np.average(x[:,1:], axis=1), (x.shape[0], 1)), [1, self.out_dim])
+
+class ActorNet(EagerCNN):
+    def __init__(self, 
+                 model=None,
+                 name='ActorNet',
+                 out_dim=10,
+                 opt=Adam,   # Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]
+                 lr=0.001,
+                 l2_reg=False,
+                 l2_reg_scale=0.0001,
+                 trainable=False,
+                 is_noisy=False,
+                 is_categorical=False
+                 ):
+        super().__init__(model=model,name=name,out_dim=out_dim,opt=opt,lr=lr,l2_reg=l2_reg,l2_reg_scale=l2_reg_scale,trainable=trainable,is_noisy=is_noisy,is_categorical=is_categorical)
+        self.max_action = 
+
+class CriticNet(EagerCNN):
+    def __init__(self, 
+                 model=None,
+                 name='CriticNet',
+                 out_dim=10,
+                 opt=Adam,   # Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]
+                 lr=0.001,
+                 l2_reg=False,
+                 l2_reg_scale=0.0001,
+                 trainable=False,
+                 is_noisy=False,
+                 is_categorical=False
+                 ):
+        super().__init__(model=model,name=name,out_dim=out_dim,opt=opt,lr=lr,l2_reg=l2_reg,l2_reg_scale=l2_reg_scale,trainable=trainable,is_noisy=is_noisy,is_categorical=is_categorical)
+
+    def inference(self, inputs):
+        x, u = inputs
+        for i, my_layer in enumerate(self._layers):
+            if i > 0 and my_layer[i][0]=='fc':
+                x = tf.concat([x, u], axis=1)
+            x = tf.convert_to_tensor(x, dtype=tf.float32)
+            try:
+                x = my_layer(x, training=self._trainable)
+            except:
+                x = my_layer(x)
+

@@ -3,10 +3,17 @@ tensorflow
 
 # Overview
 tensorflowの勉強用  
-CNNと強化学習について触れる  
-強化学習に関しては、Eagerモードを使用するように作成していく  
+CNNと強化学習について触れる
+## CNN
+MonitoredTrainingSessionを使用し、Graph Modeで学習を行っていく
+tensorboardでgraphや各数値を確認することが出来ます
+
+## 強化学習
+tensorflowのEager Modeを使用している  
+[Eagerモード参考URL](https://www.hellocybernetics.tech/entry/2018/12/04/231714)
+
 使い方などは各ディレクトリのREADME.mdを見てください  
-[Eagerモード参考URL](https://www.hellocybernetics.tech/entry/2018/12/04/231714)  
+
 
 # Installation
 ```
@@ -40,7 +47,8 @@ tensorflow
 ┃  ┣ agents  : 強化学習用のAgent  
 ┃  ┣ env    : pygame用のenvironment構築  
 ┃  ┣ atari  : atariを使用して強化学習  
-┃  ┗ classic : 古典的なenvを使用して強化学習  
+┃  ┣ classic : 古典的なenvを使用して強化学習  
+┃  ┗ pygame : pygameを使用して強化学習  
 ┃  
 ┣ segmentation : segmentationを行うディレクトリ  
 ┃  

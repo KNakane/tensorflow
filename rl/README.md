@@ -2,7 +2,10 @@ rl
 ====
 
 # Overview
-[Open AI gym](https://gym.openai.com/)を使って、強化学習を行う  
+強化学習を行うフォルダ  
+使用できるEnvironmentは以下の通り
+- [Open AI gym](https://gym.openai.com/) : CartpoleやBreakout, Invaderなど
+- [pygame]()  : python上でゲームの環境が作成できる  
 masterブランチではDefine and Runで実行するように作成していたが、devブランチではEagerモードで作成していく
 
 # Description
