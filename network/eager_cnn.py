@@ -126,7 +126,7 @@ class ActorNet(EagerCNN):
                  is_categorical=False
                  ):
         super().__init__(model=model,name=name,out_dim=out_dim,opt=opt,lr=lr,l2_reg=l2_reg,l2_reg_scale=l2_reg_scale,trainable=trainable,is_noisy=is_noisy,is_categorical=is_categorical)
-        self.max_action = 
+        self.max_action = 1
 
 class CriticNet(EagerCNN):
     def __init__(self, 

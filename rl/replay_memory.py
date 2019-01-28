@@ -11,16 +11,16 @@ class ReplayBuffer(object):
         self.capacity = capacity
         self.memory = []
         self.index = 0
-        self.Transition = namedtuple('Transition',('states', 'actions', 'dones', 'next_states', 'rewards'))
+        self.Transition = namedtuple('Transition',('states', 'actions', 'dones', 'next_states', 'rewards', 'p_index'))
 
     def __len__(self):
         return len(self.memory)
 
-    def push(self, state, action, done, next_state, reward):
+    def push(self, state, action, done, next_state, reward, p_index):
         #data = [state, action, done, next_state, reward]
         if len(self.memory) < self.capacity:
             self.memory.append(None)
-        self.memory[self.index] = self.Transition(state, action, done, next_state, reward) #data
+        self.memory[self.index] = self.Transition(state, action, done, next_state, reward, p_index) #data
         self.index = (self.index + 1) % self.capacity
 
     def sample(self, batch_size, _=None):
@@ -48,9 +48,9 @@ class PrioritizeReplayBuffer(ReplayBuffer):
     def _getPriority(self, td_error):
         return (td_error + self.EPSILON) ** self.ALPHA
 
-    def push(self, state, action, done, next_state, reward):
+    def push(self, state, action, done, next_state, reward, p_index):
         self.size += 1
-        transition = self.Transition(state, action, done, next_state, reward)
+        transition = self.Transition(state, action, done, next_state, reward, p_index)
         priority = self.tree.max()
         if priority <= 0:
             priority = 1

@@ -26,7 +26,7 @@ class DQN(Agent):
         return self.q_eval.inference(state)
 
     def update_q_net(self, replay_data):
-        self.bs, ba, done, bs_, br = replay_data
+        self.bs, ba, done, bs_, br, p_idx = replay_data
         batch_index = np.arange(self.batch_size, dtype=np.int32)
         eval_act_index = ba
         reward = br
@@ -72,7 +72,7 @@ class DQN(Agent):
             else:
                 q_next, q_eval = self.q_next.inference(bs_), self.q_eval.inference(self.bs)
                 q_target = np.array(q_eval).copy()
-                q_target[batch_index, eval_act_index] = reward + self.gamma * np.max(q_next, axis=1) * (1. - done)
+                q_target[batch_index, eval_act_index] = reward + self.gamma ** p_idx * np.max(q_next, axis=1) * (1. - done)
                 self.td_error = abs(q_target[batch_index, eval_act_index] - np.array(q_eval)[batch_index, eval_act_index])
                 self.loss = tf.losses.huber_loss(labels=q_target, predictions=q_eval)
         self.q_eval.optimize(self.loss, global_step, tape)
@@ -94,7 +94,7 @@ class DDQN(DQN):
         super().__init__(*args, **kwargs)
 
     def update_q_net(self, replay_data):
-        self.bs, ba, done, bs_, br = replay_data
+        self.bs, ba, done, bs_, br, p_idx = replay_data
         batch_index = np.arange(self.batch_size, dtype=np.int32)
         eval_act_index = ba
         reward = br
@@ -139,7 +139,7 @@ class DDQN(DQN):
                 q_target = np.array(q_eval).copy()
                 max_act4next = np.argmax(q_eval4next, axis=1)        # the action that brings the highest value is evaluated by q_eval
                 selected_q_next = q_next[batch_index, max_act4next] # Double DQN, select q_next depending on above actions
-                q_target[batch_index, eval_act_index] = reward + self.gamma * selected_q_next * (1. - done)
+                q_target[batch_index, eval_act_index] = reward + self.gamma ** p_idx * selected_q_next * (1. - done)
                 self.td_error = abs(q_target[batch_index, eval_act_index] - np.array(q_eval)[batch_index, eval_act_index])
                 self.loss = tf.losses.huber_loss(labels=q_target, predictions=q_eval)
         self.q_eval.optimize(self.loss, global_step, tape)

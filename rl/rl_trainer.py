@@ -75,10 +75,10 @@ class Trainer():
                         reward = r1 + r2
 
                     if len(self.state_deque) == self.multi_step or done:
-                        t_reward, reward = self.multi_step_reward(self.reward_deque, self.agent.gamma)
+                        t_reward, reward, p_index = self.multi_step_reward(self.reward_deque, self.agent.gamma)
                         state = self.state_deque[0]
                         action = self.action_deque[0]
-                        self.replay_buf.push(state, action, done, state_, t_reward)
+                        self.replay_buf.push(state, action, done, state_, t_reward, p_index)
 
                     total_reward += reward
                     if len(self.replay_buf) > self.replay_size and len(self.replay_buf) > self.n_warmup:
@@ -145,4 +145,4 @@ class Trainer():
         for idx, reward in enumerate(rewards):
             ret += reward * (gamma ** idx)
             t_ret += reward
-        return ret, t_ret/(idx+1)
+        return ret, t_ret/(idx+1), idx
