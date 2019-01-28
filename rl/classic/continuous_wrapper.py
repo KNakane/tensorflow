@@ -10,7 +10,7 @@ import numpy as np
 import tensorflow as tf
 from optimizer import *
 from ddpg import DDPG
-from trainer import Trainer
+from rl_trainer import Trainer
 
 
 def set_model(outdim):
@@ -35,7 +35,9 @@ def main(argv):
                  e_greedy=0.9,
                  replace_target_iter=100,
                  e_greedy_increment=0.001,
-                 optimizer=FLAGS.opt
+                 optimizer=FLAGS.opt,
+                 max_action=env.action_space.high[0],
+                 min_action=env.action_space.low[0]
                  )
 
     trainer = Trainer(agent=agent, 
@@ -64,7 +66,7 @@ def main(argv):
 if __name__ == '__main__':
     flags = tf.app.flags
     FLAGS = flags.FLAGS
-    flags.DEFINE_string('env', 'Pendulum-v0', 'Choice environment -> [Pendulum-v0,MountainCar-v0]')
+    flags.DEFINE_string('env', 'Pendulum-v0', 'Choice environment -> [Pendulum-v0,MountainCarContinuous-v0]')
     flags.DEFINE_integer('n_episode', '100000', 'Input max episode')
     flags.DEFINE_integer('step', '10000', 'Input max steps')
     flags.DEFINE_integer('batch_size', '32', 'Input batch size')

@@ -16,10 +16,11 @@ class DDPG(Agent):
         self.min_action = kwargs.pop('min_action')
         super().__init__(*args, **kwargs)
         self.noise = OrnsteinUhlenbeckProcess(num_actions=self.n_actions)
+        self.tau = 0.001
 
     def _build_net(self):
         self.actor = ActorNet(model=self.model[0], out_dim=self.n_actions, name='ActorNet', opt=self._optimizer, lr=self.lr, trainable=True, max_action=self.max_action)
-        self.actor_target = ActorNet(model=self.model[0], out_dim=self.n_actions, name='ActorNet', opt=self._optimizer, lr=self.lr, trainable=False)
+        self.actor_target = ActorNet(model=self.model[0], out_dim=self.n_actions, name='ActorNet', opt=self._optimizer, lr=self.lr, trainable=False, max_action=self.max_action)
 
         self.critic = CriticNet(model=self.model[1], out_dim=1, name='CriticNet', opt=self._optimizer, lr=self.lr, trainable=True)
         self.critic_target = CriticNet(model=self.model[1], out_dim=1, name='CriticNet', opt=self._optimizer, lr=self.lr, trainable=False)
@@ -46,8 +47,9 @@ class DDPG(Agent):
         self.bs, ba, done, bs_, br, p_idx = replay_data
         batch_index = np.arange(self.batch_size, dtype=np.int32)
         eval_act_index = ba
-        reward = br
-        done = done
+        reward = np.reshape(br,(self.batch_size,1))
+        done = np.reshape(done,(self.batch_size,1))
+        p_idx = np.reshape(p_idx,(self.batch_size,1))
 
         # check to replace target parameters
         if self._iteration % self.replace_target_iter == 0:
@@ -58,10 +60,10 @@ class DDPG(Agent):
         # update critic_net
         with tf.GradientTape() as tape:
             critic_next, critic_eval = self.critic_target.inference([bs_, self.actor_target.inference(bs_)]), self.critic.inference([self.bs, eval_act_index])
-            critic_next = reward + self.gamma ** p_idx * critic_next * (1. - done)
-            critic_next = tf.stop_gradient(critic_next)
-            self.td_error = abs(critic_next - critic_eval)
-            self.critic_loss = tf.losses.huber_loss(labels=critic_next, predictions=critic_eval)
+            target_Q = reward + self.gamma ** p_idx * critic_next * (1. - done)
+            target_Q = tf.stop_gradient(target_Q)
+            self.td_error = abs(target_Q - critic_eval)
+            self.critic_loss = tf.losses.huber_loss(labels=target_Q, predictions=critic_eval)
         self.critic.optimize(self.critic_loss, global_step, tape)
 
         # update actor_net
@@ -76,9 +78,9 @@ class DDPG(Agent):
     def update_target_net(self):
         # update critic_target_net
         for param, target_param in zip(self.critic.weights, self.critic_target.weights):
-            target_param.assign(param)
+            target_param.assign(self.tau * param + (1 - self.tau) * target_param)
         
         # update actor_target_net
         for param, target_param in zip(self.actor.weights, self.actor_target.weights):
-            target_param.assign(param)
+            target_param.assign(self.tau * param + (1 - self.tau) * target_param)
         return

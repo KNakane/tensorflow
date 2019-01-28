@@ -9,7 +9,7 @@ from eager_cnn import EagerCNN, Dueling_Net
 from optimizer import *
 from writer import Writer
 
-class DQN(Agent, tf.contrib.checkpoint.Checkpointable):
+class DQN(Agent):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
@@ -109,6 +109,7 @@ class DDQN(DQN):
                 Vmax, Vmin = 10, -10
                 Delta_z = (Vmax - Vmin)/(self.q_eval.N_atoms - 1)
                 z_list = tf.constant([Vmin + i * Delta_z for i in range(self.q_eval.N_atoms)],dtype=tf.float32)
+                
                 q_next, q_eval4next, q_eval = np.array(self.q_next.inference(bs_)), self.q_eval.inference(bs_), self.q_eval.inference(self.bs)
                 q_target = np.array(q_eval).copy()
                 tmp_batch_size = tf.shape(q_next)[0]

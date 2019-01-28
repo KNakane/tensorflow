@@ -3,7 +3,7 @@ import numpy as np
 import tensorflow as tf
 from writer import Writer
 
-class Agent():
+class Agent(tf.contrib.checkpoint.Checkpointable):
     def __init__(
             self,
             model,

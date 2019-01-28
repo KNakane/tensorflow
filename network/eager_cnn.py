@@ -127,6 +127,14 @@ class ActorNet(EagerCNN):
         super().__init__(model=model,name=name,out_dim=out_dim,opt=opt,lr=lr,l2_reg=l2_reg,l2_reg_scale=l2_reg_scale,trainable=trainable)
         self.max_action = max_action
 
+    def _build(self):
+        for l in range(len(self.model)):
+            if l == len(self.model) - 1:
+                self.model[l][2] = tf.nn.tanh
+            my_layer = eval('self.' + self.model[l][0])(self.model[l][1:])
+            self._layers.append(my_layer)
+            
+
     def inference(self, x):
         for i, my_layer in enumerate(self._layers):
             x = tf.convert_to_tensor(x, dtype=tf.float32)
@@ -134,7 +142,7 @@ class ActorNet(EagerCNN):
                 x = my_layer(x, training=self._trainable)
             except:
                 x = my_layer(x)
-        return x
+        return tf.multiply(self.max_action, x)
 
 class CriticNet(EagerCNN):
     def __init__(self, 
