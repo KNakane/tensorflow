@@ -24,7 +24,7 @@ class ReplayBuffer(object):
         self.index = (self.index + 1) % self.capacity
 
     def sample(self, batch_size, _=None):
-        return (None, random.sample(self.memory, batch_size), None)
+        return (None, random.sample(self.memory, batch_size), 1)
 
     def update(self, idx, td_error):
         pass

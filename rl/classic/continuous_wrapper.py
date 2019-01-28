@@ -2,6 +2,7 @@
 #tensorboard --logdir ./logs
 import sys,os
 sys.path.append(os.path.join(os.path.dirname(__file__), '../'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '../env'))
 sys.path.append(os.path.join(os.path.dirname(__file__), '../agents'))
 sys.path.append(os.path.join(os.path.dirname(__file__), '../../utility'))
 import gym
@@ -11,6 +12,7 @@ import tensorflow as tf
 from optimizer import *
 from ddpg import DDPG
 from rl_trainer import Trainer
+from pendulum_env import WrappedPendulumEnv
 
 
 def set_model(outdim):
@@ -27,6 +29,8 @@ def set_model(outdim):
 def main(argv):
     env = gym.make(FLAGS.env)
     env = env.unwrapped
+    if FLAGS.env == 'Pendulum-v0':
+        env = WrappedPendulumEnv(env)
     agent = DDPG(model=set_model(outdim=env.action_space.shape[0]),
                  n_actions=env.action_space.shape[0],
                  n_features=env.observation_space.shape[0],
@@ -36,6 +40,7 @@ def main(argv):
                  replace_target_iter=100,
                  e_greedy_increment=0.001,
                  optimizer=FLAGS.opt,
+                 is_categorical=FLAGS.category,
                  max_action=env.action_space.high[0],
                  min_action=env.action_space.low[0]
                  )
@@ -47,7 +52,12 @@ def main(argv):
                       replay_size=FLAGS.batch_size, 
                       data_size=10**6,
                       n_warmup=FLAGS.n_warmup,
-                      render=FLAGS.render)
+                      priority=FLAGS.priority,
+                      multi_step=FLAGS.multi_step,
+                      render=FLAGS.render,
+                      test_episode=2,
+                      test_interval=50,
+                      init_model_dir=FLAGS.init_model)
 
     print()
     print("---Start Learning------")
@@ -57,8 +67,13 @@ def main(argv):
     print("batch_size : {}".format(FLAGS.batch_size))
     print("learning rate : {}".format(FLAGS.lr))
     print("Optimizer : {}".format(FLAGS.opt))
+    print("priority : {}".format(FLAGS.priority))
+    print("multi_step : {}".format(FLAGS.multi_step))
+    print("categorical : {}".format(FLAGS.category))
     print("n_warmup : {}".format(FLAGS.n_warmup))
     print("model_update : {}".format(FLAGS.model_update))
+    if FLAGS.init_model is not None:
+        print("init_model : {}".format(FLAGS.init_model))
     print("-----------------------")
     trainer.train()
 
@@ -66,13 +81,19 @@ def main(argv):
 if __name__ == '__main__':
     flags = tf.app.flags
     FLAGS = flags.FLAGS
+    flags.DEFINE_string('agent', 'DDPG', 'Choise Agents -> [DDPG]')
     flags.DEFINE_string('env', 'Pendulum-v0', 'Choice environment -> [Pendulum-v0,MountainCarContinuous-v0]')
     flags.DEFINE_integer('n_episode', '100000', 'Input max episode')
     flags.DEFINE_integer('step', '10000', 'Input max steps')
     flags.DEFINE_integer('batch_size', '32', 'Input batch size')
+    flags.DEFINE_integer('multi_step', '1', 'how many multi_step')
     flags.DEFINE_integer('n_warmup', '1000', 'n_warmup value')
     flags.DEFINE_integer('model_update', '1000', 'target_model_update_freq')
     flags.DEFINE_boolean('render', 'False', 'render')
+    flags.DEFINE_boolean('priority', 'False', 'prioritized Experience Replay')
+    flags.DEFINE_boolean('category', 'False', 'Categorical DQN')
+    flags.DEFINE_boolean('noise', 'False', 'Noisy Net')
+    flags.DEFINE_string('init_model','None','Choice the initial model directory')
     flags.DEFINE_float('lr', '1e-4', 'Input learning rate')
     flags.DEFINE_string('opt','RMSProp','Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]')
     tf.app.run()

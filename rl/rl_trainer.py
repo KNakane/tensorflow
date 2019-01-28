@@ -88,9 +88,9 @@ class Trainer():
 
                     total_reward += reward
                     if len(self.replay_buf) > self.replay_size and len(self.replay_buf) > self.n_warmup:
-                        indexes, transitions, _ = self.replay_buf.sample(self.agent.batch_size, episode/self.n_episode)
+                        indexes, transitions, weights = self.replay_buf.sample(self.agent.batch_size, episode/self.n_episode)
                         train_data = map(np.array, zip(*transitions))
-                        self.agent.update_q_net(train_data)
+                        self.agent.update_q_net(train_data, weights)
                         learning_flag = 1
                         if len(self.agent.bs[0].shape) == 4:
                             tf.contrib.summary.image('train/input_img', tf.expand_dims(self.agent.bs[:,:,:,0], 3))
@@ -113,7 +113,7 @@ class Trainer():
                         tf.contrib.summary.scalar('train/total_reward', total_reward)
                         tf.contrib.summary.scalar('train/average_reward', total_reward / step)
                         print("episode: %d total_steps: %d  steps/episode: %d  total_reward: %0.2f"%(episode, total_steps, step, total_reward))
-                        self.util.save_model()
+                        #self.util.save_model()
                         self.state_deque.clear()
                         self.action_deque.clear()
                         self.reward_deque.clear()
@@ -136,7 +136,7 @@ class Trainer():
                         test_next_state, test_reward, test_done, _ = self.env.step(test_action)
                         test_total_reward += test_reward
                         
-                        if test_done or step == self.max_steps - 1:
+                        if test_done or test_step == self.max_steps - 1:
                             test_total_steps += test_step
                             display_frames_as_gif(frames, "test_{}_{}".format(episode, test_episode), self.util.res_dir)
                             tf.contrib.summary.scalar('test/total_steps_{}'.format(test_episode), test_total_steps)

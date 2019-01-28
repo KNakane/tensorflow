@@ -7,7 +7,6 @@ import tensorflow as tf
 from agent import Agent
 from eager_cnn import ActorNet, CriticNet
 from optimizer import *
-from writer import Writer
 from OU_noise import OrnsteinUhlenbeckProcess
 
 class DDPG(Agent):
@@ -41,9 +40,9 @@ class DDPG(Agent):
                 action = np.argmax(actions_value)
         else:
             action = np.random.uniform(self.min_action, self.max_action, 1)
-        return action
+        return action + self.noise.generate()
 
-    def update_q_net(self, replay_data):
+    def update_q_net(self, replay_data, weights):
         self.bs, ba, done, bs_, br, p_idx = replay_data
         batch_index = np.arange(self.batch_size, dtype=np.int32)
         eval_act_index = ba
@@ -63,7 +62,7 @@ class DDPG(Agent):
             target_Q = reward + self.gamma ** p_idx * critic_next * (1. - done)
             target_Q = tf.stop_gradient(target_Q)
             self.td_error = abs(target_Q - critic_eval)
-            self.critic_loss = tf.losses.huber_loss(labels=target_Q, predictions=critic_eval)
+            self.critic_loss = tf.reduce_mean(tf.losses.huber_loss(labels=target_Q, predictions=critic_eval) * weights, keep_dims=True)
         self.critic.optimize(self.critic_loss, global_step, tape)
 
         # update actor_net
