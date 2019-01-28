@@ -122,11 +122,19 @@ class ActorNet(EagerCNN):
                  l2_reg=False,
                  l2_reg_scale=0.0001,
                  trainable=False,
-                 is_noisy=False,
-                 is_categorical=False
+                 max_action=None
                  ):
-        super().__init__(model=model,name=name,out_dim=out_dim,opt=opt,lr=lr,l2_reg=l2_reg,l2_reg_scale=l2_reg_scale,trainable=trainable,is_noisy=is_noisy,is_categorical=is_categorical)
-        self.max_action = 1
+        super().__init__(model=model,name=name,out_dim=out_dim,opt=opt,lr=lr,l2_reg=l2_reg,l2_reg_scale=l2_reg_scale,trainable=trainable)
+        self.max_action = max_action
+
+    def inference(self, x):
+        for i, my_layer in enumerate(self._layers):
+            x = tf.convert_to_tensor(x, dtype=tf.float32)
+            try:
+                x = my_layer(x, training=self._trainable)
+            except:
+                x = my_layer(x)
+        return x
 
 class CriticNet(EagerCNN):
     def __init__(self, 
@@ -143,14 +151,27 @@ class CriticNet(EagerCNN):
                  ):
         super().__init__(model=model,name=name,out_dim=out_dim,opt=opt,lr=lr,l2_reg=l2_reg,l2_reg_scale=l2_reg_scale,trainable=trainable,is_noisy=is_noisy,is_categorical=is_categorical)
 
+
+    def _build(self):
+        for l in range(len(self.model)):
+            # categorical DQN
+            if l == len(self.model) - 1 and self.is_categorical:
+                self.model[l][1] = self.out_dim * self.N_atoms   # 
+            if self.is_noisy and self.model[l][0]=='fc':
+                my_layer = self.noisy_dense(self.model[l][1:]) #noisy_net
+            else:
+                my_layer = eval('self.' + self.model[l][0])(self.model[l][1:])
+            self._layers.append(my_layer)
+
     def inference(self, inputs):
         x, u = inputs
         for i, my_layer in enumerate(self._layers):
-            if i > 0 and my_layer[i][0]=='fc':
+            if i > 0:
                 x = tf.concat([x, u], axis=1)
             x = tf.convert_to_tensor(x, dtype=tf.float32)
             try:
                 x = my_layer(x, training=self._trainable)
             except:
                 x = my_layer(x)
+        return x
 

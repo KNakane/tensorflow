@@ -51,6 +51,8 @@ class EagerModule(tf.keras.Model):
 
     def noisy_dense(self, args): # 強化学習用
         assert len(args) == 2, '[noisy_dense] Not enough Argument -> [units, activation]'
+        def f(e_list):
+            return tf.multiply(tf.sign(e_list), tf.pow(tf.abs(e_list), 0.5))
         regularizer = tf.keras.regularizers.l2(self._l2_reg_scale) if self._l2_reg else None        
         x = tf.keras.layers.Dense(units=args[0], activation=args[1], kernel_regularizer=regularizer, use_bias=True)
         return x

@@ -23,8 +23,21 @@ class Utils():
     def initial(self):
         self.conf_log()
 
-    def save_model(self, episode):
-        self.saver.save(self.sess, self.log_dir + "/model.ckpt"%episode)
+    def save_init(self, model):
+        self.checkpoint = tf.train.Checkpoint(policy=model)
+        self.saver = tf.contrib.checkpoint.CheckpointManager(self.checkpoint,
+                                                             directory=self.model_path,
+                                                             max_to_keep=5)
+
+    def save_model(self, episode=None):
+        if self.sess is not None:
+            self.saver.save(self.sess, self.log_dir + "/model.ckpt"%episode)
+        else:
+            self.saver.save(checkpoint_number=tf.train.get_or_create_global_step())
+
+    def restore_agent(self, log_dir=None):
+        self.checkpoint.restore(tf.train.latest_checkpoint(log_dir))
+
 
     def restore_model(self, log_dir=None):
         assert log_dir is not None, 'Please set log_dir to restore checkpoint'

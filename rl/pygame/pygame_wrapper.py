@@ -28,7 +28,7 @@ def set_model(outdim):
 
 def main(argv):
     env = gym.make(FLAGS.env)
-    env = PygameObserver(env, 84, 84, 4)
+    env = PygameObserver(env, 80, 80, 4)
     if FLAGS.agent == 'Rainbow':
         FLAGS.network = 'Dueling_Net'
         FLAGS.priority = True

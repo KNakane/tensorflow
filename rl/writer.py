@@ -18,8 +18,10 @@ class Writer(Utils):
 
         self.log_dir = self.res_dir + '/log'
         self.tf_board = self.res_dir + '/tf_board'
+        """
         self.saver = tf.train.Saver()
         self.writer = tf.summary.FileWriter(self.tf_board, sess.graph)
+        """
 
     def add_list(self, dic, episode, test=False):
         if test:
@@ -32,3 +34,15 @@ class Writer(Utils):
         self.writer.add_summary(list, iter)
         self.writer.flush()
         return
+
+    def save_init(self,model, optimizer, logdir):
+        checkpoint = tf.train.Checkpoint(optimizer=optimizer,
+                                         model=model,
+                                         optimizer_step=tf.train.get_or_create_global_step())
+
+        self.checkpoint_manager = tf.contrib.checkpoint.CheckpointManager(checkpoint,
+                                                                          directory=logdir,
+                                                                          max_to_keep=5)
+
+    def save(self):
+        self.checkpoint_manager.save(checkpoint_number=tf.train.get_or_create_global_step())

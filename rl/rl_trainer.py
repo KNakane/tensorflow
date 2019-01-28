@@ -8,6 +8,7 @@ import numpy as np
 import tensorflow as tf
 from collections import deque
 from utils import Utils
+from writer import Writer
 from display_as_gif import display_frames_as_gif
 from replay_memory import ReplayBuffer,PrioritizeReplayBuffer
 
@@ -25,7 +26,8 @@ class Trainer():
                  multi_step=1,
                  render=False,
                  test_episode=5,
-                 test_interval=1000):
+                 test_interval=1000,
+                 init_model_dir=None):
         self.agent = agent
         self.env = env
         self.n_episode = n_episode
@@ -44,10 +46,14 @@ class Trainer():
         self.state_deque = deque(maxlen=self.multi_step)
         self.reward_deque = deque(maxlen=self.multi_step)
         self.action_deque = deque(maxlen=self.multi_step)
+        self.init_model_dir = init_model_dir
     
     def train(self):
-        writer = tf.contrib.summary.create_file_writer(self.util.tf_board)
-        writer.set_as_default()
+        board_writer = tf.contrib.summary.create_file_writer(self.util.tf_board)
+        board_writer.set_as_default()
+        self.util.save_init(self.agent)
+        if self.init_model_dir is not None:
+            self.util.restore_agent(self.init_model_dir)
         total_steps = 0
         learning_flag = 0
         for episode in range(self.n_episode):
@@ -103,6 +109,7 @@ class Trainer():
                         tf.contrib.summary.scalar('train/total_reward', total_reward)
                         tf.contrib.summary.scalar('train/average_reward', total_reward / step)
                         print("episode: %d total_steps: %d  steps/episode: %d  total_reward: %0.2f"%(episode, total_steps, step, total_reward))
+                        self.util.save_model()
                         self.state_deque.clear()
                         self.action_deque.clear()
                         self.reward_deque.clear()
@@ -116,16 +123,16 @@ class Trainer():
                 test_total_reward = 0
                 print('-------------------- test -------------------------------------')
                 for test_episode in range(self.test_episode):
-                    state = self.env.reset()
+                    test_state = self.env.reset()
                     for test_step in range(self.max_steps):
                         #img = self.env.render(mode='rgb_array')
                         #if img is not None:
                         #    frames.append(img)
-                        action = self.agent.choose_action(state)
-                        next_state, reward, done, _ = self.env.step(action)
-                        test_total_reward += reward
+                        test_action = self.agent.choose_action(test_state)
+                        test_next_state, test_reward, test_done, _ = self.env.step(test_action)
+                        test_total_reward += test_reward
                         
-                        if done or step == self.max_steps - 1:
+                        if test_done or step == self.max_steps - 1:
                             test_total_steps += test_step
                             display_frames_as_gif(frames, "test_{}_{}".format(episode, test_episode), self.util.res_dir)
                             tf.contrib.summary.scalar('test/total_steps_{}'.format(test_episode), test_total_steps)
@@ -134,7 +141,7 @@ class Trainer():
                             tf.contrib.summary.scalar('test/average_reward_{}'.format(test_episode), test_total_reward / test_step)
                             print("test_episode: %d total_steps: %d  steps/episode: %d  total_reward: %0.2f"%(test_episode, test_total_steps, test_step, test_total_reward))
                             break
-                        state = next_state                     
+                        test_state = test_next_state                     
                 print('---------------------------------------------------------------')
 
         self.env.close()
@@ -145,4 +152,4 @@ class Trainer():
         for idx, reward in enumerate(rewards):
             ret += reward * (gamma ** idx)
             t_ret += reward
-        return ret, t_ret/(idx+1), idx
+        return ret, t_ret/(idx+1), idx + 1

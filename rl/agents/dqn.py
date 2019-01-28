@@ -9,7 +9,7 @@ from eager_cnn import EagerCNN, Dueling_Net
 from optimizer import *
 from writer import Writer
 
-class DQN(Agent):
+class DQN(Agent, tf.contrib.checkpoint.Checkpointable):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         

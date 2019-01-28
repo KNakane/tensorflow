@@ -12,20 +12,38 @@ from OU_noise import OrnsteinUhlenbeckProcess
 
 class DDPG(Agent):
     def __init__(self, *args, **kwargs):
+        self.max_action = kwargs.pop('max_action')
+        self.min_action = kwargs.pop('min_action')
         super().__init__(*args, **kwargs)
+        self.noise = OrnsteinUhlenbeckProcess(num_actions=self.n_actions)
 
     def _build_net(self):
-        self.actor = ActorNet(model=self.model, out_dim=self.n_actions, name='ActorNet', opt=self._optimizer, lr=self.lr, trainable=True, is_categorical=self.is_categorical)
-        self.actor_target = ActorNet(model=self.model, out_dim=self.n_actions, name='ActorNet', opt=self._optimizer, lr=self.lr, trainable=False, is_categorical=self.is_categorical)
+        self.actor = ActorNet(model=self.model[0], out_dim=self.n_actions, name='ActorNet', opt=self._optimizer, lr=self.lr, trainable=True, max_action=self.max_action)
+        self.actor_target = ActorNet(model=self.model[0], out_dim=self.n_actions, name='ActorNet', opt=self._optimizer, lr=self.lr, trainable=False)
 
-        self.critic = CriticNet(model=self.model, out_dim=1, name='CriticNet', opt=self._optimizer, lr=self.lr, trainable=True, is_categorical=self.is_categorical)
-        self.critic_target = CriticNet(model=self.model, out_dim=1, name='CriticNet', opt=self._optimizer, lr=self.lr, trainable=False, is_categorical=self.is_categorical)
+        self.critic = CriticNet(model=self.model[1], out_dim=1, name='CriticNet', opt=self._optimizer, lr=self.lr, trainable=True)
+        self.critic_target = CriticNet(model=self.model[1], out_dim=1, name='CriticNet', opt=self._optimizer, lr=self.lr, trainable=False)
 
     def inference(self, state):
         return self.actor.inference(state)
 
+    def choose_action(self, observation):
+        # to have batch dimension when feed into tf placeholder
+        observation = observation[np.newaxis, :]
+
+        if np.random.uniform() < self.epsilon:
+            # forward feed the observation and get q value for every actions
+            actions_value = self.inference(observation)
+            if self.on_policy:
+                action = np.random.choice(self.actions_list, size=1, p=np.array(actions_value)[0])
+            else:
+                action = np.argmax(actions_value)
+        else:
+            action = np.random.uniform(self.min_action, self.max_action, 1)
+        return action
+
     def update_q_net(self, replay_data):
-        self.bs, ba, done, bs_, br = replay_data
+        self.bs, ba, done, bs_, br, p_idx = replay_data
         batch_index = np.arange(self.batch_size, dtype=np.int32)
         eval_act_index = ba
         reward = br
@@ -39,13 +57,11 @@ class DDPG(Agent):
 
         # update critic_net
         with tf.GradientTape() as tape:
-            critic_next = self.critic_target.inference([bs_, self.actor_target.inference(bs_)])
-            critic_eval = self.critic.inference([self.bs, eval_act_index])
-            critic_target = np.array(critic_eval).copy()
-            critic_target[batch_index, eval_act_index] = reward + self.gamma * critic_next * (1. - done)
-
-            self.td_error = abs(critic_target[batch_index, eval_act_index] - np.array(critic_eval)[batch_index, eval_act_index])
-            self.critic_loss = tf.losses.huber_loss(labels=critic_target, predictions=critic_eval)
+            critic_next, critic_eval = self.critic_target.inference([bs_, self.actor_target.inference(bs_)]), self.critic.inference([self.bs, eval_act_index])
+            critic_next = reward + self.gamma ** p_idx * critic_next * (1. - done)
+            critic_next = tf.stop_gradient(critic_next)
+            self.td_error = abs(critic_next - critic_eval)
+            self.critic_loss = tf.losses.huber_loss(labels=critic_next, predictions=critic_eval)
         self.critic.optimize(self.critic_loss, global_step, tape)
 
         # update actor_net
