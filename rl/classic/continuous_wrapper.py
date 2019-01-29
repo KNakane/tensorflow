@@ -35,7 +35,7 @@ def main(argv):
     agent = DDPG(model=set_model(outdim=env.action_space.shape[0]),
                  n_actions=env.action_space.shape[0],
                  n_features=env.observation_space.shape[0],
-                 learning_rate=0.01,
+                 learning_rate=FLAGS.lr,
                  batch_size=FLAGS.batch_size, 
                  e_greedy=0.9,
                  replace_target_iter=10,
