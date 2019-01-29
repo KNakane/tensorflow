@@ -52,6 +52,12 @@ class DDPG(Agent):
         done = np.reshape(done,(self.batch_size,1))
         p_idx = np.reshape(p_idx,(self.batch_size,1))
 
+        # check to replace target parameters
+        if self._iteration % self.replace_target_iter == 0:
+            self.update_target_net()
+
+        global_step = tf.train.get_or_create_global_step()
+
         # update critic_net
         with tf.GradientTape() as tape:
             critic_next, critic_eval = self.critic_target.inference([bs_, self.actor_target.inference(bs_)]), self.critic.inference([self.bs, eval_act_index])
@@ -59,17 +65,13 @@ class DDPG(Agent):
             target_Q = tf.stop_gradient(target_Q)
             self.td_error = (target_Q - critic_eval) ** 2
             self.critic_loss = tf.losses.huber_loss(labels=target_Q, predictions=critic_eval)#tf.reduce_mean(tf.losses.huber_loss(labels=target_Q, predictions=critic_eval) * weights, keep_dims=True)
-        self.critic.optimize(self.critic_loss, tape)
+        self.critic.optimize(self.critic_loss, global_step, tape)
 
         # update actor_net
         with tf.GradientTape() as tape:
             actor_eval = self.actor.inference(self.bs)
             self.actor_loss = -tf.reduce_mean(self.critic.inference([self.bs, actor_eval]))
-        self.actor.optimize(self.actor_loss, tape)
-
-        # check to replace target parameters
-        if self._iteration % self.replace_target_iter == 0:
-            self.update_target_net()
+        self.actor.optimize(self.actor_loss, global_step, tape)
 
         # increasing epsilon
         self.epsilon = self.epsilon + self.epsilon_increment if self.epsilon < self.epsilon_max else self.epsilon_max
