@@ -71,6 +71,11 @@ class DDPG(Agent):
             self.actor_loss = -tf.reduce_mean(self.critic.inference([self.bs, actor_eval]))
         self.actor.optimize(self.actor_loss, global_step, tape)
 
+        # increasing epsilon
+        self.epsilon = self.epsilon + self.epsilon_increment if self.epsilon < self.epsilon_max else self.epsilon_max
+
+        self._iteration += 1
+
         return
 
     
