@@ -128,11 +128,12 @@ class ActorNet(EagerCNN):
         self.max_action = max_action
 
     def _build(self):
-        for l in range(len(self.model)):
-            if l == len(self.model) - 1:
-                self.model[l][2] = tf.nn.tanh
-            my_layer = eval('self.' + self.model[l][0])(self.model[l][1:])
-            self._layers.append(my_layer)
+        with tf.variable_scope(self.name):
+            for l in range(len(self.model)):
+                if l == len(self.model) - 1:
+                    self.model[l][2] = tf.nn.tanh
+                my_layer = eval('self.' + self.model[l][0])(self.model[l][1:])
+                self._layers.append(my_layer)
             
 
     def inference(self, x):
@@ -142,7 +143,12 @@ class ActorNet(EagerCNN):
                 x = my_layer(x, training=self._trainable)
             except:
                 x = my_layer(x)
-        return tf.multiply(self.max_action, x)
+        return self.max_action * x
+
+    def optimize(self, loss, global_step, tape=None):
+        assert tape is not None, 'please set tape in opmize'
+        grads = tape.gradient(loss, self.trainable_variables)
+        self.optimizer.method.apply_gradients(zip(grads, self.trainable_variables),global_step)
 
 class CriticNet(EagerCNN):
     def __init__(self, 
@@ -183,3 +189,7 @@ class CriticNet(EagerCNN):
                 x = my_layer(x)
         return x
 
+    def optimize(self, loss, global_step, tape=None):
+        assert tape is not None, 'please set tape in opmize'
+        grads = tape.gradient(loss, self.trainable_variables)
+        self.optimizer.method.apply_gradients(zip(grads, self.trainable_variables),global_step)

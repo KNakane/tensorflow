@@ -15,14 +15,14 @@ class DDPG(Agent):
         self.min_action = kwargs.pop('min_action')
         super().__init__(*args, **kwargs)
         self.noise = OrnsteinUhlenbeckProcess(num_actions=self.n_actions)
-        self.tau = 0.001
+        self.tau = 0.01
 
     def _build_net(self):
         self.actor = ActorNet(model=self.model[0], out_dim=self.n_actions, name='ActorNet', opt=self._optimizer, lr=self.lr, trainable=True, max_action=self.max_action)
-        self.actor_target = ActorNet(model=self.model[0], out_dim=self.n_actions, name='ActorNet', opt=self._optimizer, lr=self.lr, trainable=False, max_action=self.max_action)
+        self.actor_target = ActorNet(model=self.model[0], out_dim=self.n_actions, name='ActorNet_target', trainable=False, max_action=self.max_action)
 
         self.critic = CriticNet(model=self.model[1], out_dim=1, name='CriticNet', opt=self._optimizer, lr=self.lr, trainable=True)
-        self.critic_target = CriticNet(model=self.model[1], out_dim=1, name='CriticNet', opt=self._optimizer, lr=self.lr, trainable=False)
+        self.critic_target = CriticNet(model=self.model[1], out_dim=1, name='CriticNet_target',trainable=False)
 
     def inference(self, state):
         return self.actor.inference(state)
@@ -62,7 +62,7 @@ class DDPG(Agent):
             target_Q = reward + self.gamma ** p_idx * critic_next * (1. - done)
             target_Q = tf.stop_gradient(target_Q)
             self.td_error = abs(target_Q - critic_eval)
-            self.critic_loss = tf.reduce_mean(tf.losses.huber_loss(labels=target_Q, predictions=critic_eval) * weights, keep_dims=True)
+            self.critic_loss = tf.losses.huber_loss(labels=target_Q, predictions=critic_eval)#tf.reduce_mean(tf.losses.huber_loss(labels=target_Q, predictions=critic_eval) * weights, keep_dims=True)
         self.critic.optimize(self.critic_loss, global_step, tape)
 
         # update actor_net

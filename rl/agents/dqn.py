@@ -73,7 +73,7 @@ class DQN(Agent):
                 q_target = np.array(q_eval).copy()
                 q_target[batch_index, eval_act_index] = reward + self.gamma ** p_idx * np.max(q_next, axis=1) * (1. - done)
                 self.td_error = abs(q_target[batch_index, eval_act_index] - np.array(q_eval)[batch_index, eval_act_index])
-                self.loss = tf.reduce_mean(tf.losses.huber_loss(labels=q_target, predictions=q_eval) * weights, keep_dims=True)
+                self.loss = tf.reduce_sum(tf.losses.huber_loss(labels=q_target, predictions=q_eval) * weights, keep_dims=True)
         self.q_eval.optimize(self.loss, global_step, tape)
         
         # increasing epsilon
@@ -141,7 +141,7 @@ class DDQN(DQN):
                 selected_q_next = q_next[batch_index, max_act4next] # Double DQN, select q_next depending on above actions
                 q_target[batch_index, eval_act_index] = reward + self.gamma ** p_idx * selected_q_next * (1. - done)
                 self.td_error = abs(q_target[batch_index, eval_act_index] - np.array(q_eval)[batch_index, eval_act_index])
-                self.loss = tf.reduce_mean(tf.losses.huber_loss(labels=q_target, predictions=q_eval) * weights, keep_dims=True)
+                self.loss = tf.reduce_sum(tf.losses.huber_loss(labels=q_target, predictions=q_eval) * weights, keep_dims=True)
         self.q_eval.optimize(self.loss, global_step, tape)
 
         # increasing epsilon

@@ -96,7 +96,7 @@ class Trainer():
                             tf.contrib.summary.image('train/input_img', tf.expand_dims(self.agent.bs[:,:,:,0], 3))
                         if self.agent.__class__.__name__ == 'DDPG':
                             tf.contrib.summary.scalar('train/critic_loss', self.agent.critic_loss)
-                            tf.contrib.summary.scalar('train/actor_loss', self.agent.actor_loss)
+                            tf.contrib.summary.scalar('train/actor_loss', -self.agent.actor_loss)
                         else:
                             tf.contrib.summary.scalar('train/loss', self.agent.loss)
                         tf.contrib.summary.scalar('train/e_greedy', self.agent.epsilon)
