@@ -123,10 +123,10 @@ class Trainer():
             # test
             if episode % self.test_interval == 0 and learning_flag:
                 frames = []
-                test_total_steps = 0
-                test_total_reward = 0
                 print('-------------------- test -------------------------------------')
                 for test_episode in range(self.test_episode):
+                    test_total_steps = 0
+                    test_total_reward = 0
                     test_state = self.env.reset()
                     for test_step in range(self.max_steps):
                         #img = self.env.render(mode='rgb_array')

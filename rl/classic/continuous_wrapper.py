@@ -38,7 +38,7 @@ def main(argv):
                  learning_rate=0.01,
                  batch_size=FLAGS.batch_size, 
                  e_greedy=0.9,
-                 replace_target_iter=1,
+                 replace_target_iter=10,
                  e_greedy_increment=0.01,
                  optimizer=FLAGS.opt,
                  is_categorical=FLAGS.category,
@@ -85,16 +85,16 @@ if __name__ == '__main__':
     flags.DEFINE_string('agent', 'DDPG', 'Choise Agents -> [DDPG]')
     flags.DEFINE_string('env', 'Pendulum-v0', 'Choice environment -> [Pendulum-v0,MountainCarContinuous-v0]')
     flags.DEFINE_integer('n_episode', '100000', 'Input max episode')
-    flags.DEFINE_integer('step', '10000', 'Input max steps')
+    flags.DEFINE_integer('step', '400', 'Input max steps')
     flags.DEFINE_integer('batch_size', '32', 'Input batch size')
     flags.DEFINE_integer('multi_step', '1', 'how many multi_step')
-    flags.DEFINE_integer('n_warmup', '1000', 'n_warmup value')
-    flags.DEFINE_integer('model_update', '1000', 'target_model_update_freq')
+    flags.DEFINE_integer('n_warmup', '400', 'n_warmup value')
+    flags.DEFINE_integer('model_update', '100', 'target_model_update_freq')
     flags.DEFINE_boolean('render', 'False', 'render')
     flags.DEFINE_boolean('priority', 'False', 'prioritized Experience Replay')
     flags.DEFINE_boolean('category', 'False', 'Categorical DQN')
     flags.DEFINE_boolean('noise', 'False', 'Noisy Net')
     flags.DEFINE_string('init_model','None','Choice the initial model directory')
-    flags.DEFINE_float('lr', '1e-4', 'Input learning rate')
+    flags.DEFINE_float('lr', '1e-3', 'Input learning rate')
     flags.DEFINE_string('opt','RMSProp','Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]')
     tf.app.run()

@@ -43,33 +43,33 @@ class DDPG(Agent):
         return action + self.noise.generate()
 
     def update_q_net(self, replay_data, weights):
-        self.bs, ba, done, bs_, br, p_idx = replay_data
+        bs, ba, done, bs_, br, p_idx = replay_data
         batch_index = np.arange(self.batch_size, dtype=np.int32)
-        eval_act_index = ba
+        self.bs = np.array(bs, dtype=np.float32)
+        bs_ = np.array(bs_, dtype=np.float32)
+        eval_act_index = np.reshape(ba,(self.batch_size,1))
         reward = np.reshape(br,(self.batch_size,1))
         done = np.reshape(done,(self.batch_size,1))
         p_idx = np.reshape(p_idx,(self.batch_size,1))
-
-        # check to replace target parameters
-        if self._iteration % self.replace_target_iter == 0:
-            self.update_target_net()
-
-        global_step = tf.train.get_or_create_global_step()
 
         # update critic_net
         with tf.GradientTape() as tape:
             critic_next, critic_eval = self.critic_target.inference([bs_, self.actor_target.inference(bs_)]), self.critic.inference([self.bs, eval_act_index])
             target_Q = reward + self.gamma ** p_idx * critic_next * (1. - done)
             target_Q = tf.stop_gradient(target_Q)
-            self.td_error = abs(target_Q - critic_eval)
+            self.td_error = (target_Q - critic_eval) ** 2
             self.critic_loss = tf.losses.huber_loss(labels=target_Q, predictions=critic_eval)#tf.reduce_mean(tf.losses.huber_loss(labels=target_Q, predictions=critic_eval) * weights, keep_dims=True)
-        self.critic.optimize(self.critic_loss, global_step, tape)
+        self.critic.optimize(self.critic_loss, tape)
 
         # update actor_net
         with tf.GradientTape() as tape:
             actor_eval = self.actor.inference(self.bs)
             self.actor_loss = -tf.reduce_mean(self.critic.inference([self.bs, actor_eval]))
-        self.actor.optimize(self.actor_loss, global_step, tape)
+        self.actor.optimize(self.actor_loss, tape)
+
+        # check to replace target parameters
+        if self._iteration % self.replace_target_iter == 0:
+            self.update_target_net()
 
         # increasing epsilon
         self.epsilon = self.epsilon + self.epsilon_increment if self.epsilon < self.epsilon_max else self.epsilon_max
