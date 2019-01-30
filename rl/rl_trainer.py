@@ -54,14 +54,14 @@ class Trainer():
         self.util.save_init(self.agent)
         if self.init_model_dir is not None:
             self.util.restore_agent(self.init_model_dir)
-        total_steps = 1
+        total_steps = 0
         learning_flag = 0
-        for episode in range(self.n_episode):
+        for episode in range(1, self.n_episode+1):
             self.global_step.assign_add(1)
             with tf.contrib.summary.always_record_summaries():
                 state = self.env.reset()
                 total_reward = 0
-                for step in range(self.max_steps):
+                for step in range(1, self.max_steps+1):
                     if self.render:
                         self.env.render()
 
@@ -106,13 +106,13 @@ class Trainer():
                                 td_error = value
                                 self.replay_buf.update(indexes[i], td_error)
 
-                    if done or step == self.max_steps - 1:
+                    if done or step == self.max_steps:
                         total_steps += step
                         tf.contrib.summary.scalar('train/total_steps', total_steps)
                         tf.contrib.summary.scalar('train/steps_per_episode', step)
                         tf.contrib.summary.scalar('train/total_reward', total_reward)
                         tf.contrib.summary.scalar('train/average_reward', total_reward / step)
-                        print("episode: %d total_steps: %d  steps/episode: %d  total_reward: %0.2f"%(episode+1, total_steps, step, total_reward))
+                        print("episode: %d total_steps: %d  steps/episode: %d  total_reward: %0.2f"%(episode, total_steps, step, total_reward))
                         #self.util.save_model()
                         self.state_deque.clear()
                         self.action_deque.clear()
