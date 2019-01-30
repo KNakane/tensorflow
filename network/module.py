@@ -86,7 +86,7 @@ class Module(object):
                 x = tf.reduce_mean(x, axis=1)
             return x
 
-    def BN(self, x):
+    def BN(self, x, args):
         return tf.layers.batch_normalization(inputs=x, trainable=self._trainable)
     
     def ReLU(self, x, args):
