@@ -113,7 +113,7 @@ class Trainer():
                         tf.contrib.summary.scalar('train/total_reward', total_reward)
                         tf.contrib.summary.scalar('train/average_reward', total_reward / step)
                         print("episode: %d total_steps: %d  steps/episode: %d  total_reward: %0.2f"%(episode, total_steps, step, total_reward))
-                        #self.util.save_model()
+                        self.util.save_model()
                         self.state_deque.clear()
                         self.action_deque.clear()
                         self.reward_deque.clear()

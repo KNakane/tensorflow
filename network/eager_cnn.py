@@ -130,8 +130,6 @@ class ActorNet(EagerCNN):
     def _build(self):
         with tf.variable_scope(self.name):
             for l in range(len(self.model)):
-                if l == len(self.model) - 1:
-                    self.model[l][2] = tf.nn.tanh
                 my_layer = eval('self.' + self.model[l][0])(self.model[l][1:])
                 self._layers.append(my_layer)
             

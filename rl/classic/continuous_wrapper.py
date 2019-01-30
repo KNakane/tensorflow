@@ -22,7 +22,8 @@ def set_model(outdim):
 
     critic = [['fc', 32, tf.nn.relu],
              ['fc', 32, tf.nn.relu],
-             ['fc', outdim, None]]
+             ['fc', outdim, tf.nn.tanh]]
+    # Don't forget tf.nn.tanh in activation function
     return actor, critic
 
 
