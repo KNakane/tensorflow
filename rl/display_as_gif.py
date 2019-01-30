@@ -10,9 +10,10 @@ def display_frames_as_gif(frames, prefix, save_dir, fps=30):
 
         def animate(i):
             patch.set_data(frames[i])
-
         anim = animation.FuncAnimation(plt.gcf(), animate, frames=len(frames), interval=50)
         anim.save(save_dir+'/{}.gif'.format(prefix), writer='imagemagick', fps=fps)
+    else:
+        pass
 
 
 def main():
