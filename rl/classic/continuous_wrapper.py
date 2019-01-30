@@ -38,7 +38,7 @@ def main(argv):
                  learning_rate=FLAGS.lr,
                  batch_size=FLAGS.batch_size, 
                  e_greedy=0.9,
-                 replace_target_iter=10,
+                 replace_target_iter=1,
                  e_greedy_increment=0.01,
                  optimizer=FLAGS.opt,
                  is_categorical=FLAGS.category,
@@ -89,7 +89,7 @@ if __name__ == '__main__':
     flags.DEFINE_integer('batch_size', '32', 'Input batch size')
     flags.DEFINE_integer('multi_step', '1', 'how many multi_step')
     flags.DEFINE_integer('n_warmup', '400', 'n_warmup value')
-    flags.DEFINE_integer('model_update', '100', 'target_model_update_freq')
+    flags.DEFINE_integer('model_update', '1', 'target_model_update_freq')
     flags.DEFINE_boolean('render', 'False', 'render')
     flags.DEFINE_boolean('priority', 'False', 'prioritized Experience Replay')
     flags.DEFINE_boolean('category', 'False', 'Categorical DQN')

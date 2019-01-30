@@ -18,7 +18,7 @@ class DDPG(Agent):
         self.tau = 0.01
 
     def _build_net(self):
-        self.actor = ActorNet(model=self.model[0], out_dim=self.n_actions, name='ActorNet', opt=self._optimizer, lr=self.lr*0.1, trainable=True, max_action=self.max_action)
+        self.actor = ActorNet(model=self.model[0], out_dim=self.n_actions, name='ActorNet', opt=self._optimizer, lr=self.lr, trainable=True, max_action=self.max_action)
         self.actor_target = ActorNet(model=self.model[0], out_dim=self.n_actions, name='ActorNet_target', trainable=False, max_action=self.max_action)
 
         self.critic = CriticNet(model=self.model[1], out_dim=1, name='CriticNet', opt=self._optimizer, lr=self.lr, trainable=True)
@@ -30,17 +30,11 @@ class DDPG(Agent):
     def choose_action(self, observation):
         # to have batch dimension when feed into tf placeholder
         observation = observation[np.newaxis, :]
-
-        if np.random.uniform() < self.epsilon:
-            # forward feed the observation and get q value for every actions
-            actions_value = self.inference(observation)
-            if self.on_policy:
-                action = np.random.choice(self.actions_list, size=1, p=np.array(actions_value)[0])
-            else:
-                action = np.argmax(actions_value)
-        else:
-            action = np.random.uniform(self.min_action, self.max_action, 1)
-        return action + self.noise.generate()
+        # forward feed the observation and get q value for every actions
+        #print(self.inference(observation).shape, np.expand_dims(self.noise.generate(),axis=0).shape)
+        #sys.exit()
+        action = self.inference(observation) + np.expand_dims(self.noise.generate(),axis=0)
+        return action[0]
 
     def update_q_net(self, replay_data, weights):
         bs, ba, done, bs_, br, p_idx = replay_data

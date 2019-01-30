@@ -54,7 +54,7 @@ class Trainer():
         self.util.save_init(self.agent)
         if self.init_model_dir is not None:
             self.util.restore_agent(self.init_model_dir)
-        total_steps = 0
+        total_steps = 1
         learning_flag = 0
         for episode in range(self.n_episode):
             self.global_step.assign_add(1)
@@ -96,7 +96,7 @@ class Trainer():
                             tf.contrib.summary.image('train/input_img', tf.expand_dims(self.agent.bs[:,:,:,0], 3))
                         if self.agent.__class__.__name__ == 'DDPG':
                             tf.contrib.summary.scalar('train/critic_loss', self.agent.critic_loss)
-                            tf.contrib.summary.scalar('train/actor_loss', -self.agent.actor_loss)
+                            tf.contrib.summary.scalar('train/actor_loss', self.agent.actor_loss)
                         else:
                             tf.contrib.summary.scalar('train/loss', self.agent.loss)
                         tf.contrib.summary.scalar('train/e_greedy', self.agent.epsilon)
@@ -112,7 +112,7 @@ class Trainer():
                         tf.contrib.summary.scalar('train/steps_per_episode', step)
                         tf.contrib.summary.scalar('train/total_reward', total_reward)
                         tf.contrib.summary.scalar('train/average_reward', total_reward / step)
-                        print("episode: %d total_steps: %d  steps/episode: %d  total_reward: %0.2f"%(episode, total_steps, step, total_reward))
+                        print("episode: %d total_steps: %d  steps/episode: %d  total_reward: %0.2f"%(episode+1, total_steps, step, total_reward))
                         #self.util.save_model()
                         self.state_deque.clear()
                         self.action_deque.clear()
