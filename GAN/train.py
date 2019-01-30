@@ -16,7 +16,8 @@ def main(args):
         "epoch":FLAGS.n_epoch,
         "batch_size": FLAGS.batch_size,
         "Optimizer":FLAGS.opt,
-        "learning_rate":FLAGS.lr})
+        "learning_rate":FLAGS.lr,
+        "Augmentation": FLAGS.aug})
 
     # Setting
     checkpoints_to_keep = FLAGS.checkpoints_to_keep
@@ -39,9 +40,9 @@ def main(args):
     D, D_logits, D_, D_logits_, G = model.inference(inputs, batch_size)
     dis_loss, gen_loss = model.loss(D, D_logits, D_, D_logits_)
     
-    g_opt, d_opt = model.optimize(dis_loss, gen_loss, global_step)
+    opt_op = model.optimize(dis_loss, gen_loss, global_step)
     update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-    train_op = tf.group(g_opt,d_opt,update_ops)
+    train_op = tf.group([opt_op] + update_ops)
     predict = model.predict()
     #correct_prediction = tf.equal(dis_true, 1) + tf.equal(dis_fake, 0)
     #accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
@@ -90,7 +91,7 @@ def main(args):
         
     with session:
         while not session.should_stop():
-            session.run([g_opt, d_opt, update_ops])
+            session.run([train_op])
 
     return
 
@@ -103,6 +104,8 @@ if __name__ == '__main__':
     flags.DEFINE_integer('batch_size', '32', 'Input batch size')
     flags.DEFINE_float('lr', '0.001', 'Input learning rate')
     flags.DEFINE_string('opt', 'SGD', 'Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]')
+    flags.DEFINE_string('aug','None','Choice the Augmentation -> ["shift","mirror","rotate","shift_rotate","cutout","random_erace"]')
+    flags.DEFINE_bool('l2_norm', 'False', 'Input learning rate')
     flags.DEFINE_integer('checkpoints_to_keep', 5,'checkpoint keep count')
     flags.DEFINE_integer('keep_checkpoint_every_n_hours', 1, 'checkpoint create ')
     flags.DEFINE_integer('save_checkpoint_steps', 1000,'save checkpoint step')

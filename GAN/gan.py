@@ -39,16 +39,16 @@ class GAN(CNN):
 
         gen_model = [['fc', 512*s_h16*s_h16, None],
                      ['reshape', [-1, s_h16, s_h16, 512]],
-                     ['BN', 1],
+                     ['BN'],
                      ['ReLU'],
                      ['deconv', s_h8, 256, 2, None],
-                     ['BN', 2],
+                     ['BN'],
                      ['ReLU'],
                      ['deconv', s_h4, 128, 2, None],
-                     ['BN', 3],
+                     ['BN'],
                      ['ReLU'],
                      ['deconv', s_h2, 64, 2, None],
-                     ['BN', 4],
+                     ['BN'],
                      ['ReLU'],
                      ['deconv', s_h, 1, 2, None],
                      ['tanh']]
@@ -56,13 +56,13 @@ class GAN(CNN):
 
         dis_model = [['conv', 5, 64, 2, tf.nn.leaky_relu],
                      ['conv', 5, 128, 2, None],
-                     ['BN', 1],
+                     ['BN'],
                      ['Leaky_ReLU'],
                      ['conv', 5, 256, 2, None],
-                     ['BN', 2],
+                     ['BN'],
                      ['Leaky_ReLU'],
                      ['conv', 5, 512, 2, None],
-                     ['BN', 3],
+                     ['BN'],
                      ['Leaky_ReLU'],
                      ['fc', 1, None]
                      ]
@@ -72,11 +72,11 @@ class GAN(CNN):
     def inference(self, inputs, batch_size):
         with tf.variable_scope(self.name):
             z = tf.random_normal((batch_size, self._z_dim), dtype=tf.float32)
-            self.z = tf.reshape(z, [self.batch_size, 1, 1, self._z_dim])
-            self.G = self.generator.inference(self.z)
+            self.z = tf.reshape(z, [batch_size, 1, 1, self._z_dim])
+            self.G = tf.stop_gradient(self.generator.inference(self.z))
             
-            self.D, self.D_logits = self.discriminator.inference(inputs)
-            self.D_, self.D_logits_ = self.discriminator.inference(self.G, reuse=True)
+            self.D, self.D_logits = self.discriminator.inference(inputs)               # Correct data
+            self.D_, self.D_logits_ = self.discriminator.inference(self.G, reuse=True) # Fake data
 
             return self.D, self.D_logits, self.D_, self.D_logits_, self.G
 
