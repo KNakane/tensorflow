@@ -69,8 +69,8 @@ class DDPG(Agent):
 
         # update actor_net
         with tf.GradientTape() as tape:
-            actor_eval = self.actor.inference(self.bs)
-            self.actor_loss = -tf.reduce_mean(self.critic.inference([self.bs, actor_eval]))
+            #actor_eval = self.actor.inference(self.bs)
+            self.actor_loss = -tf.reduce_mean(self.critic.inference([self.bs, self.actor.inference(self.bs)]))
         self.actor.optimize(self.actor_loss, global_step, tape)
 
         # increasing epsilon

@@ -143,7 +143,11 @@ class ActorNet(EagerCNN):
                 x = my_layer(x, training=self._trainable)
             except:
                 x = my_layer(x)
-        return tf.multiply(self.max_action, x)
+
+        if self.max_action is not None: # DDPG
+            return tf.multiply(self.max_action, x)
+        else:
+            return x
 
     def optimize(self, loss, global_step, tape=None):
         assert tape is not None, 'please set tape in opmize'
@@ -178,8 +182,12 @@ class CriticNet(EagerCNN):
             self._layers.append(my_layer)
 
     def inference(self, inputs):
-        x, u = inputs
-        x = tf.concat([x, u], axis=1)
+        if len(inputs) == 2:
+            x, u = inputs
+            x = tf.concat([x, u], axis=1)
+        else:
+            x = inputs
+            
         for i, my_layer in enumerate(self._layers):
             x = tf.convert_to_tensor(x, dtype=tf.float32)
             try:

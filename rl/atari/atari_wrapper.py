@@ -264,7 +264,9 @@ def main(argv):
     agent = eval(FLAGS.agent)(model=set_model(outdim=env.action_space.n),
                 n_actions=env.action_space.n,
                 n_features=env.observation_space.shape,
-                learning_rate=0.01, e_greedy=0.9,
+                learning_rate=0.01, 
+                e_greedy=0.9,
+                reward_decay=0.9,
                 replace_target_iter=100,
                 e_greedy_increment=0.0001,
                 optimizer=FLAGS.opt,
@@ -283,7 +285,7 @@ def main(argv):
                       multi_step=3 if FLAGS.agent == 'Rainbow' else FLAGS.multi_step,
                       render=FLAGS.render,
                       test_episode=5,
-                      test_interval=1000)
+                      test_interval=10000)
 
     print()
     print("---Start Learning------")
