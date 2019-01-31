@@ -24,6 +24,6 @@ class Generator(CNN):
             return outputs
 
     def optimize(self, loss, global_step=None):
-        print(self.name,self.var)
-        sys.exit()
+        #print(self.name,self.var)
+        #sys.exit()
         return self.optimizer.optimize(loss=loss, global_step=global_step, var_list=self.var)
