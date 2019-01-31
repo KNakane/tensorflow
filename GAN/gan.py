@@ -24,9 +24,6 @@ class GAN(CNN):
         self.gen_train_interval = interval
         self.eps = 1e-14
         self._z_dim = z_dim
-        if self._trainable:
-            self.D_optimizer = eval(opt)(learning_rate=lr)
-            self.G_optimizer = eval(opt)(learning_rate=lr)
 
     def conv_out_size_same(self, size, stride):
         return int(math.ceil(float(size) / float(stride)))
@@ -76,29 +73,24 @@ class GAN(CNN):
             self.z = tf.reshape(z, [batch_size, 1, 1, self._z_dim])
             self.G = self.generator.inference(self.z)
             
-            self.D, self.D_logits = self.discriminator.inference(inputs)               # Correct data
-            self.D_, self.D_logits_ = self.discriminator.inference(self.G, reuse=True) # Fake data
+            self.D, self.D_logits = self.discriminator.inference(inputs)               # input Correct data
+            self.D_, self.D_logits_ = self.discriminator.inference(self.G, reuse=True) # input Fake data
 
             return self.D, self.D_logits, self.D_, self.D_logits_, self.G
 
     def predict(self):
         return self.generator.inference(self.z)
 
-    def loss(self, D, D_logits, D_, D_logits_):
-        d_loss = - (tf.reduce_mean(tf.log(D_ + self.eps)) + tf.reduce_mean(tf.log(1 - D + self.eps)))
-        g_loss = - tf.reduce_mean(tf.log(D_ + self.eps))
+    def loss(self, img, fake_img):
+        d_loss = - (tf.reduce_mean(tf.log(img + self.eps)) + tf.reduce_mean(tf.log(1 - fake_img + self.eps)))
+        g_loss = - tf.reduce_mean(tf.log(fake_img + self.eps))
 
         return d_loss, g_loss
 
-    def optimize(self, dis_loss, gen_loss, global_steps=None):
-        #return self.G_optimizer.optimize(loss=gen_loss, global_step=global_steps), self.D_optimizer.optimize(loss=dis_loss, global_step=global_steps)
-        
-        def gen_train(loss, global_steps):
-            return self.G_optimizer.optimize(loss=loss, global_step=global_steps)
-        judge = tf.cast(global_steps % self.gen_train_interval == 0, tf.bool)
-        gen_train_op = tf.cond(judge, lambda: gen_train(loss=gen_loss, global_steps=global_steps), lambda: tf.no_op())
-        with tf.control_dependencies([gen_train_op]):
-            return [gen_train_op, self.D_optimizer.optimize(loss=dis_loss, global_step=global_steps)]
+    def optimize(self, dis_loss, gen_loss):
+        global_steps = tf.train.get_or_create_global_step()
+        with tf.control_dependencies(tf.get_collection(tf.GraphKeys.UPDATE_OPS)):
+            return self.generator.optimize(loss=gen_loss, global_step=global_steps), self.discriminator.optimize(loss=dis_loss, global_step=global_steps)
         
         
     
