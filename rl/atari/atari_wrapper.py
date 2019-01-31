@@ -308,7 +308,7 @@ if __name__ == '__main__':
     FLAGS = flags.FLAGS
     flags.DEFINE_string('agent', 'DQN', 'Choise Agents -> [DQN, DDQN, Rainbow]')
     flags.DEFINE_string('env', 'BreakoutNoFrameskip-v4', 'Choice the environment')
-    flags.DEFINE_string('network', 'EagerCNN', 'Choise Network -> [EagerCNN, Dueling_Net]')
+    flags.DEFINE_string('network', 'EagerNN', 'Choise Network -> [EagerNN, Dueling_Net]')
     flags.DEFINE_integer('n_episode', '100000', 'Input max episode')
     flags.DEFINE_integer('step', '10000', 'Input max steps')
     flags.DEFINE_integer('batch_size', '32', 'Input batch size')

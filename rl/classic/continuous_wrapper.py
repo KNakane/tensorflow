@@ -10,7 +10,7 @@ import gym.spaces
 import numpy as np
 import tensorflow as tf
 from optimizer import *
-from ddpg import DDPG
+from ddpg import DDPG, TD3
 from rl_trainer import Trainer
 from pendulum_env import WrappedPendulumEnv
 
@@ -33,19 +33,18 @@ def main(argv):
     if FLAGS.env == 'Pendulum-v0':
         env = WrappedPendulumEnv(env)
         FLAGS.step = 200
-    agent = DDPG(model=set_model(outdim=env.action_space.shape[0]),
-                 n_actions=env.action_space.shape[0],
-                 n_features=env.observation_space.shape[0],
-                 learning_rate=FLAGS.lr,
-                 batch_size=FLAGS.batch_size, 
-                 e_greedy=0.9,
-                 replace_target_iter=1,
-                 e_greedy_increment=0.01,
-                 optimizer=FLAGS.opt,
-                 is_categorical=FLAGS.category,
-                 max_action=env.action_space.high[0],
-                 min_action=env.action_space.low[0]
-                 )
+    agent = eval(FLAGS.agent)(model=set_model(outdim=env.action_space.shape[0]),
+                              n_actions=env.action_space.shape[0],
+                              n_features=env.observation_space.shape[0],
+                              learning_rate=FLAGS.lr,
+                              batch_size=FLAGS.batch_size, 
+                              e_greedy=0.9,
+                              replace_target_iter=1,
+                              e_greedy_increment=0.01,
+                              optimizer=FLAGS.opt,
+                              is_categorical=FLAGS.category,
+                              max_action=env.action_space.high[0]
+                              )
 
     trainer = Trainer(agent=agent, 
                       env=env, 
@@ -83,7 +82,7 @@ def main(argv):
 if __name__ == '__main__':
     flags = tf.app.flags
     FLAGS = flags.FLAGS
-    flags.DEFINE_string('agent', 'DDPG', 'Choise Agents -> [DDPG]')
+    flags.DEFINE_string('agent', 'DDPG', 'Choise Agents -> [DDPG, TD3]')
     flags.DEFINE_string('env', 'Pendulum-v0', 'Choice environment -> [Pendulum-v0,MountainCarContinuous-v0]')
     flags.DEFINE_integer('n_episode', '100000', 'Input max episode')
     flags.DEFINE_integer('step', '400', 'Input max steps')
