@@ -22,6 +22,7 @@ class GAN(CNN):
         self.generator = Generator(model=gen_model, opt=opt, trainable=trainable)
         self.discriminator = Discriminator(model=dis_model, opt=opt, trainable=trainable)
         self.gen_train_interval = interval
+        self.eps = 1e-14
         self._z_dim = z_dim
         if self._trainable:
             self.D_optimizer = eval(opt)(learning_rate=lr)
@@ -73,7 +74,7 @@ class GAN(CNN):
         with tf.variable_scope(self.name):
             z = tf.random_normal((batch_size, self._z_dim), dtype=tf.float32)
             self.z = tf.reshape(z, [batch_size, 1, 1, self._z_dim])
-            self.G = tf.stop_gradient(self.generator.inference(self.z))
+            self.G = self.generator.inference(self.z)
             
             self.D, self.D_logits = self.discriminator.inference(inputs)               # Correct data
             self.D_, self.D_logits_ = self.discriminator.inference(self.G, reuse=True) # Fake data
@@ -84,22 +85,20 @@ class GAN(CNN):
         return self.generator.inference(self.z)
 
     def loss(self, D, D_logits, D_, D_logits_):
-        d_loss_real = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=D_logits, labels=tf.ones_like(D)))
-        d_loss_fake = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=D_logits_, labels=tf.zeros_like(D_)))
-        g_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=D_logits_, labels=tf.ones_like(D_)))
-        d_loss = d_loss_real + d_loss_fake
+        d_loss = - (tf.reduce_mean(tf.log(D_ + self.eps)) + tf.reduce_mean(tf.log(1 - D + self.eps)))
+        g_loss = - tf.reduce_mean(tf.log(D_ + self.eps))
 
         return d_loss, g_loss
 
     def optimize(self, dis_loss, gen_loss, global_steps=None):
-        return self.G_optimizer.optimize(loss=gen_loss, global_step=global_steps), self.D_optimizer.optimize(loss=dis_loss, global_step=global_steps)
-        """
+        #return self.G_optimizer.optimize(loss=gen_loss, global_step=global_steps), self.D_optimizer.optimize(loss=dis_loss, global_step=global_steps)
+        
         def gen_train(loss, global_steps):
             return self.G_optimizer.optimize(loss=loss, global_step=global_steps)
         judge = tf.cast(global_steps % self.gen_train_interval == 0, tf.bool)
-        gen_train_op = tf.cond(judge, lambda: gen_train(gen_loss, global_steps), lambda: tf.no_op())
+        gen_train_op = tf.cond(judge, lambda: gen_train(loss=gen_loss, global_steps=global_steps), lambda: tf.no_op())
         with tf.control_dependencies([gen_train_op]):
-            return gen_train_op + self.D_optimizer.optimize(loss=dis_loss, global_step=global_steps)
-        """
+            return [gen_train_op, self.D_optimizer.optimize(loss=dis_loss, global_step=global_steps)]
+        
         
     
