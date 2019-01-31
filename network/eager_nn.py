@@ -6,10 +6,10 @@ sys.path.append('./utility')
 from eager_module import EagerModule
 from optimizer import *
 
-class EagerCNN(EagerModule):
+class BasedEagerNN(EagerModule):
     def __init__(self, 
                  model=None,
-                 name='CNN',
+                 name='NN',
                  out_dim=10,
                  opt=Adam,   # Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]
                  lr=0.001,
@@ -20,6 +20,7 @@ class EagerCNN(EagerModule):
                  is_categorical=False
                  ):
         super().__init__(l2_reg=l2_reg,l2_reg_scale=l2_reg_scale, trainable=trainable)
+
         self.out_dim = out_dim
         self.model = model
         self._layers = []
@@ -29,6 +30,26 @@ class EagerCNN(EagerModule):
         if self._trainable:
             self.optimizer = eval(opt)(learning_rate=lr)
         self._build()
+
+    def _build(self):
+        raise Exception('please build network')
+
+    def inference(self, x):
+        raise Exception('please build network')
+
+    def loss(self, logits, labels):
+        loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=logits, labels=labels))
+        return loss
+
+    def optimize(self, loss, global_step, tape=None):
+        assert tape is not None, 'please set tape in opmize'
+        grads = tape.gradient(loss, self.trainable_variables)
+        self.optimizer.method.apply_gradients(zip(grads, self.trainable_variables),global_step)
+    
+
+class EagerNN(BasedEagerNN):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     def _build(self):
         for l in range(len(self.model)):
@@ -55,30 +76,10 @@ class EagerCNN(EagerModule):
         else:
             return x
 
-    def loss(self, logits, labels):
-        loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=logits, labels=labels))
-        return loss
 
-    def optimize(self, loss, global_step, tape=None):
-        assert tape is not None, 'please set tape in opmize'
-        grads = tape.gradient(loss, self.trainable_variables)
-        self.optimizer.method.apply_gradients(zip(grads, self.trainable_variables),global_step)
-
-
-class Dueling_Net(EagerCNN):
-    def __init__(self, 
-                 model=None,
-                 name='Dueling_Net',
-                 out_dim=10,
-                 opt=Adam,   # Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]
-                 lr=0.001,
-                 l2_reg=False,
-                 l2_reg_scale=0.0001,
-                 trainable=False,
-                 is_noisy=False,
-                 is_categorical=False
-                 ):
-        super().__init__(model=model,name=name,out_dim=out_dim,opt=opt,lr=lr,l2_reg=l2_reg,l2_reg_scale=l2_reg_scale,trainable=trainable,is_noisy=is_noisy,is_categorical=is_categorical)
+class Dueling_Net(BasedEagerNN):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     def _build(self):
         for l in range(len(self.model)):
@@ -112,26 +113,14 @@ class Dueling_Net(EagerCNN):
             V = tf.tile(V, [1, self.out_dim])
             return x[:, 1:] + V - tf.tile(tf.reshape(np.average(x[:,1:], axis=1), (x.shape[0], 1)), [1, self.out_dim])
 
-class ActorNet(EagerCNN):
-    def __init__(self, 
-                 model=None,
-                 name='ActorNet',
-                 out_dim=10,
-                 opt=Adam,   # Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]
-                 lr=0.001,
-                 l2_reg=False,
-                 l2_reg_scale=0.0001,
-                 trainable=False,
-                 max_action=None
-                 ):
-        super().__init__(model=model,name=name,out_dim=out_dim,opt=opt,lr=lr,l2_reg=l2_reg,l2_reg_scale=l2_reg_scale,trainable=trainable)
-        self.max_action = max_action
+class ActorNet(BasedEagerNN):
+    def __init__(self, *args, **kwargs):
+        self.max_action = kwargs.pop('max_action')
+        super().__init__(*args, **kwargs)
 
     def _build(self):
         with tf.variable_scope(self.name):
             for l in range(len(self.model)):
-                if l == len(self.model) - 1:
-                    self.model[l][2] = tf.nn.tanh
                 my_layer = eval('self.' + self.model[l][0])(self.model[l][1:])
                 self._layers.append(my_layer)
             
@@ -149,26 +138,10 @@ class ActorNet(EagerCNN):
         else:
             return x
 
-    def optimize(self, loss, global_step, tape=None):
-        assert tape is not None, 'please set tape in opmize'
-        grads = tape.gradient(loss, self.trainable_variables)
-        self.optimizer.method.apply_gradients(zip(grads, self.trainable_variables), global_step)
 
-class CriticNet(EagerCNN):
-    def __init__(self, 
-                 model=None,
-                 name='CriticNet',
-                 out_dim=10,
-                 opt=Adam,   # Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]
-                 lr=0.001,
-                 l2_reg=False,
-                 l2_reg_scale=0.0001,
-                 trainable=False,
-                 is_noisy=False,
-                 is_categorical=False
-                 ):
-        super().__init__(model=model,name=name,out_dim=out_dim,opt=opt,lr=lr,l2_reg=l2_reg,l2_reg_scale=l2_reg_scale,trainable=trainable,is_noisy=is_noisy,is_categorical=is_categorical)
-
+class CriticNet(BasedEagerNN):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     def _build(self):
         for l in range(len(self.model)):
@@ -196,7 +169,30 @@ class CriticNet(EagerCNN):
                 x = my_layer(x)
         return x
 
-    def optimize(self, loss, global_step, tape=None):
-        assert tape is not None, 'please set tape in opmize'
-        grads = tape.gradient(loss, self.trainable_variables)
-        self.optimizer.method.apply_gradients(zip(grads, self.trainable_variables), global_step)
+class A2CNet(BasedEagerNN):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+    
+    def _build(self):
+        for l in range(len(self.model)):
+            if l == len(self.model) - 1:
+                # 状態価値V用に1unit追加
+                self.model[l][1] = self.out_dim + 1
+            if self.is_noisy and self.model[l][0]=='fc':
+                my_layer = self.noisy_dense(self.model[l][1:]) #noisy_net
+            else:
+                my_layer = eval('self.' + self.model[l][0])(self.model[l][1:])
+            self._layers.append(my_layer)
+
+    def inference(self, x):
+        for i, my_layer in enumerate(self._layers):
+            x = tf.convert_to_tensor(x, dtype=tf.float32)
+            try:
+                x = my_layer(x, training=self._trainable)
+            except:
+                x = my_layer(x)
+                
+        action = x[:, 1:]
+        V = tf.reshape(x[:,0], (x.shape[0], 1))
+        V = tf.tile(V, [1, self.out_dim])
+        return action, V

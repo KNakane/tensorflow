@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 import tensorflow as tf
-from writer import Writer
 
 class Agent(tf.contrib.checkpoint.Checkpointable):
     def __init__(
@@ -29,7 +28,7 @@ class Agent(tf.contrib.checkpoint.Checkpointable):
         self.actions_list = list(range(n_actions))
         self.n_features = n_features
         self.lr = learning_rate
-        self.gamma = reward_decay
+        self.discount = reward_decay #discount
         self.epsilon_max = e_greedy
         self.replace_target_iter = replace_target_iter
         self.batch_size = batch_size

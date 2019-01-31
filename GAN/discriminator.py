@@ -12,6 +12,10 @@ class Discriminator(CNN):
                  name='Discriminator',
                  trainable=False):
         super().__init__(model=model, name=name, opt=opt, trainable=trainable)
+    
+    @property
+    def var(self):
+        return tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=self.name)
 
     def inference(self, logits, reuse=False):
         with tf.variable_scope("discriminator"):
@@ -20,3 +24,6 @@ class Discriminator(CNN):
             for l in range(len(self.model)):
                 logits = (eval('self.' + self.model[l][0])(logits, self.model[l][1:]))
             return tf.nn.sigmoid(logits) ,logits
+
+    def optimize(self, loss, global_step=None):
+        return self.optimizer.optimize(loss=loss, global_step=global_step, var_list=self.var)

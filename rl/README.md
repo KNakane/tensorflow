@@ -9,7 +9,17 @@ rl
 masterブランチではDefine and Runで実行するように作成していたが、devブランチではEagerモードで作成していく
 
 # Description
-[All env](https://medium.com/@researchplex/openai-gym-environment-full-list-8b2e8ac4c1f7)にgymで使用できるenvironmentの一覧が記載されている
+[All env](https://medium.com/@researchplex/openai-gym-environment-full-list-8b2e8ac4c1f7)にgymで使用できるenvironmentの一覧が記載されている  
+## 使用できるAgent
+|Agent|wrapper|備考|
+|:----:|:-----:|:----:|
+|DQN|atari,cartpole,pygame|-|
+|DDQN|atari,cartpole,pygame|-|
+|Rainbow|atari,cartpole,pygame|categoricalとNoisyNetは未実装|
+|A2C||未実装|
+|DDPG|continuous||
+|TD3||未実装|
+
 
 # Usage
 ## Build Network

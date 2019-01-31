@@ -38,11 +38,9 @@ def main(args):
 
     model = eval(FLAGS.network)(z_dim=100, name=FLAGS.network, lr=FLAGS.lr, opt=FLAGS.opt, interval=2, trainable=True)
     D, D_logits, D_, D_logits_, G = model.inference(inputs, batch_size)
-    dis_loss, gen_loss = model.loss(D, D_logits, D_, D_logits_)
+    dis_loss, gen_loss = model.loss(D, D_)
     
-    opt_op = model.optimize(dis_loss, gen_loss, global_step)
-    update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-    train_op = tf.group([opt_op] + update_ops)
+    g_op, d_op = model.optimize(dis_loss, gen_loss)
     predict = model.predict()
     #correct_prediction = tf.equal(dis_true, 1) + tf.equal(dis_fake, 0)
     #accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
@@ -91,7 +89,9 @@ def main(args):
         
     with session:
         while not session.should_stop():
-            session.run([train_op])
+            _, step = session.run([d_op, global_step])
+            if step % 2 == 0:
+                session.run([g_op])
 
     return
 
@@ -102,7 +102,7 @@ if __name__ == '__main__':
     flags.DEFINE_string('data', 'mnist', 'Choice the training data name -> ["mnist","cifar10","cifar100"]')
     flags.DEFINE_integer('n_epoch', '1000', 'Input max epoch')
     flags.DEFINE_integer('batch_size', '32', 'Input batch size')
-    flags.DEFINE_float('lr', '0.001', 'Input learning rate')
+    flags.DEFINE_float('lr', '2e-4', 'Input learning rate')
     flags.DEFINE_string('opt', 'SGD', 'Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]')
     flags.DEFINE_string('aug','None','Choice the Augmentation -> ["shift","mirror","rotate","shift_rotate","cutout","random_erace"]')
     flags.DEFINE_bool('l2_norm', 'False', 'Input learning rate')

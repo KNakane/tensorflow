@@ -3,12 +3,10 @@
 import os,sys
 sys.path.append(os.path.join(os.path.dirname(__file__), '../../utility'))
 import random
-import threading
 import numpy as np
 import tensorflow as tf
 from collections import deque
 from utils import Utils
-from writer import Writer
 from display_as_gif import display_frames_as_gif
 from replay_memory import ReplayBuffer,PrioritizeReplayBuffer
 
@@ -56,12 +54,12 @@ class Trainer():
             self.util.restore_agent(self.init_model_dir)
         total_steps = 0
         learning_flag = 0
-        for episode in range(self.n_episode):
+        for episode in range(1, self.n_episode+1):
             self.global_step.assign_add(1)
             with tf.contrib.summary.always_record_summaries():
                 state = self.env.reset()
                 total_reward = 0
-                for step in range(self.max_steps):
+                for step in range(1, self.max_steps+1):
                     if self.render:
                         self.env.render()
 
@@ -81,7 +79,7 @@ class Trainer():
                         reward = r1 + r2
 
                     if len(self.state_deque) == self.multi_step or done:
-                        t_reward, reward, p_index = self.multi_step_reward(self.reward_deque, self.agent.gamma)
+                        t_reward, reward, p_index = self.multi_step_reward(self.reward_deque, self.agent.discount)
                         state = self.state_deque[0]
                         action = self.action_deque[0]
                         self.replay_buf.push(state, action, done, state_, t_reward, p_index)
@@ -95,8 +93,12 @@ class Trainer():
                         if len(self.agent.bs[0].shape) == 4:
                             tf.contrib.summary.image('train/input_img', tf.expand_dims(self.agent.bs[:,:,:,0], 3))
                         if self.agent.__class__.__name__ == 'DDPG':
-                            tf.contrib.summary.scalar('train/critic_loss', self.agent.critic_loss)
-                            tf.contrib.summary.scalar('train/actor_loss', -self.agent.actor_loss)
+                            tf.contrib.summary.scalar('train/critic_loss', self.agent.td_error)
+                            tf.contrib.summary.scalar('train/actor_loss', self.agent.actor_loss)
+                        elif self.agent.__class__.__name__ == 'TD3':
+                            tf.contrib.summary.scalar('train/critic_loss1', self.agent.critic_loss1)
+                            tf.contrib.summary.scalar('train/critic_loss2', self.agent.critic_loss2)
+                            tf.contrib.summary.scalar('train/actor_loss', self.agent.actor_loss)
                         else:
                             tf.contrib.summary.scalar('train/loss', self.agent.loss)
                         tf.contrib.summary.scalar('train/e_greedy', self.agent.epsilon)
@@ -106,7 +108,7 @@ class Trainer():
                                 td_error = value
                                 self.replay_buf.update(indexes[i], td_error)
 
-                    if done or step == self.max_steps - 1:
+                    if done or step == self.max_steps:
                         total_steps += step
                         tf.contrib.summary.scalar('train/total_steps', total_steps)
                         tf.contrib.summary.scalar('train/steps_per_episode', step)
@@ -150,10 +152,10 @@ class Trainer():
 
         self.env.close()
 
-    def multi_step_reward(self, rewards, gamma):
+    def multi_step_reward(self, rewards, discount):
         ret = 0.
         t_ret = 0.
         for idx, reward in enumerate(rewards):
-            ret += reward * (gamma ** idx)
+            ret += reward * (discount ** idx)
             t_ret += reward
         return ret, t_ret/(idx+1), idx + 1

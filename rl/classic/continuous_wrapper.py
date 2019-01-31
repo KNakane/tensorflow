@@ -10,7 +10,7 @@ import gym.spaces
 import numpy as np
 import tensorflow as tf
 from optimizer import *
-from ddpg import DDPG
+from ddpg import DDPG, TD3
 from rl_trainer import Trainer
 from pendulum_env import WrappedPendulumEnv
 
@@ -22,7 +22,8 @@ def set_model(outdim):
 
     critic = [['fc', 32, tf.nn.relu],
              ['fc', 32, tf.nn.relu],
-             ['fc', outdim, None]]
+             ['fc', outdim, tf.nn.tanh]]
+    # Don't forget tf.nn.tanh in activation function
     return actor, critic
 
 
@@ -32,19 +33,18 @@ def main(argv):
     if FLAGS.env == 'Pendulum-v0':
         env = WrappedPendulumEnv(env)
         FLAGS.step = 200
-    agent = DDPG(model=set_model(outdim=env.action_space.shape[0]),
-                 n_actions=env.action_space.shape[0],
-                 n_features=env.observation_space.shape[0],
-                 learning_rate=FLAGS.lr,
-                 batch_size=FLAGS.batch_size, 
-                 e_greedy=0.9,
-                 replace_target_iter=10,
-                 e_greedy_increment=0.01,
-                 optimizer=FLAGS.opt,
-                 is_categorical=FLAGS.category,
-                 max_action=env.action_space.high[0],
-                 min_action=env.action_space.low[0]
-                 )
+    agent = eval(FLAGS.agent)(model=set_model(outdim=env.action_space.shape[0]),
+                              n_actions=env.action_space.shape[0],
+                              n_features=env.observation_space.shape[0],
+                              learning_rate=FLAGS.lr,
+                              batch_size=FLAGS.batch_size, 
+                              e_greedy=0.9,
+                              replace_target_iter=1,
+                              e_greedy_increment=0.01,
+                              optimizer=FLAGS.opt,
+                              is_categorical=FLAGS.category,
+                              max_action=env.action_space.high[0]
+                              )
 
     trainer = Trainer(agent=agent, 
                       env=env, 
@@ -82,14 +82,14 @@ def main(argv):
 if __name__ == '__main__':
     flags = tf.app.flags
     FLAGS = flags.FLAGS
-    flags.DEFINE_string('agent', 'DDPG', 'Choise Agents -> [DDPG]')
+    flags.DEFINE_string('agent', 'DDPG', 'Choise Agents -> [DDPG, TD3]')
     flags.DEFINE_string('env', 'Pendulum-v0', 'Choice environment -> [Pendulum-v0,MountainCarContinuous-v0]')
     flags.DEFINE_integer('n_episode', '100000', 'Input max episode')
     flags.DEFINE_integer('step', '400', 'Input max steps')
     flags.DEFINE_integer('batch_size', '32', 'Input batch size')
     flags.DEFINE_integer('multi_step', '1', 'how many multi_step')
     flags.DEFINE_integer('n_warmup', '400', 'n_warmup value')
-    flags.DEFINE_integer('model_update', '100', 'target_model_update_freq')
+    flags.DEFINE_integer('model_update', '1', 'target_model_update_freq')
     flags.DEFINE_boolean('render', 'False', 'render')
     flags.DEFINE_boolean('priority', 'False', 'prioritized Experience Replay')
     flags.DEFINE_boolean('category', 'False', 'Categorical DQN')
