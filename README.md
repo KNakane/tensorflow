@@ -3,10 +3,10 @@ tensorflow
 
 # Overview
 tensorflowの勉強用  
-CNNと強化学習について触れる
+CNNと強化学習について触れる  
 ## CNN
-MonitoredTrainingSessionを使用し、Graph Modeで学習を行っていく
-tensorboardでgraphや各数値を確認することが出来ます
+MonitoredTrainingSessionを使用し、Graph Modeで学習を行っていく  
+tensorboardでgraphや各数値を確認することが出来ます  
 
 ## 強化学習
 tensorflowのEager Modeを使用している  
@@ -21,7 +21,7 @@ $ brew install imagemagick
 $ brew install pyenv
 $ pyenv install 3.6.7
 $ pyenv global 3.6.7
-$ git clone -b dev https://github.com/KNakane/tensorflow.git
+$ git clone https://github.com/KNakane/tensorflow.git
 $ pip install -r requirements.txt
 $ pip install tensorflow or pip install tensorflow-gpu
 ```
