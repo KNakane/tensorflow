@@ -4,7 +4,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '../../network'))
 import numpy as np
 import tensorflow as tf
 from agent import Agent
-from eager_cnn import EagerCNN
+from eager_nn import EagerNN
 
 class PolicyGradient(Agent):
     def __init__(self, *args, **kwargs):

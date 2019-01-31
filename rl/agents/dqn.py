@@ -5,7 +5,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '../../network'))
 import numpy as np
 import tensorflow as tf
 from agent import Agent
-from eager_cnn import EagerCNN, Dueling_Net
+from eager_nn import EagerNN, Dueling_Net
 from optimizer import *
 
 class DQN(Agent):
@@ -71,7 +71,7 @@ class DQN(Agent):
             else:
                 q_next, q_eval = self.q_next.inference(bs_), self.q_eval.inference(self.bs)
                 q_target = np.array(q_eval).copy()
-                q_target[batch_index, eval_act_index] = reward + self.gamma ** p_idx * np.max(q_next, axis=1) * (1. - done)
+                q_target[batch_index, eval_act_index] = reward + self.discount ** p_idx * np.max(q_next, axis=1) * (1. - done)
                 self.td_error = abs(q_target[batch_index, eval_act_index] - np.array(q_eval)[batch_index, eval_act_index])
                 self.loss = tf.reduce_sum(tf.losses.huber_loss(labels=q_target, predictions=q_eval) * weights, keep_dims=True)
         self.q_eval.optimize(self.loss, global_step, tape)
@@ -117,7 +117,7 @@ class DDQN(DQN):
                 reward = tf.cast(tf.tile(tf.expand_dims(reward, 1),[1,self.q_eval.N_atoms]), tf.float32)
                 done = tf.cast(tf.tile(tf.expand_dims(done, 1),[1,self.q_eval.N_atoms]),tf.float32)
                 z_list = tf.cast(tf.tile(tf.expand_dims(z_list, 0), [tmp_batch_size,1]), tf.float32)
-                q_target[batch_index, eval_act_index] = reward + self.gamma * z_list * (1 - done)
+                q_target[batch_index, eval_act_index] = reward + self.discount * z_list * (1 - done)
                 q_target = tf.clip_by_value(q_target, Vmin, Vmax)
                 b = (q_target - Vmin) / Delta_z
                 u, l = tf.ceil(b), tf.floor(b)
