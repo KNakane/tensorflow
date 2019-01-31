@@ -7,7 +7,7 @@ tensorflowの練習用
 
 # Description
 - [2018年風TensorFlowでの学習処理の記述方法](http://ksksksks2.hatenadiary.jp/entry/20181008/1538994843)にある```MoniteredTrainedSession```や```tf.data```などの使い方を学ぶため、mnistやcifarを用いて、プログラムを作成する
-
+- Eager Mode(eager_train.py)を使用するよりも、sessionを立てる方(train.py))が計算が早いです
 
 # Requirement
 新たにinstallするものはないため、[README.md](../README.md)を参照

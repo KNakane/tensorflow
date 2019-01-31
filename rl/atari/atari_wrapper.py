@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 #tensorboard --logdir ./logs
 import sys,os
+sys.path.append(os.path.join(os.path.dirname(__file__), '../'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '../agents'))
 sys.path.append(os.path.join(os.path.dirname(__file__), '../../utility'))
 import tensorflow as tf
 from optimizer import *
@@ -9,8 +11,8 @@ os.environ.setdefault('PATH', '')
 from collections import deque
 import gym
 from gym import spaces
-from trainer import Trainer
-from dqn import DQN,DDQN
+from rl_trainer import Trainer
+from dqn import DQN,DDQN,Rainbow
 import cv2
 cv2.ocl.setUseOpenCL(False)
 
@@ -240,9 +242,10 @@ def wrap_deepmind(env, episode_life=True, clip_rewards=True, frame_stack=False, 
     return env
 
 def set_model(outdim):
-    model_set = [['conv', 8, 32, 4],
-                 ['conv', 4, 64, 2],
-                 ['conv', 3, 64, 1],
+    model_set = [['conv', 8, 32, 4, tf.nn.relu],
+                 ['conv', 4, 64, 2, tf.nn.relu],
+                 ['conv', 3, 64, 1, tf.nn.relu],
+                 ['flat'],
                  ['fc', 512, tf.nn.relu],
                  ['fc', outdim, None]]
     return model_set
@@ -252,13 +255,23 @@ def main(argv):
     env = make_atari(FLAGS.env)
     env = wrap_deepmind(env, frame_stack=True)
     #env = EnvWrap(env)
+    
+    if FLAGS.agent == 'Rainbow':
+        FLAGS.network = 'Dueling_Net'
+        FLAGS.priority = True
+        FLAGS.multi_step = 3
+
     agent = eval(FLAGS.agent)(model=set_model(outdim=env.action_space.n),
                 n_actions=env.action_space.n,
                 n_features=env.observation_space.shape,
-                learning_rate=0.01, e_greedy=0.9,
+                learning_rate=0.01, 
+                e_greedy=0.9,
+                reward_decay=0.9,
                 replace_target_iter=100,
-                e_greedy_increment=0.001,
-                optimizer=FLAGS.opt
+                e_greedy_increment=0.0001,
+                optimizer=FLAGS.opt,
+                network='Dueling_Net' if FLAGS.agent == 'Rainbow' else FLAGS.network,
+                is_categorical=FLAGS.category
                 )
 
     trainer = Trainer(agent=agent, 
@@ -268,16 +281,23 @@ def main(argv):
                       replay_size=FLAGS.batch_size, 
                       data_size=10**6,
                       n_warmup=FLAGS.n_warmup,
-                      render=FLAGS.render)
+                      priority=True if FLAGS.agent == 'Rainbow' else FLAGS.priority,
+                      multi_step=3 if FLAGS.agent == 'Rainbow' else FLAGS.multi_step,
+                      render=FLAGS.render,
+                      test_episode=5,
+                      test_interval=10000)
 
     print()
     print("---Start Learning------")
     print("data : {}".format(FLAGS.env))
     print("Agent : {}".format(FLAGS.agent))
+    print("Network : {}".format(FLAGS.network))
     print("epoch : {}".format(FLAGS.n_episode))
     print("batch_size : {}".format(FLAGS.batch_size))
     print("learning rate : {}".format(FLAGS.lr))
     print("Optimizer : {}".format(FLAGS.opt))
+    print("priority : {}".format(FLAGS.priority))
+    print("multi_step : {}".format(FLAGS.multi_step))
     print("-----------------------")
 
     trainer.train()
@@ -286,14 +306,19 @@ def main(argv):
 if __name__ == '__main__':
     flags = tf.app.flags
     FLAGS = flags.FLAGS
-    flags.DEFINE_string('agent', 'DQN', 'Choise Agents -> [DQN, DDQN]')
+    flags.DEFINE_string('agent', 'DQN', 'Choise Agents -> [DQN, DDQN, Rainbow]')
     flags.DEFINE_string('env', 'BreakoutNoFrameskip-v4', 'Choice the environment')
+    flags.DEFINE_string('network', 'EagerCNN', 'Choise Network -> [EagerCNN, Dueling_Net]')
     flags.DEFINE_integer('n_episode', '100000', 'Input max episode')
     flags.DEFINE_integer('step', '10000', 'Input max steps')
     flags.DEFINE_integer('batch_size', '32', 'Input batch size')
+    flags.DEFINE_integer('multi_step', '1', 'how many multi_step')
     flags.DEFINE_integer('n_warmup', '5000', 'n_warmup value')
     flags.DEFINE_integer('model_update', '1000', 'target_model_update_freq')
     flags.DEFINE_boolean('render', 'False', 'render')
+    flags.DEFINE_boolean('priority', 'False', 'prioritized Experience Replay')
+    flags.DEFINE_boolean('category', 'False', 'Categorical DQN')
+    flags.DEFINE_boolean('noise', 'False', 'Noisy Net')
     flags.DEFINE_float('lr', '1e-4', 'Input learning rate')
     flags.DEFINE_string('opt','RMSProp','Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]')
     tf.app.run()
