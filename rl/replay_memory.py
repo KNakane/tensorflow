@@ -74,3 +74,7 @@ class PrioritizeReplayBuffer(ReplayBuffer):
     def update(self, idx, td_error):
         priority = self._getPriority(td_error)
         self.tree.update(idx, priority)
+
+class Rollout():   #A2C用
+    def __init__(self):
+        pass
