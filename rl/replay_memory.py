@@ -36,11 +36,7 @@ class PrioritizeReplayBuffer(ReplayBuffer):
     ALPHA = 0.6
     BETA = 0.4
     size = 0
-
-<<<<<<< HEAD
-class PrioritizeExperienceReplay(ReplayBuffer):
-=======
->>>>>>> a4a7e82c4c1897877abcc781c8ff35b1141baa0f
+    
     def __init__(self, capacity):
         super().__init__(capacity=capacity)
         self.td_error_epsilon = 0.0001
