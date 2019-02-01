@@ -26,4 +26,4 @@ class Discriminator(CNN):
             return tf.nn.sigmoid(logits) ,logits
 
     def optimize(self, loss, global_step=None):
-        return self.optimizer.optimize(loss=loss, global_step=global_step, var_list=self.var)
+        return self.optimizer.optimize(loss=loss, global_step=global_step)#, var_list=self.var)
