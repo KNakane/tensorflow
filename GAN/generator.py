@@ -15,7 +15,7 @@ class Generator(CNN):
 
     @property
     def var(self):
-        return tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=self.name)
+        return tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='GAN/{}'.format(self.name))
 
     def inference(self, outputs):
         with tf.variable_scope(self.name):
@@ -24,6 +24,4 @@ class Generator(CNN):
             return outputs
 
     def optimize(self, loss, global_step=None):
-        #print(self.name,self.var)
-        #sys.exit()
-        return self.optimizer.optimize(loss=loss, global_step=global_step)#, var_list=self.var)
+        return self.optimizer.optimize(loss=loss, global_step=global_step, var_list=self.var)

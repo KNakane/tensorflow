@@ -15,10 +15,10 @@ class Discriminator(CNN):
     
     @property
     def var(self):
-        return tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=self.name)
+        return tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='GAN/{}'.format(self.name))
 
     def inference(self, logits, reuse=False):
-        with tf.variable_scope("discriminator"):
+        with tf.variable_scope(self.name):
             if reuse:
                 tf.get_variable_scope().reuse_variables()
             for l in range(len(self.model)):
@@ -26,4 +26,4 @@ class Discriminator(CNN):
             return tf.nn.sigmoid(logits) ,logits
 
     def optimize(self, loss, global_step=None):
-        return self.optimizer.optimize(loss=loss, global_step=global_step)#, var_list=self.var)
+        return self.optimizer.optimize(loss=loss, global_step=global_step, var_list=self.var)
