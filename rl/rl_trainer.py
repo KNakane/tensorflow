@@ -124,30 +124,28 @@ class Trainer():
                     state = state_
             # test
             if episode % self.test_interval == 0 and learning_flag:
-                frames = []
                 print('-------------------- test -------------------------------------')
                 for test_episode in range(self.test_episode):
+                    frames = []
                     test_total_steps = 0
                     test_total_reward = 0
                     test_state = self.env.reset()
                     for test_step in range(self.max_steps):
-                        #img = self.env.render(mode='rgb_array')
-                        #if img is not None:
-                        #    frames.append(img)
+                        frames.append(self.env.render(mode='rgb_array'))
                         test_action = self.agent.choose_action(test_state)
                         test_next_state, test_reward, test_done, _ = self.env.step(test_action)
                         test_total_reward += test_reward
                         
                         if test_done or test_step == self.max_steps - 1:
                             test_total_steps += test_step
-                            display_frames_as_gif(frames, "test_{}_{}".format(episode, test_episode), self.util.res_dir)
                             tf.contrib.summary.scalar('test/total_steps_{}'.format(test_episode), test_total_steps)
                             tf.contrib.summary.scalar('test/steps_per_episode_{}'.format(test_episode), test_step)
                             tf.contrib.summary.scalar('test/total_reward_{}'.format(test_episode), test_total_reward)
                             tf.contrib.summary.scalar('test/average_reward_{}'.format(test_episode), test_total_reward / test_step)
                             print("test_episode: %d total_steps: %d  steps/episode: %d  total_reward: %0.2f"%(test_episode, test_total_steps, test_step, test_total_reward))
                             break
-                        test_state = test_next_state                     
+                        test_state = test_next_state
+                    display_frames_as_gif(frames, "test_{}_{}".format(episode, test_episode), self.util.res_dir)                
                 print('---------------------------------------------------------------')
 
         self.env.close()

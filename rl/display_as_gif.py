@@ -20,11 +20,12 @@ def main():
     import gym
     import numpy as np
     frames = []
-    env = gym.make('CartPole-v0')
+    env = gym.make('Pendulum-v0')
+    env = env.unwrapped
     env.reset()
     for step in range(0, 200):
         frames.append(env.render(mode='rgb_array'))
-        action = np.random.choice(2)
+        action = env.action_space.sample()
         ob, re, do, info = env.step(action)
     display_frames_as_gif(frames, "gif_image", './')
 
