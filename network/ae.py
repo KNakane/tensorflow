@@ -77,20 +77,24 @@ class VAE(AutoEncoder):
     def inference(self, outputs, reuse=False):
         with tf.variable_scope(self.name):
             self.mu, self.var = self.Encode(outputs, reuse)
-            outputs = self.Decode(self.re_parameterization(self.mu, self.var), reuse)
+            compose_img = self.re_parameterization(self.mu, self.var)
+            outputs = tf.clip_by_value(self.Decode(compose_img, reuse), 1e-8, 1 - 1e-8)
+            
             return outputs
     
     def re_parameterization(self, mu, var):
-        return mu + tf.exp(var * .5) * tf.random_normal(tf.shape(mu), 0, 1, dtype=tf.float32)
+        with tf.variable_scope('re_parameterization'):
+            std = tf.exp(0.5*var)
+            eps = tf.random_normal(tf.shape(mu), 0, 1, dtype=tf.float32)
+            return mu + std * eps
 
     def loss(self, logits, labels):
-        KL_divergence = 0.5 * tf.reduce_sum(tf.square(self.mu) + tf.square(self.var) - tf.log(1e-8 + tf.square(self.var)) - 1, axis=1)
-        loss = tf.reduce_sum(labels * tf.log(logits) + (1 - labels) * tf.log(1 - logits), 1)
-        return -loss + KL_divergence
-        """
-        #loss = - tf.reduce_sum(labels * tf.log(logits) + (1.-self.x) * tf.log( tf.clip_by_value(1.-self.y,1e-20,1e+20)))
-        KL_divergence = tf.reduce_mean(0.5 * tf.reduce_sum(tf.square(self.mu) + tf.square(self.var) - tf.log(1e-8 + tf.square(self.var)) - 1, 1))
-        #loss = tf.reduce_mean(tf.square(logits - labels))
-        loss = tf.reduce_mean(tf.reduce_sum(labels * tf.log(tf.clip_by_value(logits, 1e-10,1.0)) + (1 - labels) * tf.log(1 - tf.clip_by_value(logits, 1e-10,1.0)),1))
-        return KL_divergence - loss 
-        """
+        with tf.variable_scope('loss'):
+            if len(logits.shape) > 2:
+                logits = tf.layers.flatten(logits)
+            if len(labels.shape) > 2:
+                labels = tf.layers.flatten(labels)
+            reconstruct_loss = tf.reduce_sum(tf.nn.sigmoid_cross_entropy_with_logits(logits=logits, labels=labels))
+            KL_divergence = -0.5 * tf.reduce_sum(1 + self.var - tf.pow(self.mu,2) - tf.exp(self.var))
+            return tf.reduce_mean(reconstruct_loss + KL_divergence)
+        

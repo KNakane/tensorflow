@@ -48,9 +48,7 @@ class Module(object):
     
     def deconv(self, x, args):
         assert len(args) == 4, '[deconv] Not enough Argument -> [kernel, filter, strides, activation]'
-        if len(x.shape) < 4:
-            size = tf.sqrt(tf.cast(x.shape[1], tf.float32))
-            x = tf.reshape(x, [-1, size, size, 1])
+        assert len(x.shape) == 4
         regularizer = tf.contrib.layers.l2_regularizer(scale=self._l2_reg_scale) if self._l2_reg else None
         return tf.layers.conv2d_transpose(inputs=x,
                                           filters=args[1],
