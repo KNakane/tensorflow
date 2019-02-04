@@ -36,17 +36,18 @@ def main(args):
     # build train operation
     global_step = tf.train.get_or_create_global_step()
 
-    model = eval(FLAGS.network)(z_dim=100, name=FLAGS.network, lr=FLAGS.lr, opt=FLAGS.opt, interval=2, trainable=True)
-    D, D_logits, D_, D_logits_, G = model.inference(inputs, batch_size)
-    dis_loss, gen_loss = model.loss(D, D_)
+    #model = eval(FLAGS.network)(z_dim=100, name=FLAGS.network, lr=FLAGS.lr, opt=FLAGS.opt, interval=2, trainable=True)
+    model = eval(FLAGS.network)(z_dim=100, lr=FLAGS.lr, opt=FLAGS.opt, trainable=True)
+    D_logits, D_logits_, G = model.inference(inputs, batch_size)
+    dis_loss, gen_loss = model.loss(D_logits, D_logits_)
     
     g_op, d_op = model.optimize(dis_loss, gen_loss)
-    predict = model.predict()
+    #predict = model.predict()
     #correct_prediction = tf.equal(dis_true, 1) + tf.equal(dis_fake, 0)
     #accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
     # logging for tensorboard
-    util = Utils(prefix='GAN')
+    util = Utils(prefix=FLAGS.network)
     util.conf_log()
     tf.summary.scalar('global_step', global_step)
     tf.summary.scalar('discriminator_loss', dis_loss)
@@ -84,14 +85,15 @@ def main(args):
         checkpoint_dir=util.model_path,
         hooks=hooks,
         scaffold=scaffold,
+        save_summaries_steps=1,
         save_checkpoint_steps=save_checkpoint_steps,
         summary_dir=util.tf_board)
         
     with session:
         while not session.should_stop():
-            _, step = session.run([d_op, global_step])
-            if step % 2 == 0:
+            for _ in range(2):
                 session.run([g_op])
+            session.run([d_op])
 
     return
 
