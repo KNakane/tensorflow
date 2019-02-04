@@ -84,9 +84,9 @@ class VAE(AutoEncoder):
         return mu + tf.exp(var * .5) * tf.random_normal(tf.shape(mu), 0, 1, dtype=tf.float32)
 
     def loss(self, logits, labels):
-        KL_divergence = 0.5 * tf.reduce_mean(tf.reduce_sum(tf.square(self.mu) + tf.exp(self.var) - self.var - 1., axis=1))
-        loss = tf.reduce_mean(tf.square(labels - logits))
-        return loss + KL_divergence
+        KL_divergence = 0.5 * tf.reduce_sum(tf.square(self.mu) + tf.square(self.var) - tf.log(1e-8 + tf.square(self.var)) - 1, axis=1)
+        loss = tf.reduce_sum(labels * tf.log(logits) + (1 - labels) * tf.log(1 - logits), 1)
+        return -loss + KL_divergence
         """
         #loss = - tf.reduce_sum(labels * tf.log(logits) + (1.-self.x) * tf.log( tf.clip_by_value(1.-self.y,1e-20,1e+20)))
         KL_divergence = tf.reduce_mean(0.5 * tf.reduce_sum(tf.square(self.mu) + tf.square(self.var) - tf.log(1e-8 + tf.square(self.var)) - 1, 1))
