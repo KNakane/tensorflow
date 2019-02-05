@@ -13,14 +13,14 @@ class A2C(Agent):
         self.entropy_weight = 0.1
 
     def _build_net(self):
-        self.q_eval = A2CNet(model=self.model[0], out_dim=self.n_actions, name='A2CNet', opt=self._optimizer, lr=self.lr, trainable=True)
+        self.q_eval = A2CNet(model=self.model, out_dim=self.n_actions, name='A2CNet', opt=self._optimizer, lr=self.lr, trainable=True)
         return
 
     def inference(self, state):
         return self.actor.inference(state)
 
-    def update_q_net(self, replay_data): #Experience Replayを使用しないようにする
-        self.bs, ba, done, bs_, br = replay_data
+    def update_q_net(self, replay_data, weights): #Experience Replayを使用しないようにする
+        self.bs, ba, done, bs_, br, p_idx = replay_data
         eval_act_index = ba
         reward = br
         done = done
@@ -36,7 +36,7 @@ class A2C(Agent):
             value_loss = tf.losses.mean_squared_error(reward, values)
             action_entropy = tf.reduce_mean(self.categorical_entropy(action_eval))
             self.loss = policy_loss +  self.value_loss_weight * value_loss - self.entropy_weight * action_entropy
-        self.critic.optimize(self.critic_loss, global_step, tape)
+        self.q_eval.optimize(self.loss, global_step, tape)
 
         return
 
