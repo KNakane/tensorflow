@@ -9,6 +9,7 @@ class AE_Load(Load):
         super().__init__(name=name)
         self.y_train = self.x_train.copy()
         self.y_test = self.x_test.copy()
+        self.output_dim = self.size * self.size * self.channel
 
     def load(self, images, labels, batch_size, buffer_size=1000, is_training=False, augmentation=None):
         with tf.variable_scope('{}_dataset'.format('training' if is_training is True else 'validation')):

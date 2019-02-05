@@ -6,7 +6,6 @@ rl
 使用できるEnvironmentは以下の通り
 - [Open AI gym](https://gym.openai.com/) : CartpoleやBreakout, Invaderなど
 - [pygame]()  : python上でゲームの環境が作成できる  
-masterブランチではDefine and Runで実行するように作成していたが、devブランチではEagerモードで作成していく
 
 # Description
 [All env](https://medium.com/@researchplex/openai-gym-environment-full-list-8b2e8ac4c1f7)にgymで使用できるenvironmentの一覧が記載されている  
@@ -18,7 +17,7 @@ masterブランチではDefine and Runで実行するように作成していた
 |Rainbow|atari,cartpole,pygame|categoricalとNoisyNetは未実装|
 |A2C||未実装|
 |DDPG|continuous||
-|TD3||未実装|
+|TD3||continuous|
 
 
 # Usage

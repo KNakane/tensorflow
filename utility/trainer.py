@@ -126,6 +126,7 @@ class Train():
                 checkpoint_dir=util.model_path,
                 hooks=hooks,
                 scaffold=scaffold,
+                save_summaries_steps=1,
                 save_checkpoint_steps=self.save_checkpoint_steps,
                 summary_dir=util.tf_board)
         
