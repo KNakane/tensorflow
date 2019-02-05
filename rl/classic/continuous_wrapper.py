@@ -16,13 +16,13 @@ from pendulum_env import WrappedPendulumEnv
 
 
 def set_model(outdim):
-    actor = [['fc', 10, tf.nn.relu],
-             ['fc', 10, tf.nn.relu],
-             ['fc', outdim, None]]
+    actor = [['fc', 32, tf.nn.relu],
+             ['fc', 32, tf.nn.relu],
+             ['fc', outdim, tf.nn.tanh]]
 
     critic = [['fc', 32, tf.nn.relu],
              ['fc', 32, tf.nn.relu],
-             ['fc', outdim, tf.nn.tanh]]
+             ['fc', outdim, None]]
     # Don't forget tf.nn.tanh in activation function
     return actor, critic
 
@@ -63,6 +63,7 @@ def main(argv):
     print()
     print("---Start Learning------")
     print("data : {}".format(FLAGS.env))
+    print("agent : {}".format(FLAGS.agent))
     print("epoch : {}".format(FLAGS.n_episode))
     print("step : {}".format(FLAGS.step))
     print("batch_size : {}".format(FLAGS.batch_size))
