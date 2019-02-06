@@ -10,6 +10,7 @@ import matplotlib.ticker as ticker
 from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
 
 class EventGetter():
+    """ tensorboardに表示したデータを取得し、グラフを作成する """
     def __init__(self, events_list):
         dt_now = datetime.datetime.now()
         self.events_list = events_list
@@ -18,6 +19,7 @@ class EventGetter():
         #self._init_log()
 
     def _init_log(self):
+        """ 結果を格納するdirectoryの作成 """
         if tf.gfile.Exists(self.log_dir):
             tf.gfile.DeleteRecursively(self.log_dir)
         tf.gfile.MakeDirs(self.log_dir)
@@ -31,6 +33,7 @@ class EventGetter():
         return
     
     def logger(self):
+        """ どのファイルのeventを読み込んでグラフを作成したかテキストファイルに書き出す"""
         str_ = '\n'.join(self.name_list)
         with open(self.log_dir + "/filelist.txt", 'wt') as f:
             f.write(str_)
@@ -39,7 +42,7 @@ class EventGetter():
     def gather_result(self):
         tmp_res = []
         old_key = None
-        for i, event in enumerate(self.events_list):
+        for event in self.events_list:
             result_dic = self.get_scores(event)
             if result_dic is None:
                 continue
