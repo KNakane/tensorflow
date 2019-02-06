@@ -6,6 +6,7 @@ import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
 from itertools import chain
+import matplotlib.ticker as ticker
 from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
 
 class EventGetter():
@@ -81,7 +82,31 @@ class EventGetter():
 
         return dic
 
-    def make_graph(self):
+    def make_graph(self, values):
+        fig = plt.figure(figsize=(10,3))
+        colorlist = ["r", "g", "b", "c", "m", "y", "k", "w"]
+        ax = fig.add_subplot(1, 2, 1)
+        tmp = np.zeros((len(values), values[0].shape[0]))
+        for i,value in enumerate(values):
+            tmp[i] = value
+            plt.plot(range(value.shape[0]), value, linestyle='solid', color=colorlist[i], label=i)
+        ax.yaxis.set_major_formatter(ticker.PercentFormatter(xmax=1.0))
+        plt.grid(which='major',color='gray',linestyle='-')
+        plt.title("FetchReach-v1 of Each Result")
+        plt.xlabel("Episode")
+        plt.ylabel("Success Rate")
+
+        ax = fig.add_subplot(1, 2, 2)
+        mean = np.mean(tmp, axis=0)
+        std = np.std(tmp, axis=0)
+        plt.grid(which='major',color='gray',linestyle='-')
+        plt.plot(range(tmp.shape[1]), mean, linestyle='solid', color='blue', label=i)
+        plt.fill_between(range(tmp.shape[1]) ,mean - std,mean + std,facecolor='blue',alpha=0.3)
+        ax.yaxis.set_major_formatter(ticker.PercentFormatter(xmax=1.0))
+        plt.title("FetchReach-v1 of Average Result")
+        plt.xlabel("Episode")
+        plt.ylabel("Success Rate")
+        plt.savefig(self.log_dir + '/accuracy.png')
         return
 
 def main(args):
