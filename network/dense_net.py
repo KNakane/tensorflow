@@ -30,6 +30,7 @@ class DenseNet(CNN):
                 featmap = self.dense_block(featmap, n_layers=4, bottle_neck=True, name='dense_'+str(i))
                 featmap = self.transition_layer(featmap, name='trans_'+str(i))
 
+            featmap = self.dense_block(featmap, n_layers=31, bottle_neck=True, name='dense_final')
             featmap = tf.nn.relu(tf.layers.batch_normalization(inputs=featmap,trainable=self._trainable, name='BN1'))
             featmap = tf.layers.flatten(featmap, name='flatten')
             logits = tf.layers.dense(inputs=featmap, units=self.out_dim, activation=None, use_bias=True)
@@ -61,6 +62,7 @@ class DenseNet(CNN):
     def transition_layer(self, x, name):
         with tf.variable_scope(name):
             x = tf.nn.relu(tf.layers.batch_normalization(inputs=x,trainable=self._trainable,name='BN_1'))
-            x = tf.layers.conv2d(x, self.growth_k, [1, 1], activation=None, name="conv")
+            in_channel = x.get_shape().as_list()[3]
+            x = tf.layers.conv2d(x, in_channel * 0.5, [1, 1], activation=None, name="conv")
             x = tf.layers.average_pooling2d(x, pool_size=[2,2], strides=2, padding='VALID')
             return x
