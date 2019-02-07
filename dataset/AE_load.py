@@ -20,7 +20,7 @@ class AE_Load(Load):
                 y = tf.reshape(tf.cast(image, tf.float32), (self.size, self.size, self.channel)) / 255.0
                 return x, y
 
-            if augmentation is not None and is_training:
+            if augmentation is not 'None' and is_training:
                 augment = Augment(images, labels)
                 images, labels = eval('augment.'+augmentation)()
 
