@@ -11,7 +11,7 @@ class Augment():
         self.aug_img = self.img.copy()
         self.aug_label = self.label.copy() 
 
-    def shift(self, v=3, h=3):
+    def shift(self, v=2, h=2):
         aug = []
         for i in trange(self.img.shape[0], desc="Augmentation -> Shift"):
             vertical = 2*v * np.random.rand() - v
@@ -40,7 +40,7 @@ class Augment():
         self.aug_label = np.hstack((self.aug_label, self.label))
         return self.aug_img, self.aug_label
 
-    def shift_rotate(self, v=3, h=3, angle_range=(-20, 20)):
+    def shift_rotate(self, v=2, h=2, angle_range=(-10, 10)):
         aug = []
         for i in trange(self.img.shape[0], desc="Augmentation -> Shift & Rotate"):
             vertical = 2*v * np.random.rand() - v
