@@ -13,39 +13,54 @@ class DenseNet(CNN):
                  out_dim=10,
                  opt=Adam,   # Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]
                  lr=0.001,
+                 l2_reg=False,
+                 l2_reg_scale=0.0001,
                  trainable=False):
-        super().__init__(name=name,opt=opt,lr=lr,trainable=trainable, out_dim=out_dim)
+        super().__init__(name=name, out_dim=out_dim, opt=opt, lr=lr, l2_reg=l2_reg, l2_reg_scale=l2_reg_scale, trainable=trainable)
+        self.growth_k = 12
+        self.nb_blocks = 2
 
     def inference(self, images, reuse=False):
         with tf.variable_scope(self.name):
             if reuse:
                 tf.get_variable_scope().reuse_variables()
-            featmap = tf.layers.conv2d(images, 32, [7, 7], (2,2), activation=tf.nn.relu, name="init_conv")
-            featmap = self.dense_block(featmap, False, 'dense_1')
+            featmap = tf.layers.conv2d(images, self.growth_k * 2, [7, 7], strides=2, activation=tf.nn.relu, name="init_conv")
+            featmap = tf.layers.max_pooling2d(featmap, pool_size=[3,3], strides=2, padding='VALID')
+            for i in range(self.nb_blocks) :
+                featmap = self.dense_block(featmap, n_layers=4, bottle_neck=True, name='dense_'+str(i))
+                featmap = self.transition_layer(featmap, name='trans_'+str(i))
+
+            featmap = tf.nn.relu(tf.layers.batch_normalization(inputs=featmap,trainable=self._trainable, name='BN1'))
+            featmap = tf.layers.flatten(featmap, name='flatten')
+            logits = tf.layers.dense(inputs=featmap, units=self.out_dim, activation=None, use_bias=True)
+
+            return logits
     
     def dense_block(self, x, n_layers, bottle_neck, name):
-        with tf.name_scope(name):
+        with tf.variable_scope(name):
             layers_concat = list()
             layers_concat.append(x)
-            for i in range(n_layers):
+
+            for index in range(n_layers):
                 if bottle_neck:
-                    x = tf.layers.batch_normalization(inputs=x,trainable=self._trainable,name='BN{}'.format(index),reuse=self._reuse)
+                    x = tf.layers.batch_normalization(inputs=x,trainable=self._trainable,name='BN{}_1'.format(index))
                     x = tf.nn.relu(x)
-                    x = tf.layers.conv2d(x, 32, [1, 1], activation=None, name="conv")
-                    x = tf.layers.batch_normalization(inputs=x,trainable=self._trainable,name='BN{}'.format(index),reuse=self._reuse)
+                    x = tf.layers.conv2d(x, self.growth_k * 4, [1, 1], strides=1, padding='SAME', activation=None, name="conv{}_1".format(index))
+                    x = tf.layers.batch_normalization(inputs=x,trainable=self._trainable,name='BN{}_2'.format(index))
                     x = tf.nn.relu(x)
-                    x = tf.layers.conv2d(x, 32, [3, 3], activation=None, name="conv")
+                    x = tf.layers.conv2d(x, self.growth_k, [3, 3], strides=1, padding='SAME', activation=None, name="conv{}_2".format(index))
 
                 else:
-                    x = tf.layers.batch_normalization(inputs=x,trainable=self._trainable,name='BN{}'.format(index),reuse=self._reuse)
+                    x = tf.layers.batch_normalization(inputs=x,trainable=self._trainable,name='BN{}_1'.format(index))
                     x = tf.nn.relu(x)
-                    x = tf.layers.conv2d(x, 32, [3, 3], activation=None, name="init_conv")
+                    x = tf.layers.conv2d(x, self.growth_k * 4, [3, 3], activation=None, name="conv1")
                 layers_concat.append(x)
                 x = tf.concat(layers_concat, axis=3)
         return x
 
-    def transition(self, x):
-        x = tf.layers.batch_normalization(inputs=x,trainable=self._trainable,name='BN{}'.format(index),reuse=self._reuse)
-        x = tf.layers.conv2d(x, 32, [1, 1], activation=None, name="conv")
-        x = tf.layers.average_pooling2d(x, pool_size=[2,2], strides=2)
-        return x
+    def transition_layer(self, x, name):
+        with tf.variable_scope(name):
+            x = tf.nn.relu(tf.layers.batch_normalization(inputs=x,trainable=self._trainable,name='BN_1'))
+            x = tf.layers.conv2d(x, self.growth_k, [1, 1], activation=None, name="conv")
+            x = tf.layers.average_pooling2d(x, pool_size=[2,2], strides=2, padding='VALID')
+            return x

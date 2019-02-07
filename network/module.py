@@ -12,20 +12,20 @@ class Module(object):
         assert len(args) == 5, '[Residual] Not enough Argument -> [kernel, filter, strides, bottleneck, No]'
         with tf.variable_scope('Residual_{}'.format(args[4])):
             if args[3]:
-                x = self.BN(x=x)
+                x = self.BN(x=x, args=None)
                 x = self.ReLU(x=x, args=None)
                 x = self.conv(x=x, args=[1, args[1], 1, None])
-                x = self.BN(x=x)
+                x = self.BN(x=x, args=None)
                 x = self.ReLU(x=x, args=None)
                 x = self.conv(x=x, args=[args[0], args[1], args[2], None])
-                x = self.BN(x=x)
+                x = self.BN(x=x, args=None)
                 x = self.ReLU(x=x, args=None)
                 x = self.conv(x=x, args=[1, args[1],1, None])
             else:
-                x = self.BN(x=x)
+                x = self.BN(x=x, args=None)
                 x = self.ReLU(x=x, args=None)
                 x = self.conv(x=x, args=[args[0], args[1], 1, None])
-                x = self.BN(x=x)
+                x = self.BN(x=x, args=None)
                 x = self.ReLU(x=x, args=None)
                 x = self.conv(x=x, args=[args[0], args[1], args[2], None])
 
