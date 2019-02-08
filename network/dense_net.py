@@ -43,17 +43,17 @@ class DenseNet(CNN):
 
             for _ in range(n_layers):
                 if bottle_neck:
-                    x = self.ReLU(self.BN(x, [None]),[None])
-                    x = self.conv(x, [1, self.growth_k * 4, 1, None])
-                    x = self.ReLU(self.BN(x, [None]),[None])
-                    x = self.conv(x, [3, self.growth_k, 1, None])
+                    logits = self.ReLU(self.BN(x, [None]),[None])
+                    logits = self.conv(logits, [1, self.growth_k * 4, 1, None])
+                    logits = self.ReLU(self.BN(logits, [None]),[None])
+                    logits = self.conv(logits, [3, self.growth_k, 1, None])
 
                 else:
-                    x = self.ReLU(self.BN(x, [None]),[None])
-                    x = self.conv(x, [3, self.growth_k * 4, 1, None])
-                layers_concat.append(x)
+                    logits = self.ReLU(self.BN(x, [None]),[None])
+                    logits = self.conv(logits, [3, self.growth_k * 4, 1, None])
+                layers_concat.append(logits)
                 x = tf.concat(layers_concat, axis=3)
-        return x
+            return x
 
     def transition_layer(self, x, name):
         with tf.variable_scope(name):
