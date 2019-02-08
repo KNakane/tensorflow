@@ -45,6 +45,8 @@ class CNN(Module):
             loss = tf.reduce_mean(tf.square(logits - labels))
         else:
             loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=logits, labels=labels))
+        if self._l2_reg:
+            loss += tf.losses.get_regularization_loss()  
         return loss
 
     def optimize(self, loss, global_step=None):
