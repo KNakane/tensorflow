@@ -30,34 +30,36 @@ class ResNet(CNN):
         self.residual_list = self.get_residual_layer()
 
     
-    def inference(self, x):
+    def inference(self, x, reuse=False):
         with tf.variable_scope(self.name):
+            if reuse:
+                tf.get_variable_scope().reuse_variables()
             logits = self.conv(x, [3, self.filter, 1, None])
             for i in range(self.residual_list[0]):
                 x = self.residual_block(x, channels=self.filter, downsample=False, name='resblock0_' + str(i))
-            x = self.residual_block(x, channels=self.filter*2, downsample=True, scope='resblock1_0')
+            x = self.residual_block(x, channels=self.filter*2, downsample=True, name='resblock1_0')
             for i in range(1, self.residual_list[1]) :
-                x = self.residual_block(x, channels=self.filter*2, downsample=False, scope='resblock1_' + str(i))
-            x = self.residual_block(x, channels=self.filter*4, downsample=True, scope='resblock2_0')
+                x = self.residual_block(x, channels=self.filter*2, downsample=False, name='resblock1_' + str(i))
+            x = self.residual_block(x, channels=self.filter*4, downsample=True, name='resblock2_0')
             for i in range(1, self.residual_list[2]) :
-                x = self.residual_block(x, channels=self.filter*4, downsample=False, scope='resblock2_' + str(i))
-            x = self.residual_block(x, channels=self.filter*8, downsample=True, scope='resblock_3_0')
+                x = self.residual_block(x, channels=self.filter*4, downsample=False, name='resblock2_' + str(i))
+            x = self.residual_block(x, channels=self.filter*8, downsample=True, name='resblock_3_0')
             for i in range(1, self.residual_list[3]) :
-                x = self.residual_block(x, channels=self.filter*8, downsample=False, scope='resblock_3_' + str(i))
-            x = self.ReLU(self.BN(x, [None]))
-            x = self.gap(x,[None])
+                x = self.residual_block(x, channels=self.filter*8, downsample=False, name='resblock_3_' + str(i))
+            x = self.ReLU(self.BN(x, [None]),[None])
+            x = self.gap(x,[self.out_dim])
             logits = self.fc(x, [self.out_dim, None])
             return logits
 
     def resblock(self, x, channels, downsample=False, name=None):
         with tf.variable_scope(name):
-            logits = self.ReLU(self.BN(x, [None]))
+            logits = self.ReLU(self.BN(x, [None]),[None])
             if downsample:
                 logits = self.conv(logits, [3, channels, 2, None])
                 x = self.conv(x, [1, channels, 2, None])
             else:
                 logits = self.conv(logits, [3, channels, 1, None])
-            logits = self.ReLU(self.BN(logits, [None]))
+            logits = self.ReLU(self.BN(logits, [None]),[None])
             logits = self.conv(logits, [3, channels, 1, None])
             return logits + x
     
