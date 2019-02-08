@@ -34,7 +34,27 @@ class Module(object):
             
             return x + input
 
-    def conv(self, x, args):
+    def conv(self, x, args, name=None):
+        """
+        convolutionを行う
+        parameters
+        ----------
+        x : tensor
+            input image 4D
+        args : list
+            [kernel, filter, strides, activation]
+        name : str
+            layer name
+        
+        returns
+        ----------
+        feature map : tensor
+            畳み込みした特徴マップ
+
+        Else
+        ----------
+        padding = same
+        """
         assert len(args) == 4, '[conv] Not enough Argument -> [kernel, filter, strides, activation]'
         regularizer = tf.contrib.layers.l2_regularizer(scale=self._l2_reg_scale) if self._l2_reg else None
         return tf.layers.conv2d(inputs=x,
@@ -44,9 +64,30 @@ class Module(object):
                                 padding='same',
                                 activation=args[3],
                                 kernel_regularizer=regularizer,
-                                trainable=self._trainable)
+                                trainable=self._trainable,
+                                name=name)
     
-    def deconv(self, x, args):
+    def deconv(self, x, args, name=None):
+        """
+        de-convolutionを行う
+        parameters
+        ----------
+        x : tensor
+            input image 4D
+        args : list
+            [kernel, filter, strides, activation]
+        name : str
+            layer name
+        
+        returns
+        ----------
+        feature map : tensor
+            畳み込みした特徴マップ
+
+        Else
+        ----------
+        padding = same
+        """
         assert len(args) == 4, '[deconv] Not enough Argument -> [kernel, filter, strides, activation]'
         assert len(x.shape) == 4
         regularizer = tf.contrib.layers.l2_regularizer(scale=self._l2_reg_scale) if self._l2_reg else None
@@ -60,23 +101,80 @@ class Module(object):
                                           trainable=self._trainable)
 
     def reshape(self, x, args):
+        """
+        Reshapeを行う
+        parameters
+        ----------
+        x : tensor
+            input image 4D
+        args : list
+            [reshapeしたいサイズ]
+            ex) [-1, 28, 28, 1]
+        
+        returns
+        ----------
+        reshape : tensor
+            reshapeしたtensor
+        """
         return tf.reshape(tensor=x, shape=args[0])
 
     def max_pool(self, x, args):
-        assert len(args) == 2, '[max_pool] Not enough Argument -> [pool_size, strides]'
+        """
+        Max poolingを行う
+        parameters
+        ----------
+        x : tensor
+            input image 4D
+        args : list
+            [pool_size, strides, padding]
+        
+        returns
+        ----------
+        feature map : tensor
+            Poolingした特徴マップ
+        """
+        assert len(args) == 3, '[max_pool] Not enough Argument -> [pool_size, strides, padding]'
         return tf.layers.max_pooling2d(inputs=x,
                                        pool_size=[args[0], args[0]],
                                        strides=[args[1], args[1]],
-                                       padding='same')
+                                       padding=args[2])
     
     def avg_pool(self, x, args):
-        assert len(args) == 2, '[avg_pool] Not enough Argument -> [pool_size, strides]'
+        """
+        Average poolingを行う
+        parameters
+        ----------
+        x : tensor
+            input image 4D
+        args : list
+            [pool_size, strides, padding]
+        
+        returns
+        ----------
+        feature map : tensor
+            Poolingした特徴マップ
+        """
+        assert len(args) == 3, '[avg_pool] Not enough Argument -> [pool_size, strides, padding]'
         return tf.layers.average_pooling2d(inputs=x,
                                            pool_size=[args[0], args[0]],
                                            strides=[args[1], args[1]],
-                                           padding='same')
+                                           padding=args[2])
 
     def gap(self, x, args): #global_average_pooling
+        """
+        Global Average poolingを行う
+        parameters
+        ----------
+        x : tensor
+            input image 4D
+        args : list
+            [output_dimension]
+        
+        returns
+        ----------
+        x : tensor
+            GAPしたtensor
+        """
         assert len(args) == 1, '[gap] Not enough Argument -> [output_dim]'
         with tf.variable_scope('GAP'):
             x = self.conv(x,[1, args[0], 1, None])
@@ -85,6 +183,21 @@ class Module(object):
             return x
 
     def BN(self, x, args):
+        """
+        Batch Normalizationを行う
+        parameters
+        ----------
+        x : tensor
+            input image 4D
+        args : list
+            [None]で良い
+        
+        returns
+        ----------
+        x : tensor
+            BNしたtensor
+        tf.get_collection(tf.GraphKeys.UPDATE_OPS)が必須
+        """
         return tf.layers.batch_normalization(inputs=x, trainable=self._trainable)
     
     def ReLU(self, x, args):
@@ -104,6 +217,20 @@ class Module(object):
             return tf.nn.sigmoid(x)
 
     def fc(self, x, args): # args = [units, activation=tf.nn.relu]
+        """
+        Fully connect
+        parameters
+        ----------
+        x : tensor
+            input image 4D
+        args : list
+            [units, activation]
+        
+        returns
+        ----------
+        feature map : tensor
+            全結合の特徴ベクトル
+        """
         assert len(args) == 2, '[FC] Not enough Argument -> [units, activation]'
         if len(x.shape) > 2:
             x = tf.layers.flatten(x, name='flatten')
@@ -112,6 +239,20 @@ class Module(object):
         return x
 
     def dropout(self, x, args):
+        """
+        Fully connect + Dropout
+        parameters
+        ----------
+        x : tensor
+            input image 4D
+        args : list
+            [units, activation, rate]
+        
+        returns
+        ----------
+        feature map : tensor
+            全結合の特徴ベクトル
+        """
         assert len(args) == 3, '[Dropout] Not enough Argument -> [units, activation, rate]'
         x = self.fc(x=x, args=args[:2])
         return tf.layers.dropout(inputs=x, rate=args[2], training=self._trainable)
