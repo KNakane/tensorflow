@@ -27,25 +27,58 @@ class ResNet(CNN):
         else :
             self.residual_block = self.bottle_resblock
 
+        self.residual_list = self.get_residual_layer()
+
     
     def inference(self, x):
         with tf.variable_scope(self.name):
-
-            logits = x
+            logits = self.conv(x, [3, self.filter, 1, None])
+            for i in range(self.residual_list[0]):
+                x = self.residual_block(x, channels=self.filter, downsample=False, name='resblock0_' + str(i))
+            x = self.residual_block(x, channels=self.filter*2, downsample=True, scope='resblock1_0')
+            for i in range(1, self.residual_list[1]) :
+                x = self.residual_block(x, channels=self.filter*2, downsample=False, scope='resblock1_' + str(i))
+            x = self.residual_block(x, channels=self.filter*4, downsample=True, scope='resblock2_0')
+            for i in range(1, self.residual_list[2]) :
+                x = self.residual_block(x, channels=self.filter*4, downsample=False, scope='resblock2_' + str(i))
+            x = self.residual_block(x, channels=self.filter*8, downsample=True, scope='resblock_3_0')
+            for i in range(1, self.residual_list[3]) :
+                x = self.residual_block(x, channels=self.filter*8, downsample=False, scope='resblock_3_' + str(i))
+            x = self.ReLU(self.BN(x, [None]))
+            x = self.gap(x,[None])
+            logits = self.fc(x, [self.out_dim, None])
             return logits
 
-    
-
-    def resblock(self, x, name):
-        with tf.variable_scope(name) :
-            logits = tf.nn.relu(tf.layers.batch_normalization(x))
-            logits = tf.layers.conv2d(logits, self.filter, [3,3], strides=1, use_bias=True)
-            logits = tf.nn.relu(tf.layers.batch_normalization(logits))
-            logits = tf.layers.conv2d(logits, self.filter, [3,3], strides=1, use_bias=True)
+    def resblock(self, x, channels, downsample=False, name=None):
+        with tf.variable_scope(name):
+            logits = self.ReLU(self.BN(x, [None]))
+            if downsample:
+                logits = self.conv(logits, [3, channels, 2, None])
+                x = self.conv(x, [1, channels, 2, None])
+            else:
+                logits = self.conv(logits, [3, channels, 1, None])
+            logits = self.ReLU(self.BN(logits, [None]))
+            logits = self.conv(logits, [3, channels, 1, None])
             return logits + x
     
     def bottle_resblock(self):
         pass
+
+    def get_residual_layer(self) :
+        if self.n_res == 18:
+            return [2, 2, 2, 2]
+
+        elif self.n_res == 34:
+            return [3, 4, 6, 3]
+
+        elif self.n_res == 50:
+            return [3, 4, 6, 3]
+
+        elif self.n_res == 101:
+            return [3, 4, 23, 3]
+
+        elif self.n_res == 152:
+            return [3, 8, 36, 3]
 
 
 
