@@ -7,6 +7,8 @@ from load import Load
 from utils import Utils
 from cnn import CNN
 from lenet import LeNet
+from resnet import ResNet
+from dense_net import DenseNet
 from train import set_model
 
 def main(args):
@@ -40,7 +42,7 @@ def main(args):
 if __name__ == '__main__':
     flags = tf.app.flags
     FLAGS = flags.FLAGS
-    flags.DEFINE_string('network', 'LeNet', 'Choice the training data name -> [CNN,LeNet]')
+    flags.DEFINE_string('network', 'LeNet', 'Choice the training data name -> [CNN,LeNet,ResNet,DenseNet]')
     flags.DEFINE_string('ckpt_dir', './results/181225_193106/model', 'Choice the checkpoint directpry')
     flags.DEFINE_string('data', 'mnist', 'Choice the training data name -> ["mnist","cifar10","cifar100","kuzushiji"]')
     tf.app.run()
