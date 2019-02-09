@@ -15,7 +15,7 @@ class Observer():
         return self.transform(self._env.reset())
 
     def render(self, mode='human'):
-        self._env.render(mode)
+        return self._env.render(mode)
 
     def step(self, action):
         n_state, reward, done, info = self._env.step(action)
