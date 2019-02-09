@@ -84,8 +84,6 @@ class ResNet(CNN):
 
 
 
-
-
 class ResNeXt(CNN):
     def __init__(self, 
                  model=None,
@@ -97,3 +95,62 @@ class ResNeXt(CNN):
                  l2_reg_scale=0.0001,
                  trainable=False):
         super().__init__(name=name, out_dim=out_dim, opt=opt, lr=lr, l2_reg=l2_reg, l2_reg_scale=l2_reg_scale, trainable=trainable)
+
+        self.residual_list = [3, 4, 6, 3]
+        self.cardinality = 32
+
+    def inference(self, x, reuse=False):
+        with tf.variable_scope(self.name):
+            if reuse:
+                tf.get_variable_scope().reuse_variables()
+            x = self.conv(x, [3, 64, 1, None])
+            x = self.ReLU(self.BN(x, [None]),[None])
+            for i in range(self.residual_list[0]):
+                x = self.residual_layer(x, 128, name='resblock0_' + str(i))
+            for i in range(self.residual_list[1]):
+                x = self.residual_layer(x, 256, name='resblock1_' + str(i))
+            for i in range(self.residual_list[2]):
+                x = self.residual_layer(x, 512, name='resblock2_' + str(i))
+            for i in range(self.residual_list[3]):
+                x = self.residual_layer(x, 1024, name='resblock3_' + str(i))
+            x = self.gap(x,[self.out_dim])
+            logits = self.fc(x, [self.out_dim, None])
+            return logits
+
+    def residual_layer(self, x, channels, name=None):
+        input_channel = x.get_shape().as_list()[-1]
+
+        if input_channel * 2 == channels:
+            flag = True
+            stride = 2
+        elif input_channel == channels:
+            flag = False
+            stride = 1
+        else:
+            raise ValueError('Output and input channel does not match in residual blocks!!!')
+
+        with tf.variable_scope(name):
+            logits = self.conv(x, [1, channels/2, stride, None])
+            logits = self.ReLU(self.BN(logits, [None]),[None])
+            """
+            Group convolution
+            """
+            input_list = tf.split(logits, self.cardinality, axis=-1)
+            logits_list = []
+            for _, input_tensor in enumerate(input_list):
+                logits_list.append(self.conv(input_tensor, [3, channels/2, 1, None]))
+            logits = tf.concat(logits_list, axis=-1)
+            logits = self.ReLU(self.BN(logits, [None]),[None])
+
+            logits = self.conv(logits, [1, channels, 1, None])
+            logits = self.BN(logits, [None])
+
+            if flag is True :
+                pad_input_x = self.avg_pool(x, [2, 2, 'SAME'])
+                pad_input_x = tf.pad(pad_input_x, [[0, 0], [0, 0], [0, 0], [0, int(channels/2)]]) # [?, height, width, channel]
+            else :
+                pad_input_x = x
+                
+            logits = self.ReLU(logits + pad_input_x, [None])
+
+            return logits
