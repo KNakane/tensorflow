@@ -196,23 +196,78 @@ class Module(object):
         ----------
         x : tensor
             BNしたtensor
+
+        attention
+        ----------
         tf.get_collection(tf.GraphKeys.UPDATE_OPS)が必須
         """
         return tf.layers.batch_normalization(inputs=x, trainable=self._trainable)
     
     def ReLU(self, x, args):
+        """
+        ReLU : Activation function
+        parameters
+        ----------
+        x : tensor
+            input image 4D
+        args : list
+            [None]で良い
+        
+        returns
+        ----------
+        x : ReLU(x)
+        """
         with tf.variable_scope('ReLU'):
             return tf.nn.relu(x)
 
     def Leaky_ReLU(self, x, args):
+        """
+        Leaky_ReLU : Activation function
+        parameters
+        ----------
+        x : tensor
+            input image 4D
+        args : list
+            [None]で良い
+        
+        returns
+        ----------
+        x : Leaky_ReLU(x)
+        """
         with tf.variable_scope('Leaky_ReLU'):
             return tf.nn.leaky_relu(x)
 
     def tanh(self, x, args):
+        """
+        tanh : Activation function
+        parameters
+        ----------
+        x : tensor
+            input image 4D
+        args : list
+            [None]で良い
+        
+        returns
+        ----------
+        x : tanh(x)
+        """
         with tf.variable_scope('tanh'):
             return tf.nn.tanh(x)
 
     def sigmoid(self, x, args):
+        """
+        sigmoid : Activation function
+        parameters
+        ----------
+        x : tensor
+            input image 4D
+        args : list
+            [None]で良い
+        
+        returns
+        ----------
+        x : sigmoid(x)
+        """
         with tf.variable_scope('Sigmoid'):
             return tf.nn.sigmoid(x)
 
