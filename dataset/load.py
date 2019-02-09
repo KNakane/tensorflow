@@ -1,5 +1,7 @@
 import os,sys
+import requests
 import numpy as np
+from tqdm import tqdm
 import tensorflow as tf
 from keras.datasets import *
 from Augmentation import Augment
@@ -31,6 +33,8 @@ class Load():
             return self.datasets.load_data()
 
     def get_kuzushiji(self):
+        if not os.path.isfile('./dataset/k49-train-imgs.npz'):
+            self.down_load_kuzushiji()
         train_image = np.load('./dataset/k49-train-imgs.npz')
         train_label = np.load('./dataset/k49-train-labels.npz')
         test_image = np.load('./dataset/k49-test-imgs.npz')
@@ -83,6 +87,21 @@ class Load():
         x = tf.reshape(tf.cast(images, tf.float32), (-1, self.size, self.size, self.channel)) / 255.0
         y = tf.one_hot(tf.cast(labels, tf.uint8), self.output_dim)
         return x, y
+
+    def down_load_kuzushiji(self):
+        url_list = ['http://codh.rois.ac.jp/kmnist/dataset/k49/k49-train-imgs.npz',
+                    'http://codh.rois.ac.jp/kmnist/dataset/k49/k49-train-labels.npz',
+                    'http://codh.rois.ac.jp/kmnist/dataset/k49/k49-test-imgs.npz',
+                    'http://codh.rois.ac.jp/kmnist/dataset/k49/k49-test-labels.npz']
+        for url in url_list:
+            path = url.split('/')[-1]
+            r = requests.get(url, stream=True)
+            with open("./dataset/"+path, 'wb') as f:
+                total_length = int(r.headers.get('content-length'))
+                print('Downloading {} - {:.1f} MB'.format(path, (total_length / 1024000)))
+                for chunk in tqdm(r.iter_content(chunk_size=1024), total=int(total_length / 1024) + 1, unit="KB"):
+                    if chunk:
+                        f.write(chunk)
 
 
 if __name__ == '__main__':
