@@ -21,6 +21,7 @@ class ResNet(CNN):
         #resnet type -> '18, 34, 50, 101, 152'
         self.n_res = 18
         self.filter = 64
+        self.p_L = 0.5 if trainable else 
 
         if self.n_res < 50 :
             self.residual_block = self.resblock
@@ -65,6 +66,23 @@ class ResNet(CNN):
     
     def bottle_resblock(self):
         pass
+
+    def stochastic_depth(self, idx, L=4):
+        """
+        Base
+        -----
+            https://qiita.com/supersaiakujin/items/eb0553a1ef1d46bd03fa
+        
+        parameter
+        -----
+        idx : present layer
+        L : value of Layers
+        """
+        survival_probability = 1.0 - idx / L * (1.0 - self.p_L)
+        if tf.random.uniform(1) > survival_probability: # layer方向にDropout
+            return True
+        else:
+            return False
 
     def get_residual_layer(self) :
         if self.n_res == 18:
