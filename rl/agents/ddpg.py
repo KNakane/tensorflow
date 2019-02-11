@@ -101,7 +101,7 @@ class TD3(Agent):
         action = self.inference(observation) + np.expand_dims(self.noise.generate(),axis=0)
         return action[0]
 
-    def update_q_net(self, replay_data, weights):
+    def update_q_net(self, replay_data, weights, noise_clip=0.5):
         bs, ba, done, bs_, br, p_idx = replay_data
         self.bs = np.array(bs, dtype=np.float32)
         bs_ = np.array(bs_, dtype=np.float32)
@@ -112,7 +112,9 @@ class TD3(Agent):
 
         global_step = tf.train.get_or_create_global_step()
 
-        critic_next1, critic_next2 = self.critic_target1.inference([bs_, self.actor_target.inference(bs_)]), self.critic_target2.inference([bs_, self.actor_target.inference(bs_)])
+        noise = tf.clip_by_value(tf.random.normal(shape=[self.batch_size,1],mean=0.0, stddev=0.2) , -noise_clip, noise_clip)
+        next_action = tf.clip_by_value(self.actor_target.inference(bs_) + noise, -self.max_action, self.max_action)
+        critic_next1, critic_next2 = self.critic_target1.inference([bs_, next_action]), self.critic_target2.inference([bs_, next_action])
         critic_next = tf.minimum(critic_next1, critic_next2)
         target_Q = reward + self.discount ** p_idx * critic_next * (1. - done)
         target_Q = tf.stop_gradient(target_Q)
