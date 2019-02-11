@@ -55,7 +55,7 @@ class EagerNN(BasedEagerNN):
         for l in range(len(self.model)):
             # categorical DQN
             if l == len(self.model) - 1 and self.is_categorical:
-                self.model[l][1] = self.out_dim * self.N_atoms   # 
+                self.model[l][1] = self.out_dim * self.N_atoms
             if self.is_noisy and self.model[l][0]=='fc':
                 my_layer = self.noisy_dense(self.model[l][1:]) #noisy_net
             else:
@@ -71,7 +71,7 @@ class EagerNN(BasedEagerNN):
                 x = my_layer(x)
                 
         if self.is_categorical:
-            x = tf.reshape(x, (x.shape[0], self.out_dim + 1, self.N_atoms))
+            x = tf.reshape(x, (x.shape[0], self.out_dim, self.N_atoms))
             return tf.keras.activations.softmax(x, axis=2)
         else:
             return x

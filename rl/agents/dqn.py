@@ -11,6 +11,11 @@ from optimizer import *
 class DQN(Agent):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        if self.is_categorical:
+            self.Vmax, self.Vmin = 10, -10
+            self.delta_z = (self.Vmax - self.Vmin) / (self.q_eval.N_atoms - 1)
+            self.z_list = tf.constant([self.Vmin + i * self.delta_z for i in range(self.q_eval.N_atoms)],dtype=tf.float32)
+
         
     def _build_net(self):
         # ------------------ build eval_net ------------------
@@ -39,34 +44,31 @@ class DQN(Agent):
 
         with tf.GradientTape() as tape:
             if self.is_categorical:
-                Vmax, Vmin = 10, -10
-                Delta_z = (Vmax - Vmin)/(self.q_eval.N_atoms - 1)
-                z_list = tf.constant([Vmin + i * Delta_z for i in range(self.q_eval.N_atoms)],dtype=tf.float32)
                 q_next, q_eval = self.q_next.inference(bs_), self.q_eval.inference(self.bs)
-                tmp_batch_size = tf.shape(q_next)[0]
-                next_action = tf.cast(tf.argmax(tf.reduce_sum(q_next * z_list), axis=1), tf.int32)
-                Q_distributional_chosen_by_action_target = tf.gather_nd(q_next,
-                                                           tf.concat([tf.reshape(tf.range(tmp_batch_size), [-1, 1]),
-                                                           tf.reshape(next_action,[-1,1])], axis = 1))
+                next_action = tf.cast(tf.argmax(tf.reduce_sum(q_next * self.z_list, axis=2), axis=1), tf.int32)
+                print(next_action.shape, q_next.shape)
+                sys.exit()
+                next_greedy_probs = tf.reduce_sum(next_action * q_next, axis=1)
 
-                target = tf.tile(tf.reshape(reward,[-1, 1]), tf.constant([1, self.q_eval.N_atoms])) + (self.gamma * z_list) * tf.multiply(tf.reshape(z_list,[1,self.q_eval.N_atoms]), (1.0 - tf.tile(tf.reshape(done ,[-1, 1]), tf.constant([1, self.q_eval.N_atoms]))))
-                target = tf.clip_by_value(target, Vmin, Vmax)
-                b = (target - Vmin) / Delta_z
+                Tz = tf.clip_by_value(tf.reshape(reward,[-1, 1]) + (self.discount ** p_idx * self.z_list), self.Vmin, self.Vmax)
+                b = (Tz - self.Vmin) / self.delta_z
                 u, l = tf.ceil(b), tf.floor(b)
-                u_id, l_id = tf.cast(u, tf.int32), tf.cast(l, tf.int32)
-                u_minus_b, b_minus_l = u - b, b - l
+                eq = tf.cast(u == l, tf.float32)
+                l -= eq
+                lt0 = tf.cast(l < 0, tf.float32)
+                u += lt0
+                l += lt0
 
-                Q_distributional_chosen_by_action_online = tf.gather_nd(q_eval, self.actions_list)
+                ml = next_greedy_probs * (u - b)
+                mu = next_greedy_probs * (b - l)
 
-                index_help = tf.tile(tf.reshape(tf.range(tmp_batch_size),[-1, 1]), tf.constant([1, self.q_eval.N_atoms])) 
-                index_help = tf.expand_dims(index_help, -1)
-                u_id = tf.concat([index_help, tf.expand_dims(u_id, -1)], axis=2)
-                l_id = tf.concat([index_help, tf.expand_dims(l_id, -1)], axis=2)
-                error = Q_distributional_chosen_by_action_target * u_minus_b * \
-                        tf.log(tf.gather_nd(Q_distributional_chosen_by_action_online, l_id)) \
-                        + Q_distributional_chosen_by_action_target * b_minus_l * \
-                        tf.log(tf.gather_nd(Q_distributional_chosen_by_action_online, u_id))
-                self.loss = tf.negative(tf.reduce_sum(error, axis=1))
+                m = np.zeros((self.batch_size, self.q_eval.N_atoms), dtype=np.float32)
+                for i in range(self.q_eval.N_atoms):
+                    m[batch_index, l[batch_index, i]] += ml[batch_index, i]
+                    m[batch_index, u[batch_index, i]] += mu[batch_index, i]
+
+                probs = tf.reduce_sum(q_eval * self.actions_list, axis=1)
+                self.loss = tf.negative(tf.reduce_sum(m * tf.log(probs), axis=1))
                 sys.exit()
             else:
                 q_next, q_eval = self.q_next.inference(bs_), self.q_eval.inference(self.bs)
@@ -91,6 +93,11 @@ class DQN(Agent):
 class DDQN(DQN):
     def __init__(self,*args, **kwargs):
         super().__init__(*args, **kwargs)
+        if self.is_categorical:
+            self.Vmax, self.Vmin = 10, -10
+            self.delta_z = (self.Vmax - self.Vmin) / (self.q_eval.N_atoms - 1)
+            self.z_list = tf.constant([self.Vmin + i * self.delta_z for i in range(self.q_eval.N_atoms)],dtype=tf.float32)
+
 
     def update_q_net(self, replay_data, weights):
         self.bs, ba, done, bs_, br, p_idx = replay_data
@@ -104,41 +111,41 @@ class DDQN(DQN):
             self.update_target_net()
 
         with tf.GradientTape() as tape:
+            global_step = tf.train.get_or_create_global_step()
             if self.is_categorical:
-                Vmax, Vmin = 10, -10
-                Delta_z = (Vmax - Vmin)/(self.q_eval.N_atoms - 1)
-                z_list = tf.constant([Vmin + i * Delta_z for i in range(self.q_eval.N_atoms)],dtype=tf.float32)
-                
-                q_next, q_eval4next, q_eval = np.array(self.q_next.inference(bs_)), self.q_eval.inference(bs_), self.q_eval.inference(self.bs)
+                q_next, q_eval4next, q_eval = np.array(self.q_next.inference(bs_)), self.q_eval.inference(bs_), np.array(self.q_eval.inference(self.bs))
                 q_target = np.array(q_eval).copy()
-                tmp_batch_size = tf.shape(q_next)[0]
-                next_action = tf.cast(tf.argmax(tf.reduce_sum(q_eval4next * z_list,axis=2), axis=1), tf.int32)
-                target_next_q_dist = tf.cast(tf.tile(tf.expand_dims(next_action, 1), [1,self.q_eval.N_atoms]), tf.float32)
-                reward = tf.cast(tf.tile(tf.expand_dims(reward, 1),[1,self.q_eval.N_atoms]), tf.float32)
-                done = tf.cast(tf.tile(tf.expand_dims(done, 1),[1,self.q_eval.N_atoms]),tf.float32)
-                z_list = tf.cast(tf.tile(tf.expand_dims(z_list, 0), [tmp_batch_size,1]), tf.float32)
-                q_target[batch_index, eval_act_index] = reward + self.discount * z_list * (1 - done)
-                q_target = tf.clip_by_value(q_target, Vmin, Vmax)
-                b = (q_target - Vmin) / Delta_z
+                next_action = tf.cast(tf.argmax(tf.reduce_sum(q_eval4next * self.z_list,axis=2), axis=1), tf.int32)
+                next_greedy_probs = q_next[batch_index, next_action]
+                reward = tf.cast(tf.expand_dims(reward, 1), tf.float32)
+                done = tf.cast(tf.expand_dims(done, 1), tf.float32)
+                p_idx = tf.cast(tf.expand_dims(p_idx, 1), tf.float32)
+                
+                Tz = tf.clip_by_value(reward + (self.discount ** p_idx * tf.expand_dims(self.z_list,0) * (1 - done)), self.Vmin, self.Vmax)
+                b = (Tz - self.Vmin) / self.delta_z
                 u, l = tf.ceil(b), tf.floor(b)
-                u_id, l_id = tf.cast(u, tf.float32), tf.cast(l, tf.float32)
-                u_minus_b, b_minus_l =tf.cast(u - b, tf.float32), tf.cast(b - l, tf.float32)
+                eq = tf.cast(u == l, tf.float32)
+                l -= eq
+                lt0 = tf.cast(l < 0, tf.float32)
+                u += lt0
+                l += lt0
 
-                error1 = tf.log(tf.gather_nd(q_eval, l_id))
-                error2 = tf.log(tf.gather_nd(q_eval, u_id))
-                print(error1.shape, error2.shape)
-                sys.exit()
-                error = target_next_q_dist * u_minus_b * error1 + target_next_q_dist * b_minus_l * error2
+                ml = next_greedy_probs * (u - b)
+                mu = next_greedy_probs * (b - l)
 
-                self.loss = tf.negative(tf.reduce_sum(error, axis=1))
-                print(self.loss.shape)
-                sys.exit()
+                l = np.array(l, dtype=np.int8)
+                u = np.array(u, dtype=np.int8)
+
+                m = np.zeros((self.batch_size, self.q_eval.N_atoms), dtype=np.float32)
+                for i in range(self.q_eval.N_atoms):
+                    m[batch_index, l[batch_index, i]] += ml[:, i]
+                    m[batch_index, u[batch_index, i]] += mu[:, i]
+                self.loss = - tf.reduce_sum(tf.log(q_eval[batch_index,eval_act_index]) * m, axis=1)
             else:
-                global_step = tf.train.get_or_create_global_step()
                 q_next, q_eval4next, q_eval = np.array(self.q_next.inference(bs_)), self.q_eval.inference(bs_), self.q_eval.inference(self.bs)
                 q_target = np.array(q_eval).copy()
                 max_act4next = np.argmax(q_eval4next, axis=1)        # the action that brings the highest value is evaluated by q_eval
-                selected_q_next = q_next[batch_index, max_act4next] # Double DQN, select q_next depending on above actions
+                selected_q_next = q_next[batch_index, max_act4next]  # Double DQN, select q_next depending on above actions
                 q_target[batch_index, eval_act_index] = reward + self.discount ** p_idx * selected_q_next * (1. - done)
                 self.td_error = abs(q_target[batch_index, eval_act_index] - np.array(q_eval)[batch_index, eval_act_index])
                 self.loss = tf.reduce_sum(tf.losses.huber_loss(labels=q_target, predictions=q_eval) * weights, keep_dims=True)
