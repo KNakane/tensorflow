@@ -27,7 +27,10 @@ class DQN(Agent):
             self.q_next = eval(self.network)(model=self.model, out_dim=self.n_actions, name='target_net', trainable=False, is_categorical=self.is_categorical)
 
     def inference(self, state):
-        return self.q_eval.inference(state)
+        if self.is_categorical:
+            return tf.cast(tf.argmax(tf.reduce_sum(self.q_eval.inference(state) * self.z_list, axis=2), axis=1), tf.int32)
+        else:
+            return self.q_eval.inference(state)
 
     def update_q_net(self, replay_data, weights):
         self.bs, ba, done, bs_, br, p_idx = replay_data
@@ -69,7 +72,6 @@ class DQN(Agent):
 
                 probs = tf.reduce_sum(q_eval * self.actions_list, axis=1)
                 self.loss = tf.negative(tf.reduce_sum(m * tf.log(probs), axis=1))
-                sys.exit()
             else:
                 q_next, q_eval = self.q_next.inference(bs_), self.q_eval.inference(self.bs)
                 q_target = np.array(q_eval).copy()
@@ -113,8 +115,7 @@ class DDQN(DQN):
         with tf.GradientTape() as tape:
             global_step = tf.train.get_or_create_global_step()
             if self.is_categorical:
-                q_next, q_eval4next, q_eval = np.array(self.q_next.inference(bs_)), self.q_eval.inference(bs_), np.array(self.q_eval.inference(self.bs))
-                q_target = np.array(q_eval).copy()
+                q_next, q_eval4next, q_eval = np.array(self.q_next.inference(bs_)), self.q_eval.inference(bs_), self.q_eval.inference(self.bs)
                 next_action = tf.cast(tf.argmax(tf.reduce_sum(q_eval4next * self.z_list,axis=2), axis=1), tf.int32)
                 next_greedy_probs = q_next[batch_index, next_action]
                 reward = tf.cast(tf.expand_dims(reward, 1), tf.float32)
@@ -140,7 +141,9 @@ class DDQN(DQN):
                 for i in range(self.q_eval.N_atoms):
                     m[batch_index, l[batch_index, i]] += ml[:, i]
                     m[batch_index, u[batch_index, i]] += mu[:, i]
-                self.loss = - tf.reduce_sum(tf.log(q_eval[batch_index,eval_act_index]) * m, axis=1)
+                
+                self.td_error = -tf.reduce_sum(tf.multiply(tf.log(tf.gather_nd(q_eval, list(enumerate(eval_act_index)))),m), axis=1)
+                self.loss = tf.reduce_mean(self.td_error)
             else:
                 q_next, q_eval4next, q_eval = np.array(self.q_next.inference(bs_)), self.q_eval.inference(bs_), self.q_eval.inference(self.bs)
                 q_target = np.array(q_eval).copy()
