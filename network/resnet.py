@@ -21,7 +21,7 @@ class ResNet(CNN):
         #resnet type -> '18, 34, 50, 101, 152'
         self.n_res = 18
         self.filter = 64
-        self.p_L = 0.5 if trainable else 
+        self.p_L = 0.5 if trainable else 1.0
 
         if self.n_res < 50 :
             self.residual_block = self.resblock
@@ -78,6 +78,8 @@ class ResNet(CNN):
         idx : present layer
         L : value of Layers
         """
+        if self.p_L == 1.0:
+            return False
         survival_probability = 1.0 - idx / L * (1.0 - self.p_L)
         if tf.random.uniform(1) > survival_probability: # layer方向にDropout
             return True
