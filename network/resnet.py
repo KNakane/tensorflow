@@ -16,12 +16,13 @@ class ResNet(CNN):
                  lr=0.001,
                  l2_reg=False,
                  l2_reg_scale=0.0001,
+                 is_stochastic_depth=False,
                  trainable=False):
         super().__init__(name=name, out_dim=out_dim, opt=opt, lr=lr, l2_reg=l2_reg, l2_reg_scale=l2_reg_scale, trainable=trainable)
         #resnet type -> '18, 34, 50, 101, 152'
         self.n_res = 18
         self.filter = 64
-        self.p_L = 0.5 if trainable else 1.0
+        self.p_L = 0.5 if is_stochastic_depth else 1.0
 
         if self.n_res < 50 :
             self.residual_block = self.resblock
@@ -37,32 +38,35 @@ class ResNet(CNN):
                 tf.get_variable_scope().reuse_variables()
             logits = self.conv(x, [3, self.filter, 1, None])
             for i in range(self.residual_list[0]):
-                x = self.residual_block(x, channels=self.filter, downsample=False, name='resblock0_' + str(i))
-            x = self.residual_block(x, channels=self.filter*2, downsample=True, name='resblock1_0')
+                x = self.residual_block(x, channels=self.filter, layer_num=1, downsample=False, name='resblock0_' + str(i))
+            x = self.residual_block(x, channels=self.filter*2, layer_num=2, downsample=True, name='resblock1_0')
             for i in range(1, self.residual_list[1]) :
-                x = self.residual_block(x, channels=self.filter*2, downsample=False, name='resblock1_' + str(i))
-            x = self.residual_block(x, channels=self.filter*4, downsample=True, name='resblock2_0')
+                x = self.residual_block(x, channels=self.filter*2, layer_num=2, downsample=False, name='resblock1_' + str(i))
+            x = self.residual_block(x, channels=self.filter*4, layer_num=3, downsample=True, name='resblock2_0')
             for i in range(1, self.residual_list[2]) :
-                x = self.residual_block(x, channels=self.filter*4, downsample=False, name='resblock2_' + str(i))
-            x = self.residual_block(x, channels=self.filter*8, downsample=True, name='resblock_3_0')
+                x = self.residual_block(x, channels=self.filter*4, layer_num=3, downsample=False, name='resblock2_' + str(i))
+            x = self.residual_block(x, channels=self.filter*8, layer_num=4, downsample=True, name='resblock_3_0')
             for i in range(1, self.residual_list[3]) :
-                x = self.residual_block(x, channels=self.filter*8, downsample=False, name='resblock_3_' + str(i))
+                x = self.residual_block(x, channels=self.filter*8, layer_num=4, downsample=False, name='resblock_3_' + str(i))
             x = self.ReLU(self.BN(x, [None]),[None])
             x = self.gap(x,[self.out_dim])
             logits = self.fc(x, [self.out_dim, None])
             return logits
 
-    def resblock(self, x, channels, downsample=False, name=None):
+    def resblock(self, x, channels, layer_num, downsample=False, name=None):
         with tf.variable_scope(name):
-            logits = self.ReLU(self.BN(x, [None]),[None])
-            if downsample:
-                logits = self.conv(logits, [3, channels, 2, None])
-                x = self.conv(x, [1, channels, 2, None])
+            if self.stochastic_depth(layer_num):
+                return x
             else:
+                logits = self.ReLU(self.BN(x, [None]),[None])
+                if downsample:
+                    logits = self.conv(logits, [3, channels, 2, None])
+                    x = self.conv(x, [1, channels, 2, None])
+                else:
+                    logits = self.conv(logits, [3, channels, 1, None])
+                logits = self.ReLU(self.BN(logits, [None]),[None])
                 logits = self.conv(logits, [3, channels, 1, None])
-            logits = self.ReLU(self.BN(logits, [None]),[None])
-            logits = self.conv(logits, [3, channels, 1, None])
-            return logits + x
+                return logits + x
     
     def bottle_resblock(self):
         pass
@@ -78,7 +82,7 @@ class ResNet(CNN):
         idx : present layer
         L : value of Layers
         """
-        if self.p_L == 1.0:
+        if self.p_L == 1. or self._trainable is False:
             return False
         survival_probability = 1.0 - idx / L * (1.0 - self.p_L)
         if tf.random.uniform(1) > survival_probability: # layer方向にDropout
