@@ -29,6 +29,7 @@ def main(argv):
         FLAGS.priority = True
         FLAGS.multi_step = 3
         FLAGS.category = True
+        FLAGS.noise = True
     elif FLAGS.agent == 'PolicyGradient':
         FLAGS.multi_step = 30
     agent = eval(FLAGS.agent)(model=set_model(outdim=env.action_space.n),

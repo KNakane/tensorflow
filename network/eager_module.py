@@ -1,11 +1,12 @@
 import tensorflow as tf
 
 class EagerModule(tf.keras.Model):
-    def __init__(self, l2_reg=False, l2_reg_scale=0.0001, trainable=False):
+    def __init__(self, l2_reg=False, l2_reg_scale=0.0001, is_noise=False, trainable=False):
         super().__init__()
         self._l2_reg = l2_reg
         if self._l2_reg:
             self._l2_reg_scale = l2_reg_scale
+        self.is_noise = is_noise
         self._trainable = trainable
 
     def conv(self, args):
@@ -41,6 +42,8 @@ class EagerModule(tf.keras.Model):
 
     def fc(self, args): # args = [units, activation=tf.nn.relu]
         assert len(args) == 2, '[FC] Not enough Argument -> [units, activation]'
+        if self.is_noise:  # noisy net
+            pass
         regularizer = tf.keras.regularizers.l2(self._l2_reg_scale) if self._l2_reg else None
         x = tf.keras.layers.Dense(units=args[0], activation=args[1], kernel_regularizer=regularizer, use_bias=True)
         return x
@@ -48,11 +51,3 @@ class EagerModule(tf.keras.Model):
     def dropout(self, args):
         assert len(args) == 1, '[Dropout] Not enough Argument -> [rate]'
         return tf.keras.layers.Dropout (rate=args[2])
-
-    def noisy_dense(self, args): # 強化学習用
-        assert len(args) == 2, '[noisy_dense] Not enough Argument -> [units, activation]'
-        def f(e_list):
-            return tf.multiply(tf.sign(e_list), tf.pow(tf.abs(e_list), 0.5))
-        regularizer = tf.keras.regularizers.l2(self._l2_reg_scale) if self._l2_reg else None        
-        x = tf.keras.layers.Dense(units=args[0], activation=args[1], kernel_regularizer=regularizer, use_bias=True)
-        return x

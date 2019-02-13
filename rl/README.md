@@ -17,7 +17,7 @@ rl
 |Rainbow|atari,cartpole,pygame|categoricalとNoisyNetは未実装|
 |A2C||未実装|
 |DDPG|continuous||
-|TD3||continuous|
+|TD3|continuous||
 
 
 # Usage
@@ -30,13 +30,15 @@ rl
 各environmentに合わせて、wrapperを用意しており、そこから実行するようにしている
 - atari/atari_wrapper.py : atariを使用して強化学習を行う
 - classic/cartpole_wrapper.py : cartpoleで強化学習を行う
-- classic/cacher_wrapper.py : cacherで強化学習を行う
+- classic/continuous_wrapper.py : 連続値を扱う強化学習を行う
+- pygame/pygame_wrapper.py : pygameで強化学習を行う
 
 ## Learning
 各wrapperの使い方は  
 
-- [classic usage](classic/README.md)
 - [atari usage](atari/README.md)
+- [classic usage](classic/README.md)
+- [pygame usage](pygame/README.md)
 
 を参照のこと
 

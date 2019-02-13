@@ -26,6 +26,13 @@ $ pip install -r requirements.txt
 $ pip install tensorflow or pip install tensorflow-gpu
 ```
 
+# Usage
+全てのプログラムは基本的にここのディレクトリから呼び出して実行する必要がある
+```bash
+$ cd tensorflow
+$ python path/to/dir.py --args
+```
+実行結果は```results```に格納される
 
 # Directory
 ディレクトリ構造は以下の通り  

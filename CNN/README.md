@@ -7,7 +7,7 @@ tensorflowの練習用
 
 # Description
 - [2018年風TensorFlowでの学習処理の記述方法](http://ksksksks2.hatenadiary.jp/entry/20181008/1538994843)にある```MoniteredTrainedSession```や```tf.data```などの使い方を学ぶため、mnistやcifarを用いて、プログラムを作成する
-- Eager Mode(eager_train.py)を使用するよりも、sessionを立てる方(train.py))が計算が早いです
+- Eager Modeを使用するよりも、sessionを立てる方(train.py)が計算が早いです
 
 # Requirement
 新たにinstallするものはないため、[README.md](../README.md)を参照
@@ -36,6 +36,14 @@ listである**model_set**にlayerごとの情報をlistとしてappendする
 | BN | [] |
 | gap | [] |
 詳細は[module.py](https://github.com/KNakane/tensorflow/blob/master/network/module.py)参照のこと
+
+### Related Network
+上記はネットワークを自ら構築する必要があるが、すでに開発済みの以下のネットワークは構築せずとも使える（但し、学習済パラメータはなし）
+- ResNet
+- ResNext
+- SENet
+- DenseNet  
+以上は引数の```--network```で呼び出せば使うことが出来る
 
 ### Example
 ```
