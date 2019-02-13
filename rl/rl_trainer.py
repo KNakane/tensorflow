@@ -125,13 +125,13 @@ class Trainer():
             # test
             if episode % self.test_interval == 0 and learning_flag:
                 print('-------------------- test -------------------------------------')
-                for test_episode in range(self.test_episode):
+                for test_episode in range(1, self.test_episode+1):
                     frames = []
                     test_total_steps = 0
                     test_total_reward = 0
                     test_state = self.env.reset()
-                    for test_step in range(self.max_steps):
-                        #frames.append(self.env.render(mode='rgb_array'))
+                    for test_step in range(1, self.max_steps+1):
+                        frames.append(self.env.render(mode='rgb_array'))
                         test_action = self.agent.choose_action(test_state)
                         test_next_state, test_reward, test_done, _ = self.env.step(test_action)
                         test_total_reward += test_reward
@@ -145,7 +145,7 @@ class Trainer():
                             print("test_episode: %d total_steps: %d  steps/episode: %d  total_reward: %0.2f"%(test_episode, test_total_steps, test_step, test_total_reward))
                             break
                         test_state = test_next_state
-                    #display_frames_as_gif(frames, "test_{}_{}".format(episode, test_episode), self.util.res_dir)                
+                    display_frames_as_gif(frames, "test_{}_{}".format(episode, test_episode), self.util.res_dir)                
                 print('---------------------------------------------------------------')
 
         self.env.close()
