@@ -22,3 +22,19 @@ python hogehoge_wrpper.py --env (environment名) \
                           --lr (learning rate) \
                           --opt (optimizer)
 ```
+
+# Result
+## cartpole_wrapper
+### DQN
+### DDQN
+### DQN + Dueling
+### DDQN + Dueling
+## continuous_wrapper
+### DDPG
+|50回学習|100回学習|
+|:--:|:--:|
+|![代替テキスト](../../sample_results/rl/DDPG_50.gif)|![代替テキスト](../../sample_results/rl/DDPG_100.gif)|
+### TD3
+|50回学習|100回学習|
+|:--:|:--:|
+|![代替テキスト]()|![代替テキスト]()|
