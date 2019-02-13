@@ -17,7 +17,8 @@ class Agent(tf.contrib.checkpoint.Checkpointable):
             optimizer=None,
             network=None,
             policy=False,    # True : On-Policy   False : Off-policy
-            is_categorical=False
+            is_categorical=False,
+            is_noise=False
     ):
         # Eager Mode
         tf.enable_eager_execution()
@@ -34,6 +35,7 @@ class Agent(tf.contrib.checkpoint.Checkpointable):
         self.batch_size = batch_size
         self._optimizer = optimizer
         self.is_categorical = is_categorical
+        self.is_noise = is_noise
         self.epsilon_increment = e_greedy_increment
         self.epsilon = 0 if e_greedy_increment is not None else self.epsilon_max
 

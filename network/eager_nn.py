@@ -17,7 +17,8 @@ class BasedEagerNN(EagerModule):
                  l2_reg_scale=0.0001,
                  trainable=False,
                  is_noisy=False,
-                 is_categorical=False
+                 is_categorical=False,
+                 is_noise=False
                  ):
         super().__init__(l2_reg=l2_reg,l2_reg_scale=l2_reg_scale, trainable=trainable)
 
