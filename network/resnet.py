@@ -3,6 +3,7 @@
 # Based on https://github.com/taki0112/ResNeXt-Tensorflow
 import sys
 sys.path.append('./utility')
+import numpy as np
 import tensorflow as tf
 from cnn import CNN
 from optimizer import *
@@ -85,7 +86,7 @@ class ResNet(CNN):
         if self.p_L == 1. or self._trainable is False:
             return False
         survival_probability = 1.0 - idx / L * (1.0 - self.p_L)
-        if tf.random.uniform(1) > survival_probability: # layer方向にDropout
+        if np.random.rand() > survival_probability: # layer方向にDropout
             return True
         else:
             return False
