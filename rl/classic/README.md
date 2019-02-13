@@ -37,4 +37,4 @@ python hogehoge_wrpper.py --env (environment名) \
 ### TD3
 |50回学習|100回学習|
 |:--:|:--:|
-|![代替テキスト]()|![代替テキスト]()|
+|![代替テキスト](../../sample_results/rl/TD3_50.gif)|![代替テキスト](../../sample_results/rl/TD3_100.gif)|
