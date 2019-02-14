@@ -7,7 +7,7 @@ from load import Load
 from utils import Utils
 from cnn import CNN
 from lenet import LeNet
-from resnet import ResNet
+from resnet import ResNet, ResNeXt, SENet
 from dense_net import DenseNet
 from train import set_model
 
@@ -20,7 +20,8 @@ def main(args):
 
     # load dataset
     data = Load(FLAGS.data)
-    inputs, labels = data.load_test(data.x_test, data.y_test)
+    shape = int(data.x_test.shape[0] / 7)
+    inputs, labels = data.load_test(data.x_test[:shape], data.y_test[:shape])
 
     model_set = set_model(data.output_dim)
     model = eval(FLAGS.network)(model=model_set, name=FLAGS.network, out_dim=data.output_dim, lr=0, opt=None, trainable=False)
@@ -42,7 +43,7 @@ def main(args):
 if __name__ == '__main__':
     flags = tf.app.flags
     FLAGS = flags.FLAGS
-    flags.DEFINE_string('network', 'LeNet', 'Choice the training data name -> [CNN,LeNet,ResNet,DenseNet]')
+    flags.DEFINE_string('network', 'CNN', 'Choice the training data name -> [CNN,LeNet,ResNet,ResNeXt,SENet,DenseNet]')
     flags.DEFINE_string('ckpt_dir', './results/181225_193106/model', 'Choice the checkpoint directpry')
     flags.DEFINE_string('data', 'mnist', 'Choice the training data name -> ["mnist","cifar10","cifar100","kuzushiji"]')
     tf.app.run()
