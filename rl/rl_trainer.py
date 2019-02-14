@@ -145,7 +145,7 @@ class Trainer():
                             print("test_episode: %d total_steps: %d  steps/episode: %d  total_reward: %0.2f"%(test_episode, test_total_steps, test_step, test_total_reward))
                             break
                         test_state = test_next_state
-                    display_frames_as_gif(frames, "test_{}_{}".format(episode, test_episode), self.util.res_dir)                
+                    display_frames_as_gif(frames, "test_{}_{}".format(episode, test_episode), self.util.res_dir)
                 print('---------------------------------------------------------------')
 
         self.env.close()
