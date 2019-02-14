@@ -73,7 +73,7 @@ class EagerNN(BasedEagerNN):
                 
         if self.is_categorical:
             x = tf.reshape(x, (x.shape[0], self.out_dim, self.N_atoms))
-            return tf.keras.activations.softmax(x, axis=2)
+            return tf.clip_by_value(tf.keras.activations.softmax(x, axis=2), 1e-8, 1.0-1e-8)
         else:
             return x
 
@@ -107,7 +107,7 @@ class Dueling_Net(BasedEagerNN):
             V = tf.reshape(x[:,0], (x.shape[0], 1, self.N_atoms))
             V = tf.tile(V, [1, self.out_dim, 1])
             x = x[:, 1:] + V - tf.tile(tf.reshape(np.average(x[:,1:], axis=1), (x.shape[0], 1, self.N_atoms)), [1, self.out_dim, 1])
-            return tf.keras.activations.softmax(x, axis=2)
+            return tf.clip_by_value(tf.keras.activations.softmax(x, axis=2), 1e-8, 1.0-1e-8)
         else:
             # Dueling part
             V = tf.reshape(x[:,0], (x.shape[0], 1))

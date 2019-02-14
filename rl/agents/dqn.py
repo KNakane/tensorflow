@@ -15,6 +15,7 @@ class DQN(Agent):
             self.Vmax, self.Vmin = 10, -10
             self.delta_z = (self.Vmax - self.Vmin) / (self.q_eval.N_atoms - 1)
             self.z_list = tf.constant([self.Vmin + i * self.delta_z for i in range(self.q_eval.N_atoms)],dtype=tf.float32)
+            self.z_list_broadcasted = tf.tile(tf.reshape(self.z_list,[1,self.q_eval.N_atoms]), tf.constant([self.n_actions,1]))
 
         
     def _build_net(self):
@@ -28,7 +29,8 @@ class DQN(Agent):
 
     def inference(self, state):
         if self.is_categorical:
-            return tf.cast(tf.argmax(tf.reduce_sum(self.q_eval.inference(state) * self.z_list, axis=2), axis=1), tf.int32)
+            return tf.cast(tf.argmax(tf.reduce_sum(tf.multiply(self.q_eval.inference(state), self.z_list_broadcasted), axis=2), axis=1), tf.int32)
+            #return tf.cast(tf.argmax(tf.reduce_sum(self.q_eval.inference(state) * self.z_list, axis=2), axis=1), tf.int32)
         else:
             return self.q_eval.inference(state)
 
@@ -95,11 +97,6 @@ class DQN(Agent):
 class DDQN(DQN):
     def __init__(self,*args, **kwargs):
         super().__init__(*args, **kwargs)
-        if self.is_categorical:
-            self.Vmax, self.Vmin = 10, -10
-            self.delta_z = (self.Vmax - self.Vmin) / (self.q_eval.N_atoms - 1)
-            self.z_list = tf.constant([self.Vmin + i * self.delta_z for i in range(self.q_eval.N_atoms)],dtype=tf.float32)
-
 
     def update_q_net(self, replay_data, weights):
         self.bs, ba, done, bs_, br, p_idx = replay_data
@@ -115,9 +112,9 @@ class DDQN(DQN):
         with tf.GradientTape() as tape:
             global_step = tf.train.get_or_create_global_step()
             if self.is_categorical:
-                q_next, q_eval4next, q_eval = np.array(self.q_next.inference(bs_)), self.q_eval.inference(bs_), self.q_eval.inference(self.bs)
-                next_action = tf.cast(tf.argmax(tf.reduce_sum(q_eval4next * self.z_list,axis=2), axis=1), tf.int32)
-                next_greedy_probs = q_next[batch_index, next_action]
+                q_next, q_eval4next, q_eval = self.q_next.inference(bs_), self.q_eval.inference(bs_), self.q_eval.inference(self.bs)
+                next_action = tf.cast(tf.argmax(tf.reduce_sum(tf.multiply(q_eval4next, self.z_list_broadcasted), axis=2), axis=1), tf.int32)
+                Q_distributional_chosen_by_action_target = tf.gather_nd(q_next, list(enumerate(next_action)))
                 reward = tf.cast(tf.expand_dims(reward, 1), tf.float32)
                 done = tf.cast(tf.expand_dims(done, 1), tf.float32)
                 p_idx = tf.cast(tf.expand_dims(p_idx, 1), tf.float32)
@@ -125,25 +122,20 @@ class DDQN(DQN):
                 Tz = tf.clip_by_value(reward + (self.discount ** p_idx * tf.expand_dims(self.z_list,0) * (1 - done)), self.Vmin, self.Vmax)
                 b = (Tz - self.Vmin) / self.delta_z
                 u, l = tf.ceil(b), tf.floor(b)
-                eq = tf.cast(u == l, tf.float32)
-                l -= eq
-                lt0 = tf.cast(l < 0, tf.float32)
-                u += lt0
-                l += lt0
+                u_id, l_id = tf.cast(u, tf.int32), tf.cast(l, tf.int32)
+                u_minus_b, b_minus_l = u - b, b - l
+                Q_distributional_chosen_by_action_online = tf.gather_nd(q_eval4next, list(enumerate(eval_act_index)))
 
-                ml = next_greedy_probs * (u - b)
-                mu = next_greedy_probs * (b - l)
-
-                l = np.array(l, dtype=np.int8)
-                u = np.array(u, dtype=np.int8)
-
-                m = np.zeros((self.batch_size, self.q_eval.N_atoms), dtype=np.float32)
-                for i in range(self.q_eval.N_atoms):
-                    m[batch_index, l[batch_index, i]] += ml[:, i]
-                    m[batch_index, u[batch_index, i]] += mu[:, i]
-                
-                self.td_error = -tf.reduce_sum(tf.multiply(tf.log(tf.gather_nd(q_eval, list(enumerate(eval_act_index)))),m), axis=1)
-                self.loss = tf.reduce_mean(self.td_error)
+                index_help = tf.tile(tf.reshape(tf.range(self.batch_size),[-1, 1]), tf.constant([1, self.q_eval.N_atoms]))
+                index_help = tf.expand_dims(index_help, -1)
+                u_id = tf.concat([index_help, tf.expand_dims(u_id, -1)], axis=2)
+                l_id = tf.concat([index_help, tf.expand_dims(l_id, -1)], axis=2)
+                error = Q_distributional_chosen_by_action_target * u_minus_b * \
+                    tf.log(tf.gather_nd(Q_distributional_chosen_by_action_online, l_id)) \
+                  + Q_distributional_chosen_by_action_target * b_minus_l * \
+                    tf.log(tf.gather_nd(Q_distributional_chosen_by_action_online, u_id))
+                self.td_error = -tf.reduce_sum(error, axis=1)
+                self.loss = self.td_error * weights
             else:
                 q_next, q_eval4next, q_eval = np.array(self.q_next.inference(bs_)), self.q_eval.inference(bs_), self.q_eval.inference(self.bs)
                 q_target = np.array(q_eval).copy()
