@@ -37,7 +37,7 @@ class DQN(Agent):
     def update_q_net(self, replay_data, weights):
         self.bs, ba, done, bs_, br, p_idx = replay_data
         batch_index = np.arange(self.batch_size, dtype=np.int32)
-        eval_act_index = np.argmax(ba, axis=1 if ba.ndim > 1 else 0)
+        eval_act_index = ba
         reward = br
         done = done
 
@@ -101,7 +101,7 @@ class DDQN(DQN):
     def update_q_net(self, replay_data, weights):
         self.bs, ba, done, bs_, br, p_idx = replay_data
         batch_index = np.arange(self.batch_size, dtype=np.int32)
-        eval_act_index = np.argmax(ba, axis=1 if ba.ndim > 1 else 0)
+        eval_act_index = ba
         reward = br
         done = done
 
