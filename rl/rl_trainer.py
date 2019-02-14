@@ -79,7 +79,7 @@ class Trainer():
                         reward = r1 + r2
 
                     if len(self.state_deque) == self.multi_step or done:
-                        t_reward, reward, p_index = self.multi_step_reward(self.reward_deque, self.agent.discount)
+                        t_reward, p_index = self.multi_step_reward(self.reward_deque, self.agent.discount)
                         state = self.state_deque[0]
                         action = self.action_deque[0]
                         self.replay_buf.push(state, action, done, state_, t_reward, p_index)
@@ -151,9 +151,7 @@ class Trainer():
         self.env.close()
 
     def multi_step_reward(self, rewards, discount):
-        ret = 0.
-        t_ret = 0.
+        ret = 0.0
         for idx, reward in enumerate(rewards):
             ret += reward * (discount ** idx)
-            t_ret += reward
-        return ret, t_ret/(idx+1), idx + 1
+        return ret, idx + 1
