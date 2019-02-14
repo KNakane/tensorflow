@@ -26,9 +26,21 @@ python hogehoge_wrpper.py --env (environment名) \
 # Result
 ## cartpole_wrapper
 ### DQN
+|100回学習|150回学習|
+|:--:|:--:|
+|![代替テキスト](../../sample_results/rl/DQN_100.gif)|![代替テキスト](../../sample_results/rl/DQN_150.gif)|
 ### DDQN
+|100回学習|150回学習|
+|:--:|:--:|
+|![代替テキスト](../../sample_results/rl/DDQN_100.gif)|![代替テキスト](../../sample_results/rl/DDQN_150.gif)|
 ### DQN + Dueling
+|100回学習|150回学習|
+|:--:|:--:|
+|![代替テキスト](../../sample_results/rl/DQN_Duel_100.gif)|![代替テキスト](../../sample_results/rl/DQN_Duel_150.gif)|
 ### DDQN + Dueling
+|100回学習|150回学習|
+|:--:|:--:|
+|![代替テキスト](../../sample_results/rl/DDQN_Duel_100.gif)|![代替テキスト](../../sample_results/rl/DDQN_Duel_150.gif)|
 ## continuous_wrapper
 ### DDPG
 |50回学習|100回学習|
