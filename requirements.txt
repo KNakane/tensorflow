@@ -3,6 +3,7 @@ numpy
 keras
 gym
 gym[atari]
+gym[box2d]
 matplotlib
 requests
 opencv-python
