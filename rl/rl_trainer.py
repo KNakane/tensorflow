@@ -90,8 +90,9 @@ class Trainer():
                         train_data = map(np.array, zip(*transitions))
                         self.agent.update_q_net(train_data, weights)
                         learning_flag = 1
-                        if len(self.agent.bs[0].shape) == 4:
-                            tf.contrib.summary.image('train/input_img', tf.expand_dims(self.agent.bs[:,:,:,0], 3))
+                        if len(self.agent.bs.shape) == 4:
+                            image = tf.expand_dims(self.agent.bs[:3,:,:,0],3)
+                            tf.contrib.summary.image('train/input_img', tf.cast(image * 255.0, tf.uint8))
                         if self.agent.__class__.__name__ == 'DDPG':
                             tf.contrib.summary.scalar('train/critic_loss', self.agent.td_error)
                             tf.contrib.summary.scalar('train/actor_loss', self.agent.actor_loss)
