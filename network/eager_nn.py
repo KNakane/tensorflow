@@ -63,7 +63,7 @@ class EagerNN(BasedEagerNN):
                 my_layer = eval('self.' + self.model[l][0])(self.model[l][1:])
             self._layers.append(my_layer)
 
-    def inference(self, x):
+    def inference(self, x, softmax=True):
         for my_layer in self._layers:
             x = tf.convert_to_tensor(x, dtype=tf.float32)
             try:
@@ -73,7 +73,10 @@ class EagerNN(BasedEagerNN):
                 
         if self.is_categorical:
             x = tf.reshape(x, (x.shape[0], self.out_dim, self.N_atoms))
-            return tf.clip_by_value(tf.keras.activations.softmax(x, axis=2), 1e-8, 1.0-1e-8)
+            if softmax:
+                return tf.clip_by_value(tf.keras.activations.softmax(x, axis=2), 1e-8, 1.0-1e-8)
+            else:
+                return x
         else:
             return x
 
