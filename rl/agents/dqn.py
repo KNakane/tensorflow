@@ -114,7 +114,9 @@ class DDQN(DQN):
 
         with tf.GradientTape() as tape:
             if self.is_categorical:
-                q_next, q_eval4next, q_eval = np.array(self.q_next.inference(bs_)), self.q_eval.inference(bs_), self.q_eval.inference(self.bs)
+                q_next = np.array(self.q_next.inference(bs_))
+                q_eval4next = self.q_eval.inference(bs_)
+                q_eval = self.q_eval.inference(self.bs)
                 q_ = tf.reduce_sum(tf.multiply(q_eval4next, self.z_list), axis=2)
                 next_action = tf.cast(tf.argmax(q_, axis=1), tf.int32)
                 
@@ -125,8 +127,6 @@ class DDQN(DQN):
                 Tz = tf.clip_by_value(reward + (self.discount ** p_idx * tf.expand_dims(self.z_list,0) * (1 - done)), self.Vmin, self.Vmax)
                 b = (Tz - self.Vmin) / self.delta_z
                 u, l = tf.ceil(b), tf.floor(b)
-                l[(u > 0) * (l == u)] -= 1
-                u[(l < (self.q_eval.N_atoms - 1)) * (l == u)] += 1
                 u_id, l_id = tf.cast(u, tf.int32), tf.cast(l, tf.int32)
                 u_minus_b, b_minus_l = u - b, b - l
 
