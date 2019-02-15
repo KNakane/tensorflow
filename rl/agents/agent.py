@@ -69,5 +69,10 @@ class Agent(tf.contrib.checkpoint.Checkpointable):
             action = np.random.randint(0, self.n_actions)
         return action
 
+    def test_choose_action(self, observation):
+        observation = observation[np.newaxis, :]
+        actions_value = self.inference(observation)
+        return np.argmax(actions_value)
+
     def update_q_net(self, replay_data):
         raise Exception('please set update_q_net')

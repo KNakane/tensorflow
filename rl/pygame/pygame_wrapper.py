@@ -36,13 +36,14 @@ def main(argv):
     agent = eval(FLAGS.agent)(model=set_model(outdim=env.action_space.n),
                               n_actions=env.action_space.n,
                               n_features=env.observation_space.shape[0],
-                              learning_rate=0.01,
+                              learning_rate=FLAGS.lr,
                               batch_size=FLAGS.batch_size, 
                               e_greedy=0.9,
-                              replace_target_iter=30,
+                              reward_decay=0.9,
+                              replace_target_iter=100,
                               e_greedy_increment=0.0005,
                               optimizer=FLAGS.opt,
-                              network='Dueling_Net' if FLAGS.agent == 'Rainbow' else FLAGS.network,
+                              network=FLAGS.network,
                               is_categorical=FLAGS.category
                               )
 
@@ -53,8 +54,8 @@ def main(argv):
                       replay_size=FLAGS.batch_size, 
                       data_size=10**6,
                       n_warmup=FLAGS.n_warmup,
-                      priority=True if FLAGS.agent == 'Rainbow' else FLAGS.priority,
-                      multi_step=3 if FLAGS.agent == 'Rainbow' else FLAGS.multi_step,
+                      priority=FLAGS.priority,
+                      multi_step=FLAGS.multi_step,
                       render=FLAGS.render,
                       test_episode=3,
                       test_interval=1000)

@@ -133,7 +133,7 @@ class Trainer():
                     test_state = self.env.reset()
                     for test_step in range(1, self.max_steps+1):
                         #frames.append(self.env.render(mode='rgb_array'))
-                        test_action = self.agent.choose_action(test_state)
+                        test_action = self.agent.test_choose_action(test_state)
                         test_next_state, test_reward, test_done, _ = self.env.step(test_action)
                         test_total_reward += test_reward
                         
