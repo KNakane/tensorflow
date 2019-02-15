@@ -29,8 +29,7 @@ class DQN(Agent):
 
     def inference(self, state):
         if self.is_categorical:
-            return tf.cast(tf.argmax(tf.reduce_sum(tf.multiply(self.q_eval.inference(state), self.z_list_broadcasted), axis=2), axis=1), tf.int32)
-            #return tf.cast(tf.argmax(tf.reduce_sum(self.q_eval.inference(state) * self.z_list, axis=2), axis=1), tf.int32)
+            return tf.cast(tf.argmax(tf.reduce_sum(self.q_eval.inference(state) * self.z_list, axis=2), axis=1), tf.int32)
         else:
             return self.q_eval.inference(state)
 
