@@ -57,7 +57,7 @@ class Load():
 
             labels = labels.reshape(labels.shape[0])
 
-            if augmentation is not 'None' and is_training:
+            if augmentation is not None and is_training:
                 augment = Augment(images, labels)
                 images, labels = eval('augment.'+ augmentation)()
 
