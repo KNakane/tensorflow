@@ -39,7 +39,7 @@ class ResNet(CNN):
                 tf.get_variable_scope().reuse_variables()
             logits = self.conv(x, [3, self.filter, 1, None])
             for i in range(self.residual_list[0]):
-                x = self.residual_block(x, channels=self.filter, layer_num=1, downsample=False, name='resblock0_' + str(i))
+                x = self.residual_block(logits, channels=self.filter, layer_num=1, downsample=False, name='resblock0_' + str(i))
             x = self.residual_block(x, channels=self.filter*2, layer_num=2, downsample=True, name='resblock1_0')
             for i in range(1, self.residual_list[1]) :
                 x = self.residual_block(x, channels=self.filter*2, layer_num=2, downsample=False, name='resblock1_' + str(i))
