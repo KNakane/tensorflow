@@ -30,3 +30,11 @@ $ python AutoEncoder/train.py --data (データ名) \
                               --keep_checkpoint_every_n_hours \
                               --save_checkpoint_steps
 ```
+
+# Sample Result
+## AutoEncoder
+上 : 入力画像, 下 : 出力画像
+![代替テキスト](../sample_results/AutoEncoder/autoencoder.png)
+
+## VAE
+上 : 入力画像, 下 : 出力画像
