@@ -5,6 +5,8 @@ AutoEncoder
 AutoEncoderを使用して、画像を生成する
 
 # Description
+mnistなどのデータセットを用いて、AutoEncoderで画像生成を行う  
+現在、AutoEncoderとVAEが使える  
 
 # Requirement
 新たにinstallするものはないため、[README.md](../README.md)を参照
@@ -23,7 +25,7 @@ $ python AutoEncoder/train.py --data (データ名) \
                               --batch_size (batch size) \
                               --lr (学習率) \
                               --opt (optimizer) \
-                              --aug (augmentationをするかしないか) \
+                              --aug (augmentationの種類) \
                               --checkpoints_to_keep \
                               --keep_checkpoint_every_n_hours \
                               --save_checkpoint_steps
