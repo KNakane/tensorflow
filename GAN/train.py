@@ -3,6 +3,7 @@ sys.path.append('./CNN')
 sys.path.append('./dataset')
 import tensorflow as tf
 from gan import GAN
+from dcgan import DCGAN
 from utils import Utils
 from load import Load
 from collections import OrderedDict
@@ -41,7 +42,7 @@ def main(args):
     D_logits, D_logits_, G = model.inference(inputs, batch_size)
     dis_loss, gen_loss = model.loss(D_logits, D_logits_)
     
-    g_op, d_op = model.optimize(dis_loss, gen_loss)
+    d_op, g_op = model.optimize(d_loss=dis_loss, g_loss=gen_loss)
     #predict = model.predict()
     #correct_prediction = tf.equal(dis_true, 1) + tf.equal(dis_fake, 0)
     #accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
@@ -88,13 +89,11 @@ def main(args):
         save_summaries_steps=1,
         save_checkpoint_steps=save_checkpoint_steps,
         summary_dir=util.tf_board)
-        
+
     with session:
         while not session.should_stop():
-            for _ in range(2):
-                session.run([g_op])
-            session.run([d_op])
-
+            session.run([g_op])
+            session.run([d_op,g_op])
     return
 
 if __name__ == '__main__':
@@ -102,7 +101,7 @@ if __name__ == '__main__':
     FLAGS = flags.FLAGS
     flags.DEFINE_string('network', 'GAN', 'Choice the training data name -> [GAN]')
     flags.DEFINE_string('data', 'mnist', 'Choice the training data name -> ["mnist","cifar10","cifar100"]')
-    flags.DEFINE_integer('n_epoch', '1000', 'Input max epoch')
+    flags.DEFINE_integer('n_epoch', '100000', 'Input max epoch')
     flags.DEFINE_integer('batch_size', '32', 'Input batch size')
     flags.DEFINE_float('lr', '2e-4', 'Input learning rate')
     flags.DEFINE_string('opt', 'SGD', 'Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]')

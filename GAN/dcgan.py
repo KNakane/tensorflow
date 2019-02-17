@@ -4,10 +4,7 @@ sys.path.append('./utility')
 import tensorflow as tf
 import math
 from module import Module
-from optimizer import *
-from based_gan import BasedGAN
-from generator import Generator
-from discriminator import Discriminator
+from based_gan import BasedGAN, Discriminator, Generator
 
 class DCGAN(BasedGAN):
     def __init__(self, **kwargs):
@@ -50,39 +47,30 @@ class DCGAN(BasedGAN):
                      ['fc', 1, None]
                      ]
 
-        self.generator = Generator(model=gen_model, opt=self.opt, lr=self.lr, scope_name=self.name, trainable=self.trainable)
-        self.discriminator = Discriminator(model=dis_model, opt=self.opt, lr=self.lr, scope_name=self.name, trainable=self.trainable)
+        self.D = Discriminator(dis_model)
+        self.G = Generator(gen_model)
 
     def inference(self, inputs, batch_size):
-        with tf.variable_scope(self.name):
-            self.z = tf.random_normal((batch_size, self._z_dim), dtype=tf.float32)
-            self.G = self.generator.inference(self.z)
-            
-            self.D_logits = self.discriminator.inference(inputs)               # input Correct data
-            self.D_logits_ = self.discriminator.inference(self.G, reuse=True) # input Fake data
-
-            return self.D_logits, self.D_logits_, self.G
+        self.z = tf.random_normal((batch_size, self._z_dim), dtype=tf.float32)
+        fake_img = self.G(self.z)
+        real_logit = self.D(inputs)
+        fake_logit = self.D(fake_img, reuse=True)
+        return real_logit, fake_logit, fake_img
 
     def predict(self):
         return self.generator.inference(self.z)
 
-    def loss(self, img, fake_img):
-        real = tf.nn.sigmoid(img)
-        fake = tf.nn.sigmoid(fake_img)
-        """
-        self.d_loss_real = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=real, labels=tf.ones_like(img)))
-        self.d_loss_fake = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=fake, labels=tf.zeros_like(fake_img)))
-        self.g_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=fake, labels=tf.ones_like(fake_img)))
-        self.d_loss = self.d_loss_real + self.d_loss_fake
-        """
-        self.d_loss = - (tf.reduce_mean(tf.log(real + self.eps)) + tf.reduce_mean(tf.log(1 - fake + self.eps)))
-        self.g_loss = - tf.reduce_mean(tf.log(fake + self.eps))
+    def loss(self, real_logit, fake_logit):
+        d_loss_real = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=real_logit, labels=tf.ones_like(real_logit)))
+        d_loss_fake = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=fake_logit, labels=tf.zeros_like(fake_logit)))
+        d_loss = d_loss_real + d_loss_fake
+        g_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=fake_logit, labels=tf.ones_like(fake_logit)))
 
-        return self.d_loss, self.g_loss
+        return d_loss, g_loss
 
-    def optimize(self, dis_loss, gen_loss):
-        global_steps = tf.train.get_or_create_global_step()
-        with tf.control_dependencies(tf.get_collection(tf.GraphKeys.UPDATE_OPS)):
-            return self.generator.optimize(loss=gen_loss, global_step=global_steps), self.discriminator.optimize(loss=dis_loss, global_step=global_steps)
-    
+    def optimize(self, d_loss, g_loss):
+        global_step = tf.train.get_or_create_global_step()
+        opt_D = tf.train.AdamOptimizer(1e-4, beta1=0.5).minimize(d_loss, global_step, var_list=self.D.var)
+        opt_G = tf.train.AdamOptimizer(2e-4, beta1=0.5).minimize(g_loss, global_step, var_list=self.G.var)
+        return opt_D, opt_G
 
