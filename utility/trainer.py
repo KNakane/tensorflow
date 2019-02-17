@@ -20,7 +20,10 @@ class Train():
         self.max_steps = FLAGS.n_epoch
         self.save_checkpoint_steps = self.max_steps / 10 if FLAGS.save_checkpoint_steps is None else FLAGS.save_checkpoint_steps
         self.batch_size = FLAGS.batch_size
-        self.aug = FLAGS.aug if hasattr(FLAGS, 'aug') else None
+        if hasattr(FLAGS, 'aug') and FLAGS.aug != "None":
+            self.aug = FLAGS.aug
+        else:
+            self.aug = None
         self.name = name
         self.message = message
         self.data = data
