@@ -132,6 +132,7 @@ class Train():
         
         with session:
             while not session.should_stop():
-                _, loss, train_acc, test_acc = session.run([train_op, train_loss, train_accuracy, test_accuracy])
-            
+                _, loss, train_acc, test_acc, test_input, test_output = session.run([train_op, train_loss, train_accuracy, test_accuracy, valid_inputs, test_logits])
+        if self.name == 'AutoEncoder' or self.name == 'VAE':
+            util.construct_figure(test_input, test_output)
         return loss, train_acc, test_acc

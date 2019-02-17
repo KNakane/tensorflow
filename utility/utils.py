@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import datetime
 import tensorflow as tf
+import matplotlib.pyplot as plt
 
 
 class Utils():
@@ -63,3 +64,23 @@ class Utils():
                                              signature_def_map={'predict': signature})
         builder.save()
         return
+
+    def construct_figure(self, x_test, decoded_imgs):
+        n = 10
+        plt.figure(figsize=(20, 4))
+        for i in range(n):
+            #  display original
+            ax = plt.subplot(2, n, i + 1)
+            ax.imshow(x_test[i].reshape(28, 28))
+            plt.gray()
+            ax.get_xaxis().set_visible(False)
+            ax.get_yaxis().set_visible(False)
+
+            ax = plt.subplot(2, n, i + 1 + n)
+            ax.imshow(decoded_imgs[i].reshape(28, 28))
+            plt.gray()
+            ax.get_xaxis().set_visible(False)
+            ax.get_yaxis().set_visible(False)
+            
+            plt.tight_layout()
+        plt.savefig(self.log_dir + '/construct_figure.png')
