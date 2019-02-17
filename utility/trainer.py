@@ -26,6 +26,7 @@ class Train():
         self.data = data
         self.global_step = tf.train.get_or_create_global_step()
         self.model = model
+        self.restore_dir = FLAGS.init_model
 
     def load(self):
         # Load Dataset
@@ -60,13 +61,15 @@ class Train():
                                    self.data.labels_placeholder: self.data.y_train,
                                    self.data.valid_placeholder: self.data.x_test,
                                    self.data.valid_labels_placeholder: self.data.y_test})
+        
+        saver = tf.train.Saver(
+                max_to_keep=self.checkpoints_to_keep,
+                keep_checkpoint_every_n_hours=self.keep_checkpoint_every_n_hours)
 
         # create saver
         scaffold = tf.train.Scaffold(
             init_fn=init_fn,
-            saver=tf.train.Saver(
-                max_to_keep=self.checkpoints_to_keep,
-                keep_checkpoint_every_n_hours=self.keep_checkpoint_every_n_hours))
+            saver=saver)
 
         tf.logging.set_verbosity(tf.logging.INFO)
         config = tf.ConfigProto(allow_soft_placement=True, log_device_placement=False)
@@ -131,6 +134,11 @@ class Train():
                 summary_dir=util.tf_board)
         
         with session:
+            if self.restore_dir is not None:
+                ckpt = tf.train.get_checkpoint_state(self.restore_dir)
+                if ckpt and ckpt.model_checkpoint_path:
+                    # Restores from checkpoint
+                    saver.restore(session, ckpt.model_checkpoint_path)
             while not session.should_stop():
                 _, loss, train_acc, test_acc, test_input, test_output = session.run([train_op, train_loss, train_accuracy, test_accuracy, valid_inputs, test_logits])
         if self.name == 'AutoEncoder' or self.name == 'VAE':
