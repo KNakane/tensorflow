@@ -15,11 +15,13 @@ class AutoEncoder(CNN):
                  out_dim=10,
                  opt=Adam,   # Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]
                  lr=0.001,
+                 l2_reg=False,
+                 l2_reg_scale=0.0001,
                  trainable=False
                  ):
         assert encode is not None, "Please set encode model"
         assert decode is not None, "Please set decode model"
-        super().__init__(name=name, out_dim=out_dim, opt=opt, lr=lr, trainable=trainable)
+        super().__init__(name=name, out_dim=out_dim, opt=opt, lr=lr, l2_reg=l2_reg, l2_reg_scale=l2_reg_scale, trainable=trainable)
         self.encode = encode
         self.decode = decode
 
@@ -61,9 +63,11 @@ class VAE(AutoEncoder):
                  out_dim=10,
                  opt=Adam,   # Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]
                  lr=0.001,
+                 l2_reg=False,
+                 l2_reg_scale=0.0001,
                  trainable=False
                  ):
-        super().__init__(encode=encode, decode=decode, name=name, out_dim=out_dim, opt=opt, lr=lr, trainable=trainable)
+        super().__init__(encode=encode, decode=decode, name=name, out_dim=out_dim, opt=opt, lr=lr, l2_reg=l2_reg, l2_reg_scale=l2_reg_scale, trainable=trainable)
 
     def Encode(self, outputs, reuse=False):
         with tf.variable_scope('Encode'):
