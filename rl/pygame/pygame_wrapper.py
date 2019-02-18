@@ -57,8 +57,8 @@ def main(argv):
                       priority=FLAGS.priority,
                       multi_step=FLAGS.multi_step,
                       render=FLAGS.render,
-                      test_episode=3,
-                      test_interval=1000)
+                      test_episode=2,
+                      test_interval=50)
 
     print()
     print("---Start Learning------")
@@ -85,7 +85,7 @@ if __name__ == '__main__':
     flags.DEFINE_string('agent', 'DQN', 'Choise Agents -> [DQN, DDQN]')
     flags.DEFINE_integer('n_episode', '100000', 'Input max episode')
     flags.DEFINE_string('network', 'EagerNN', 'Choise Network -> [EagerNN, Dueling_Net]')
-    flags.DEFINE_integer('step', '10000', 'Input max steps')
+    flags.DEFINE_integer('step', '7000', 'Input max steps')
     flags.DEFINE_integer('batch_size', '32', 'Input batch size')
     flags.DEFINE_integer('multi_step', '1', 'how many multi_step')
     flags.DEFINE_integer('n_warmup', '1000', 'n_warmup value')

@@ -36,8 +36,11 @@ python pygame_wrapper.py --env (environment名) \
 ```
 
 # Result
-## cartpole_wrapper
+## Catcher
 ### DQN
+|50回学習|100回学習|
+|:--:|:--:|
+|<img src="../../sample_results/rl/catcher/DQN_50.gif" width="100%">||
 ### DDQN
 ### DQN + Dueling
 ### DDQN + Dueling
