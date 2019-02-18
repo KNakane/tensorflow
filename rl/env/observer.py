@@ -23,3 +23,6 @@ class Observer():
 
     def transform(self, state):
         raise Exception("You have to implements transform method.")
+
+    def close(self):
+        self._env.close()
