@@ -113,10 +113,10 @@ class DDQN(DQN):
 
         with tf.GradientTape() as tape:
             if self.is_categorical:
-                q_next = np.array(self.q_next.inference(bs_))
-                q_eval4next = self.q_eval.inference(bs_)
-                q_eval = self.q_eval.inference(self.bs)
-                q_ = tf.reduce_sum(tf.multiply(q_eval4next, self.z_list), axis=2)
+                q_next = np.array(self.q_next.inference(bs_)) #target network Q'(s', a)
+                q_eval4next = self.q_eval.inference(bs_)      #main network   Q(s', a)
+                q_eval = self.q_eval.inference(self.bs)       #main network   Q(s, a)
+                q_ = tf.reduce_sum(tf.multiply(q_eval4next, self.z_list), axis=2) # a = argmax(Q(s',a))
                 next_action = tf.cast(tf.argmax(q_, axis=1), tf.int32)
                 
                 reward = tf.cast(tf.expand_dims(reward, 1), tf.float32)
@@ -128,8 +128,9 @@ class DDQN(DQN):
                 u, l = tf.ceil(b), tf.floor(b)
                 u_id, l_id = tf.cast(u, tf.int32), tf.cast(l, tf.int32)
                 u_minus_b, b_minus_l = u - b, b - l
-
-                Q_distributional_chosen_by_action_target = q_next[batch_index, next_action]
+                
+                Q_distributional_chosen_by_action_target = np.full((self.batch_size, self.q_eval.N_atoms), 1.0/self.q_eval.N_atoms)
+                Q_distributional_chosen_by_action_target[bs_] = q_next[batch_index, next_action]
                 Q_distributional_chosen_by_action_online = tf.gather_nd(q_eval, list(enumerate(eval_act_index)))
 
                 index_help = tf.tile(tf.reshape(tf.range(self.batch_size),[-1, 1]), tf.constant([1, self.q_eval.N_atoms]))
