@@ -46,3 +46,7 @@ python pygame_wrapper.py --env (environment名) \
 ### DDQN + Dueling
 |50回学習|100回学習|
 |:--:|:--:|
+### DDQN + Dueling + priority + multi_step
+|50回学習|100回学習|
+|:--:|:--:|
+|<img src="../../sample_results/rl/catcher/DDQN_priority_multi_duel_50.gif" width="100%">||

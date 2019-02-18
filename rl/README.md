@@ -5,7 +5,7 @@ rl
 強化学習を行うフォルダ  
 使用できるEnvironmentは以下の通り
 - [Open AI gym](https://gym.openai.com/) : CartpoleやBreakout, Invaderなど
-- [pygame]()  : python上でゲームの環境が作成できる  
+- [pygame](https://pygame-learning-environment.readthedocs.io/en/latest/)  : python上でゲームの環境が作成できる  
 
 # Description
 [All env](https://medium.com/@researchplex/openai-gym-environment-full-list-8b2e8ac4c1f7)にgymで使用できるenvironmentの一覧が記載されている  
@@ -22,13 +22,13 @@ rl
 
 # Usage
 ## Build Network
-- 各wrapper内にset_model関数があるため、そこにNetworkの構造を作成する
+- 各wrapper内にset_model関数があるため、そこにNetworkの構造を作成する
 - 作成方法は[README.md](../CNN/README.md)のBuildNetworkを参照
 - 注意点：conv -> fcの時には、その間にflatが必要（入力次元を下げるため）
 
 ## Wrapper
 各environmentに合わせて、wrapperを用意しており、そこから実行するようにしている
-- atari/atari_wrapper.py : atariを使用して強化学習を行う
+- atari/atari_wrapper.py : atariを使用して強化学習を行う
 - classic/cartpole_wrapper.py : cartpoleで強化学習を行う
 - classic/continuous_wrapper.py : 連続値を扱う強化学習を行う
 - pygame/pygame_wrapper.py : pygameで強化学習を行う
