@@ -72,7 +72,7 @@ class EagerNN(BasedEagerNN):
                 x = my_layer(x)
                 
         if self.is_categorical:
-            x = tf.reshape(x, (x.shape[0], self.out_dim, self.N_atoms))
+            x = tf.reshape(x, (-1, self.out_dim, self.N_atoms))
             if softmax:
                 return tf.clip_by_value(tf.keras.activations.softmax(x, axis=2), 1e-8, 1.0-1e-8)
             else:
