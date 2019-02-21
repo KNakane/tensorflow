@@ -57,7 +57,7 @@ class ResNet(CNN):
     def resblock(self, x, channels, layer_num, downsample=False, name=None):
         with tf.variable_scope(name):
             if self.stochastic_depth(layer_num):
-                return x
+                return self.conv(x, [1, channels, 2, None]) if downsample else x
             else:
                 logits = self.ReLU(self.BN(x, [None]),[None])
                 if downsample:
@@ -85,8 +85,9 @@ class ResNet(CNN):
         """
         if self.p_L == 1. or self._trainable is False:
             return False
+        
         survival_probability = 1.0 - idx / L * (1.0 - self.p_L)
-        if np.random.rand() > survival_probability: # layer方向にDropout
+        if np.random.rand() >= survival_probability: # layer方向にDropout
             return True
         else:
             return False
