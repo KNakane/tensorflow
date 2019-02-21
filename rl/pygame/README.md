@@ -40,13 +40,19 @@ python pygame_wrapper.py --env (environment名) \
 ### DQN
 |50回学習|100回学習|
 |:--:|:--:|
-|<img src="../../sample_results/rl/catcher/DQN_50.gif" width="100%">||
+|<img src="../../sample_results/rl/catcher/DQN_50.gif" width="100%">|<img src="../../sample_results/rl/catcher/DQN_100.gif" width="100%">|
 ### DDQN
+|50回学習|100回学習|
+|:--:|:--:|
+|<img src="../../sample_results/rl/catcher/DDQN_50.gif" width="100%">|<img src="../../sample_results/rl/catcher/DDQN_100.gif" width="100%">|
 ### DQN + Dueling
+|50回学習|100回学習|
+|:--:|:--:|
 ### DDQN + Dueling
 |50回学習|100回学習|
 |:--:|:--:|
+|<img src="../../sample_results/rl/catcher/DDQN_duel_50.gif" width="100%">|<img src="../../sample_results/rl/catcher/DDQN_duel_100.gif" width="100%">|
 ### DDQN + Dueling + priority + multi_step
 |50回学習|100回学習|
 |:--:|:--:|
-|<img src="../../sample_results/rl/catcher/DDQN_priority_multi_duel_50.gif" width="100%">||
+|<img src="../../sample_results/rl/catcher/DDQN_priority_multi_duel_50.gif" width="100%">|<img src="../../sample_results/rl/catcher/DDQN_priority_multi_duel_100.gif" width="100%">|
