@@ -66,6 +66,17 @@ class Utils():
         return
 
     def construct_figure(self, x_test, decoded_imgs):
+        '''
+        元の画像と生成した画像10枚ずつを保存する
+        parameters
+        ----------
+        x_test : input test image
+        decoded_imgs : generate image
+
+        returns
+        -------
+
+        '''
         n = 10
         plt.figure(figsize=(20, 4))
         for i in range(n):
