@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import os
 import datetime
 import tensorflow as tf
 import matplotlib.pyplot as plt
@@ -20,15 +21,52 @@ class Utils():
         if tf.gfile.Exists(self.res_dir):
             tf.gfile.DeleteRecursively(self.res_dir)
         tf.gfile.MakeDirs(self.res_dir)
+        return
 
     def initial(self):
         self.conf_log()
+        if not os.path.isdir(self.log_dir):
+            tf.gfile.MakeDirs(self.log_dir)
+        return
+
+    def write_configuration(self, message):
+        """
+        設定をテキストに出力する
+
+        parameters
+        -------
+        message : dict
+        """
+        with open(self.log_dir + '/log.txt', 'a') as f:
+            f.write("------Learning Details------\n")
+            for key, info in message.items():
+                f.write("%s : %s\n"%(key, info))
+            f.write("----------------------------\n")
+        return 
+
+
+    def write_log(self, message):
+        """
+        学習状況をテキストに出力する
+
+        parameters
+        -------
+        message : dict
+        """
+        stats = []
+        for key, info in message.items():
+            stats.append("%s = %s" % (key, info))
+        info = "%s\n"%(", ".join(stats))
+        with open(self.log_dir + '/log.txt', 'a') as f:
+            f.write(str(info))
+        return 
 
     def save_init(self, model):
         self.checkpoint = tf.train.Checkpoint(policy=model)
         self.saver = tf.contrib.checkpoint.CheckpointManager(self.checkpoint,
                                                              directory=self.model_path,
                                                              max_to_keep=5)
+        return
 
     def save_model(self, episode=None):
         if self.sess is not None:
@@ -38,6 +76,7 @@ class Utils():
 
     def restore_agent(self, log_dir=None):
         self.checkpoint.restore(tf.train.latest_checkpoint(log_dir))
+        return
 
 
     def restore_model(self, log_dir=None):

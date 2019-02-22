@@ -6,6 +6,7 @@ import random
 import numpy as np
 import tensorflow as tf
 from collections import deque
+from collections import OrderedDict
 from utils import Utils
 from display_as_gif import display_frames_as_gif
 from replay_memory import ReplayBuffer,PrioritizeReplayBuffer
@@ -38,7 +39,7 @@ class Trainer():
         self.test_episode = test_episode
         self.test_interval = test_interval if test_interval is not None else 10000
         self.util = Utils(prefix=self.agent.__class__.__name__)
-        self.util.conf_log() 
+        self.util.initial() 
         self.replay_buf = PrioritizeReplayBuffer(self.data_size) if priority else ReplayBuffer(self.data_size)
         self.global_step = tf.train.get_or_create_global_step()
         self.state_deque = deque(maxlen=self.multi_step)
@@ -116,6 +117,12 @@ class Trainer():
                         tf.contrib.summary.scalar('train/total_reward', total_reward)
                         tf.contrib.summary.scalar('train/average_reward', total_reward / step)
                         print("episode: %d total_steps: %d  steps/episode: %d  total_reward: %0.2f"%(episode, total_steps, step, total_reward))
+                        metrics = OrderedDict({
+                            "episode": episode,
+                            "total_steps": total_steps,
+                            "steps/episode":step,
+                            "total_reward": total_reward})
+                        self.util.write_log(message=metrics)
                         #self.util.save_model()
                         self.state_deque.clear()
                         self.action_deque.clear()
