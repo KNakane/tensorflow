@@ -2,6 +2,7 @@
 import os,sys
 sys.path.append('./utility')
 sys.path.append('./network')
+import numpy as np
 import tensorflow as tf
 from cnn import CNN
 from module import Module
@@ -49,6 +50,9 @@ class AutoEncoder(CNN):
             outputs = self.Encode(outputs, reuse)
             outputs = self.Decode(outputs, reuse)
             return outputs
+
+    def test_inference(self, outputs):
+        return self.inference(outputs)
         
     def loss(self, logits, labels):
         loss = tf.reduce_mean(tf.square(logits - labels))
@@ -56,6 +60,7 @@ class AutoEncoder(CNN):
 
 
 class VAE(AutoEncoder):
+    # Based on https://github.com/shaohua0116/VAE-Tensorflow
     def __init__(self, 
                  encode=None,
                  decode=None,
@@ -85,20 +90,28 @@ class VAE(AutoEncoder):
             outputs = tf.clip_by_value(self.Decode(compose_img, reuse), 1e-8, 1 - 1e-8)
             
             return outputs
+
+    def test_inference(self, outputs):
+        n = 20
+        x = tf.convert_to_tensor(np.linspace(0.05, 0.95, n))
+        z = tf.tile(tf.expand_dims(x, 0), [2,1])
+        return self.Decode(z)
+
     
     def re_parameterization(self, mu, var):
         with tf.variable_scope('re_parameterization'):
-            std = tf.exp(0.5*var)
+            std = tf.exp(0.5 * var)
             eps = tf.random_normal(tf.shape(mu), 0, 1, dtype=tf.float32)
-            return mu + std * eps
+            return mu + tf.sqrt(tf.exp(std)) * eps
 
     def loss(self, logits, labels):
+        epsilon = 1e-10
         with tf.variable_scope('loss'):
             if len(logits.shape) > 2:
                 logits = tf.layers.flatten(logits)
             if len(labels.shape) > 2:
                 labels = tf.layers.flatten(labels)
-            reconstruct_loss = tf.reduce_sum(tf.nn.sigmoid_cross_entropy_with_logits(logits=logits, labels=labels))
-            KL_divergence = -0.5 * tf.reduce_sum(1 + self.var - tf.pow(self.mu,2) - tf.exp(self.var))
-            return tf.reduce_mean(reconstruct_loss + KL_divergence)
+            reconstruct_loss = -tf.reduce_mean(tf.reduce_sum(labels * tf.log(epsilon + logits) + (1 - labels) * tf.log(epsilon + 1 - logits), axis=1))
+            KL_divergence = tf.reduce_mean(-0.5 * tf.reduce_sum(1 + self.var - tf.square(self.mu - tf.exp(self.var)), axis=1))
+            return reconstruct_loss + KL_divergence
         
