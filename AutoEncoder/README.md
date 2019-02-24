@@ -38,3 +38,4 @@ $ python AutoEncoder/train.py --data (データ名) \
 
 ## VAE
 上 : 入力画像, 下 : 出力画像
+![代替テキスト](../sample_results/AutoEncoder/vae.png)
