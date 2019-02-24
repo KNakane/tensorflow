@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+import numpy as np
 import datetime
 import tensorflow as tf
 import matplotlib.pyplot as plt
@@ -104,7 +105,7 @@ class Utils():
         builder.save()
         return
 
-    def construct_figure(self, x_test, decoded_imgs):
+    def construct_figure(self, x_test, decoded_imgs, n=10):
         '''
         元の画像と生成した画像10枚ずつを保存する
         parameters
@@ -116,7 +117,6 @@ class Utils():
         -------
 
         '''
-        n = 10
         plt.figure(figsize=(20, 4))
         for i in range(n):
             #  display original
@@ -133,4 +133,12 @@ class Utils():
             ax.get_yaxis().set_visible(False)
             
             plt.tight_layout()
+        plt.savefig(self.log_dir + '/construct_figure.png')
+
+    def reconstruct_image(self, decoded_imgs):
+        """
+        VAEで出力した画像の図を作成する
+        """
+        plt.figure(figsize=(8, 8)) 
+        plt.imshow(decoded_imgs, cmap="gray")
         plt.savefig(self.log_dir + '/construct_figure.png')
