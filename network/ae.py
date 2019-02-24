@@ -12,6 +12,7 @@ class AutoEncoder(CNN):
     def __init__(self, 
                  encode=None,
                  decode=None,
+                 denoise=False,
                  name='AutoEncoder',
                  out_dim=10,
                  opt=Adam,   # Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]
@@ -25,6 +26,7 @@ class AutoEncoder(CNN):
         super().__init__(name=name, out_dim=out_dim, opt=opt, lr=lr, l2_reg=l2_reg, l2_reg_scale=l2_reg_scale, trainable=trainable)
         self.encode = encode
         self.decode = decode
+        self.denoise = denoise
 
     def Encode(self, outputs, reuse=False):
         with tf.variable_scope('Encode'):
@@ -42,11 +44,14 @@ class AutoEncoder(CNN):
                 outputs = (eval('self.' + self.decode[l][0])(outputs, self.decode[l][1:]))
             return outputs
 
-    def variable(self, outputs):
-        return outputs
+    def noise(self, outputs):
+        outputs += tf.random_normal(tf.shape(outputs))
+        return tf.clip_by_value(outputs, 1e-8, 1 - 1e-8)
 
     def inference(self, outputs, reuse=False):
         with tf.variable_scope(self.name):
+            if self.denoise:
+                outputs = self.noise(outputs)
             outputs = self.Encode(outputs, reuse)
             outputs = self.Decode(outputs, reuse)
             return outputs
@@ -64,6 +69,7 @@ class VAE(AutoEncoder):
     def __init__(self, 
                  encode=None,
                  decode=None,
+                 denoise=False,
                  name='VAE',
                  out_dim=10,
                  opt=Adam,   # Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]
@@ -85,6 +91,8 @@ class VAE(AutoEncoder):
 
     def inference(self, outputs, reuse=False):
         with tf.variable_scope(self.name):
+            if self.denoise:
+                outputs = self.noise(outputs)
             self.mu, self.var = self.Encode(outputs, reuse)
             compose_img = self.re_parameterization(self.mu, self.var)
             outputs = tf.clip_by_value(self.Decode(compose_img, reuse), 1e-8, 1 - 1e-8)
@@ -115,3 +123,17 @@ class VAE(AutoEncoder):
             KL_divergence = tf.reduce_mean(-0.5 * tf.reduce_sum(1 + self.var - tf.square(self.mu - tf.exp(self.var)), axis=1))
             return reconstruct_loss + KL_divergence
         
+
+class CVAE(AutoEncoder):
+    def __init__(self, 
+                 encode=None,
+                 decode=None,
+                 name='VAE',
+                 out_dim=10,
+                 opt=Adam,   # Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]
+                 lr=0.001,
+                 l2_reg=False,
+                 l2_reg_scale=0.0001,
+                 trainable=False
+                 ):
+        super().__init__(encode=encode, decode=decode, name=name, out_dim=out_dim, opt=opt, lr=lr, l2_reg=l2_reg, l2_reg_scale=l2_reg_scale, trainable=trainable)
