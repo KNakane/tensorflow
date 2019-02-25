@@ -23,7 +23,7 @@ def objective(trial):
     param = {
         'opt' : trial.suggest_categorical('opt', ['SGD','Momentum','Adadelta','Adagrad','Adam','RMSProp']),
         'lr' : trial.suggest_loguniform('lr', 8e-5, 8e-2),
-        'batch_size' : trial.suggest_categorical('batch_size', [32, 64, 96 ,128]),
+        'batch_size' : trial.suggest_categorical('batch_size', [64, 96 ,128]),
         'aug': trial.suggest_categorical('aug', ['None','shift','mirror','rotate','shift_rotate','cutout']),
         'l2': trial.suggest_categorical('l2', ['True','False'])
     }

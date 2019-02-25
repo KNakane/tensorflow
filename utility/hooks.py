@@ -14,7 +14,14 @@ from tensorflow.python.platform import tf_logging as logging
 from tensorflow.python.framework import ops
 
 class SavedModelBuilderHook(tf.train.SessionRunHook):
-    """SavedModelの出力する"""
+    """
+    SavedModelの出力する
+    parameters
+    ----------
+    export_dir : string SavedModelを出力するdirectory
+    
+    signature_def_map : 保存内容
+    """
     def __init__(self, export_dir, signature_def_map, tags=None):
         self.export_dir = export_dir
         self.signature_def_map = signature_def_map
@@ -31,7 +38,18 @@ class SavedModelBuilderHook(tf.train.SessionRunHook):
         builder.save()
 
 class OptunaHook(tf.train.SessionRunHook):
-    """optuna用のHook"""
+    """
+    optuna用のHook
+
+    parameters
+    -----------
+    tensors : dict 表示させたい内容
+
+    return
+    ----------
+    学習終了時に結果を表示する
+
+    """
     def __init__(self, tensors, formatter=None):
         self._tensors = tensors
         self._tag_order = tensors.keys()
@@ -53,7 +71,21 @@ class OptunaHook(tf.train.SessionRunHook):
         logging.info("%s", ", ".join(stats))
 
 class MyLoggerHook(tf.train.SessionRunHook):
-    """terminalとlogファイルに学習過程を出力をする"""
+    """
+    terminalとlogファイルに学習過程を出力をする
+    parameters
+    ----------
+    message : dict 表示する内容
+    
+    log_dir : string logを出力するdirectory
+    
+    every_n_iter : int
+    
+    every_n_secs : int
+    
+    at_end : bool
+
+    """
     def __init__(self, message, log_dir, tensors, every_n_iter=None, every_n_secs=None,
                  at_end=True, formatter=None):
         self.log_dir = log_dir
