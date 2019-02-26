@@ -2,61 +2,77 @@
 import sys
 sys.path.append('./utility')
 import tensorflow as tf
-from model import DNN
+from module import Module
 from optimizer import *
 
-class UNet(DNN):
+class UNet(Module):
     def __init__(self, 
                  model=None,
                  name='U-Net',
+                 out_dim=10,
                  opt=Adam,   # Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]
                  lr=0.001,
-                 trainable=False,
-                 **kwargs):
-        super().__init__(name=name,opt=opt,lr=lr,trainable=trainable)
-        self.output_dim = kwargs['output_dim']
+                 l2_reg=False,
+                 l2_reg_scale=0.0001,
+                 trainable=False
+                 ):
+        super().__init__(l2_reg=l2_reg,l2_reg_scale=l2_reg_scale, trainable=trainable)
+        self.model = model
+        self.output_dim = out_dim
+        self.name = name
+        if self._trainable:
+            self.optimizer = eval(opt)(learning_rate=lr)
         
     def inference(self, featmap):
         with tf.variable_scope(self.name):
-            # 
-            featmap = tf.layers.conv2d(featmap, 64, [3, 3], activation=tf.nn.relu, padding='same', name="conv1")
-            featmap1 = tf.layers.conv2d(featmap, 64, [3, 3], activation=tf.nn.relu, padding='same', name="conv2")
-            featmap = tf.layers.max_pooling2d(featmap1, pool_size=2, strides=2,  name="pool1")
 
-            featmap = tf.layers.conv2d(featmap, 128, [3, 3], activation=tf.nn.relu, padding='same', name="conv3")
-            featmap2 = tf.layers.conv2d(featmap, 128, [3, 3], activation=tf.nn.relu, padding='same', name="conv4")
-            featmap = tf.layers.max_pooling2d(featmap2, pool_size=2, strides=2,  name="pool2")
+            featmap = self.conv(featmap, [3, 64, 1, tf.nn.relu])
+            featmap1 = self.conv(featmap, [3, 64, 1, tf.nn.relu])
+            featmap = self.max_pool(featmap1, [2, 2, 'SAME'])
 
-            featmap = tf.layers.conv2d(featmap, 256, [3, 3], activation=tf.nn.relu, padding='same', name="conv5")
-            featmap3 = tf.layers.conv2d(featmap, 256, [3, 3], activation=tf.nn.relu, padding='same', name="conv6")
-            featmap = tf.layers.max_pooling2d(featmap3, pool_size=2, strides=2,  name="pool3")
+            featmap = self.conv(featmap, [3, 128, 1, tf.nn.relu])
+            featmap2 = self.conv(featmap, [3, 128, 1, tf.nn.relu])
+            featmap = self.max_pool(featmap2, [2, 2, 'SAME'])
 
-            featmap = tf.layers.conv2d(featmap, 512, [3, 3], activation=tf.nn.relu, padding='same', name="conv7")
-            featmap4 = tf.layers.conv2d(featmap, 512, [3, 3], activation=tf.nn.relu, padding='same', name="conv8")
-            featmap = tf.layers.max_pooling2d(featmap4, pool_size=2, strides=2,  name="pool4")
+            featmap = self.conv(featmap, [3, 256, 1, tf.nn.relu])
+            featmap3 = self.conv(featmap, [3, 256, 1, tf.nn.relu])
+            featmap = self.max_pool(featmap3, [2, 2, 'SAME'])
 
-            featmap = tf.layers.conv2d(featmap, 1024, [3, 3], activation=tf.nn.relu, padding='same', name="conv9")
-            featmap = tf.layers.conv2d(featmap, 1024, [3, 3], activation=tf.nn.relu, padding='same', name="conv10")
-            featmap = tf.layers.conv2d_transpose(featmap, 512, strides=[2, 2], kernel_size=[2, 2], activation=tf.nn.relu, padding='same',name="upsamp1")
+            featmap = self.conv(featmap, [3, 512, 1, tf.nn.relu])
+            featmap4 = self.conv(featmap, [3, 512, 1, tf.nn.relu])
+            featmap = self.max_pool(featmap4, [2, 2, 'SAME'])
+
+            featmap = self.conv(featmap, [3, 1024, 1, tf.nn.relu])
+            featmap = self.conv(featmap, [3, 1024, 1, tf.nn.relu])
+            featmap = self.deconv(featmap, [2, 512, 2, tf.nn.relu])
             featmap = tf.concat([featmap, featmap4], axis=3)
 
-            featmap = tf.layers.conv2d(featmap, 512, [3, 3], activation=tf.nn.relu, padding='same', name="conv11")
-            featmap = tf.layers.conv2d(featmap, 512, [3, 3], activation=tf.nn.relu, padding='same', name="conv12")
-            featmap = tf.layers.conv2d_transpose(featmap, 256, strides=[2, 2], kernel_size=[2, 2], activation=tf.nn.relu, padding='same',name="upsamp2")
+            featmap = self.conv(featmap, [3, 512, 1, tf.nn.relu])
+            featmap = self.conv(featmap, [3, 512, 1, tf.nn.relu])
+            featmap = self.deconv(featmap, [2, 512, 2, tf.nn.relu])
             featmap = tf.concat([featmap, featmap3], axis=3)
 
-            featmap = tf.layers.conv2d(featmap, 256, [3, 3], activation=tf.nn.relu, padding='same', name="conv13")
-            featmap = tf.layers.conv2d(featmap, 256, [3, 3], activation=tf.nn.relu, padding='same', name="conv14")
-            featmap = tf.layers.conv2d_transpose(featmap, 128, strides=[2, 2], kernel_size=[2, 2], activation=tf.nn.relu, padding='same',name="upsamp3")
+            featmap = self.conv(featmap, [3, 256, 1, tf.nn.relu])
+            featmap = self.conv(featmap, [3, 256, 1, tf.nn.relu])
+            featmap = self.deconv(featmap, [2, 128, 2, tf.nn.relu])
             featmap = tf.concat([featmap, featmap2], axis=3)
 
-            featmap = tf.layers.conv2d(featmap, 128, [3, 3], activation=tf.nn.relu, padding='same', name="conv15")
-            featmap = tf.layers.conv2d(featmap, 128, [3, 3], activation=tf.nn.relu, padding='same', name="conv16")
-            featmap = tf.layers.conv2d_transpose(featmap, 64, strides=[2, 2], kernel_size=[2, 2], activation=tf.nn.relu, padding='same',name="upsamp4")
+            featmap = self.conv(featmap, [3, 128, 1, tf.nn.relu])
+            featmap = self.conv(featmap, [3, 128, 1, tf.nn.relu])
+            featmap = self.deconv(featmap, [2, 64, 2, tf.nn.relu])
             featmap = tf.concat([featmap, featmap1], axis=3)
 
-            featmap = tf.layers.conv2d(featmap, 64, [3, 3], activation=tf.nn.relu, padding='same', name="conv17")
-            featmap = tf.layers.conv2d(featmap, 64, [3, 3], activation=tf.nn.relu, padding='same', name="conv18")
-            featmap = tf.layers.conv2d(featmap, self.output_dim, [1, 1], activation=None, padding='same', name="conv19")
+            featmap = self.conv(featmap, [3, 64, 1, tf.nn.relu])
+            featmap = self.conv(featmap, [3, 64, 1, tf.nn.relu])
+            featmap = self.conv(featmap, [1, self.output_dim, 1, None])
 
             return featmap
+        
+    def loss(self, logits, labels):
+        loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=logits, labels=labels))
+        if self._l2_reg:
+            loss += tf.losses.get_regularization_loss()  
+        return loss
+    
+    def optimize(self, loss, global_step=None):
+        return self.optimizer.optimize(loss=loss, global_step=global_step)

@@ -44,8 +44,7 @@ def main(argv):
     model = UNet(model=None, name='U-Net', lr=FLAGS.lr, opt=FLAGS.opt, trainable=True, output_dim=len(data.category))
     logits = model.inference(inputs)
     loss = model.loss(logits, labels)
-    loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=labels,
-                                                                  logits=logits))
+    
     opt_op = model.optimize(loss, global_step)
     update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
     train_op = tf.group([opt_op] + update_ops)
