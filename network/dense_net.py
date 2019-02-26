@@ -32,7 +32,8 @@ class DenseNet(CNN):
 
             featmap = self.dense_block(featmap, n_layers=31, bottle_neck=True, name='dense_final')
             featmap = self.ReLU(self.BN(featmap, [None]),[None])
-            logits = self.fc(featmap, [self.out_dim,None])
+            featmap = self.fc(featmap, [self.out_dim,None])
+            logits  = tf.identity(featmap, name="output_logits")
 
             return logits
     

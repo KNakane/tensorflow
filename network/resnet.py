@@ -51,7 +51,8 @@ class ResNet(CNN):
                 x = self.residual_block(x, channels=self.filter*8, layer_num=4, downsample=False, name='resblock_3_' + str(i))
             x = self.ReLU(self.BN(x, [None]),[None])
             x = self.gap(x,[self.out_dim])
-            logits = self.fc(x, [self.out_dim, None])
+            x = self.fc(x, [self.out_dim, None])
+            logits  = tf.identity(x, name="output_logits")
             return logits
 
     def resblock(self, x, channels, layer_num, downsample=False, name=None):
@@ -140,7 +141,8 @@ class ResNeXt(CNN):
             for i in range(self.residual_list[3]):
                 x = self.residual_layer(x, 1024, name='resblock3_' + str(i))
             x = self.gap(x,[self.out_dim])
-            logits = self.fc(x, [self.out_dim, None])
+            featmap = self.fc(x, [self.out_dim, None])
+            logits  = tf.identity(featmap, name="output_logits")
             return logits
 
     def residual_layer(self, x, channels, name=None):
