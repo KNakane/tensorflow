@@ -54,21 +54,21 @@ class VGG(CNN):
             featmap = self.conv(featmap, [3, 64, 1, tf.nn.relu], 'conv2')
             featmap = self.max_pool(featmap, [2, 2, 'SAME'])
 
-            featmap = self.conv(images, [3, 128, 1, tf.nn.relu], 'conv3')
+            featmap = self.conv(featmap, [3, 128, 1, tf.nn.relu], 'conv3')
             featmap = self.conv(featmap, [3, 128, 1, tf.nn.relu], 'conv4')
             featmap = self.max_pool(featmap, [2, 2, 'SAME'])
 
-            featmap = self.conv(images, [3, 256, 1, tf.nn.relu], 'conv5')
+            featmap = self.conv(featmap, [3, 256, 1, tf.nn.relu], 'conv5')
             featmap = self.conv(featmap, [3, 256, 1, tf.nn.relu], 'conv6')
             featmap = self.conv(featmap, [3, 256, 1, tf.nn.relu], 'conv7')
             featmap = self.max_pool(featmap, [2, 2, 'SAME'])
 
-            featmap = self.conv(images, [3, 512, 1, tf.nn.relu], 'conv8')
+            featmap = self.conv(featmap, [3, 512, 1, tf.nn.relu], 'conv8')
             featmap = self.conv(featmap, [3, 512, 1, tf.nn.relu], 'conv9')
             featmap = self.conv(featmap, [3, 512, 1, tf.nn.relu], 'conv10')
             featmap = self.max_pool(featmap, [2, 2, 'SAME'])
 
-            featmap = self.conv(images, [3, 512, 1, tf.nn.relu], 'conv11')
+            featmap = self.conv(featmap, [3, 512, 1, tf.nn.relu], 'conv11')
             featmap = self.conv(featmap, [3, 512, 1, tf.nn.relu], 'conv12')
             featmap = self.conv(featmap, [3, 512, 1, tf.nn.relu], 'conv13')
             featmap = self.max_pool(featmap, [2, 2, 'SAME'])
