@@ -11,6 +11,7 @@ from resnet import ResNet, ResNeXt, SENet
 from dense_net import DenseNet
 from train import set_model
 
+
 def main(args):
     print("------------Start Evaluation-----------")
     print("CheckPoint : {}".format(FLAGS.ckpt_dir))
@@ -20,8 +21,11 @@ def main(args):
 
     # load dataset
     data = Load(FLAGS.data)
-    shape = int(data.x_test.shape[0] / 7)
-    inputs, labels = data.load_test(data.x_test[:shape], data.y_test[:shape])
+    batch_size = 3000
+    iteration = data.x_test.shape[0] // batch_size
+    test = data.load_test(data.x_test, data.y_test, batch_size)
+    test_iter = test.make_initializable_iterator()
+    inputs, labels = test_iter.get_next()
 
     model_set = set_model(data.output_dim)
     model = eval(FLAGS.network)(model=model_set, name=FLAGS.network, out_dim=data.output_dim, lr=0, opt=None, trainable=False)
@@ -32,10 +36,13 @@ def main(args):
 
     tf.train.Saver()
     with tf.Session() as sess:
+        sess.run([test_iter.initializer],feed_dict={data.test_placeholder: data.x_test,
+                                        data.test_labels_placeholder: data.y_test})
         utils = Utils(sess=sess)
         if utils.restore_model(FLAGS.ckpt_dir):
-            test_accuracy = sess.run(accuracy)
-            print("accuracy : {}".format(test_accuracy))
+            for i in range(iteration):
+                test_accuracy = sess.run(accuracy)
+                print("accuracy_{} : {}".format(i, test_accuracy))
             return
         else:
             return

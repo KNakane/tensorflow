@@ -83,10 +83,27 @@ class Load():
 
             return dataset
 
-    def load_test(self, images, labels):
+    def load_test(self, images, labels, batch_size):
+        def preprocess_fn(image, label):
+            x = tf.reshape(tf.cast(image, tf.float32), (self.size, self.size, self.channel)) / 255.0
+            y = tf.one_hot(tf.cast(label, tf.uint8), self.output_dim)
+            return x, y
+
+        self.x_test, self.y_test = images, labels
+        self.test_placeholder = tf.placeholder(self.x_test.dtype, self.x_test.shape, name='valid_inputs')
+        self.test_labels_placeholder = tf.placeholder(self.y_test.dtype, self.y_test.shape, name='valid_labels')
+        dataset = tf.data.Dataset.from_tensor_slices((self.test_placeholder, self.test_labels_placeholder))
+
+        dataset = dataset.apply(tf.data.experimental.map_and_batch(
+                preprocess_fn, batch_size,
+                num_parallel_batches=4,  # cpu cores
+                drop_remainder=False))
+        
+        """
         x = tf.reshape(tf.cast(images, tf.float32), (-1, self.size, self.size, self.channel)) / 255.0
         y = tf.one_hot(tf.cast(labels, tf.uint8), self.output_dim)
-        return x, y
+        """
+        return dataset
 
     def down_load_kuzushiji(self):
         url_list = ['http://codh.rois.ac.jp/kmnist/dataset/k49/k49-train-imgs.npz',
