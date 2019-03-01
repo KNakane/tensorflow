@@ -92,6 +92,7 @@ class Train():
             "test accuracy":test_accuracy})
 
         if self.name == 'tuning':
+            config = tf.ConfigProto(allow_soft_placement=True, log_device_placement=False, gpu_options=tf.GPUOptions(per_process_gpu_memory_fraction=0.7))
             hooks = []
             hooks.append(OptunaHook(metrics))
             hooks.append(tf.train.NanTensorHook(train_loss))
