@@ -9,7 +9,7 @@ from functools import partial
 
 class Optuna():
     def __init__(self, db_name=None):
-        self.name = db_name if db_name is not None else 'example'
+        self.name = db_name if db_name is not None else 'example-study'
 
     def search(self, obj, trials):
         assert trials > 0, "trial is bigger than 0"
@@ -28,9 +28,3 @@ class Optuna():
         self.study.best_trial  # Get best trial's information.
         self.study.trials  # Get all trials' information.
         """
-        
-if __name__ == '__main__':
-    op = Optuna('example-study')
-    op.confirm('results')
-    print(op.study.best_params)
-    print(op.study.best_value)
