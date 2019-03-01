@@ -43,6 +43,8 @@ def main(args):
     dis_loss, gen_loss = model.loss(D_logits, D_logits_)
     
     d_op, g_op = model.optimize(d_loss=dis_loss, g_loss=gen_loss)
+    update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+    train_op = tf.group([d_op, g_op] + update_ops)
     #predict = model.predict()
     #correct_prediction = tf.equal(dis_true, 1) + tf.equal(dis_fake, 0)
     #accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
@@ -92,8 +94,7 @@ def main(args):
 
     with session:
         while not session.should_stop():
-            session.run([g_op])
-            session.run([d_op,g_op])
+            session.run([train_op])
     return
 
 if __name__ == '__main__':

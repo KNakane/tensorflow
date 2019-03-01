@@ -35,15 +35,14 @@ class GAN(BasedGAN):
         self.z = tf.random_normal((batch_size, self._z_dim), dtype=tf.float32)
         fake_img = self.G(self.z)
 
-        real_logit = self.D(inputs)
-        fake_logit = self.D(fake_img, reuse=True)#tf.nn.sigmoid(self.D(fake_img))
-        #real_logit = self.D(inputs, reuse=True)#tf.nn.sigmoid(self.D(inputs, reuse=True))
+        self.real, real_logit = self.D(inputs)
+        self.fake, fake_logit = self.D(fake_img, reuse=True)
         return real_logit, fake_logit, fake_img
 
     def loss(self, real_logit, fake_logit):
-        d_loss_real = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=real_logit, labels=tf.ones_like(real_logit)))
-        d_loss_fake = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=fake_logit, labels=tf.zeros_like(fake_logit)))
-        d_loss = d_loss_real + d_loss_fake
+        d_loss_real = tf.nn.sigmoid_cross_entropy_with_logits(logits=real_logit, labels=tf.ones_like(self.real))
+        d_loss_fake = tf.nn.sigmoid_cross_entropy_with_logits(logits=fake_logit, labels=tf.zeros_like(self.fake))
+        d_loss = tf.reduce_mean(d_loss_real + d_loss_fake)
         g_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=fake_logit, labels=tf.ones_like(fake_logit)))
         """
         d_loss = - (tf.reduce_mean(tf.log(real_logit + self.eps)) + tf.reduce_mean(tf.log(tf.ones_like(fake_logit) - fake_logit + self.eps)))

@@ -8,6 +8,7 @@ tensorflowの練習用
 [参考URL](https://github.com/katsugeneration/sngan-with-projection-tensorflow/tree/master/models)
 [参考](https://github.com/keiohta/tf_gans)  
 [公式](https://github.com/carpedm20/DCGAN-tensorflow)
+[簡易的](https://github.com/nogawanogawa/simpleGAN_tensorflow)
 
 # Description
 
