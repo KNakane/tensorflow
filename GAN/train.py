@@ -51,7 +51,6 @@ def main(args):
     tf.summary.scalar('global_step', global_step)
     tf.summary.scalar('discriminator_loss', dis_loss)
     tf.summary.scalar('generator_loss', gen_loss)
-    #tf.summary.scalar('accuracy', accuracy)
     tf.summary.image('image', inputs)
     tf.summary.image('fake_image', G)
 
