@@ -30,3 +30,7 @@ $ tensorboard --logdir=/path/to/logdir
 ```
  
 # Sample Result
+## GAN
+|1回学習|25000回学習|50000回学習|100000回学習|
+|:--:|:--:|:--:|:--:|
+|![代替テキスト](../sample_results/GAN/GAN/1.png)|![代替テキスト](../sample_results/GAN/GAN/25000.png)|![代替テキスト](../sample_results/GAN/GAN/50000.png)|![代替テキスト](../sample_results/GAN/GAN/100000.png)|
