@@ -2,15 +2,15 @@ GAN
 ====
 
 # Overview
-tensorflowの練習用
+tensorflowの練習用  
 使用するデータはmnistやcifarを想定  
-[参考URL](https://github.com/yihui-he/GAN-MNIST)
-[参考URL](https://github.com/katsugeneration/sngan-with-projection-tensorflow/tree/master/models)
+[参考URL](https://github.com/katsugeneration/sngan-with-projection-tensorflow/tree/master/models)  
 [参考](https://github.com/keiohta/tf_gans)  
 [公式](https://github.com/carpedm20/DCGAN-tensorflow)
-[簡易的](https://github.com/nogawanogawa/simpleGAN_tensorflow)
 
 # Description
+GANを用いた画像生成のプログラム  
+現在、全結合のみ利用可能(DCGAN等は利用不可)  
 
 
 
@@ -19,9 +19,20 @@ tensorflowの練習用
 
 # Usage
 ## Build Network
-
+[CNN/README.md](../CNN/README.md)のBuild Networkを参照すること  
+GeneratorとDiscriminatorの両方を作成する必要があり、各GANのプログラムの```build```関数に作成する必要がある。
 
 ## Learning
+```
+$ python GAN/train.py --network (GAN,DCGAN and so on)
+                      --data (mnist,cifar10,cifar100,kuzushiji)
+                      --n_epoch (epoch数)
+                      --batch_size
+                      --lr (learning rate)
+                      --opt (optimizer)
+                      --aug (shift,mirror,rotate,shift_rotate,cutout,random_erace)
+                      --l2_norm (True / False)
+```
 ## Test
 
 ## Tensorboard
