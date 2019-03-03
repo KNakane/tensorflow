@@ -32,12 +32,11 @@ def main(args):
     dataset = data.load(data.x_train, data.y_train, batch_size=batch_size, is_training=True)
     iterator = dataset.make_initializable_iterator()
     inputs, labels = iterator.get_next()
-    inputs = tf.reshape(inputs, (-1, data.size, data.size, data.channel)) / 255.0
+    inputs = tf.reshape(inputs, (-1, data.size, data.size, data.channel))
 
     # build train operation
     global_step = tf.train.get_or_create_global_step()
 
-    #model = eval(FLAGS.network)(z_dim=100, name=FLAGS.network, lr=FLAGS.lr, opt=FLAGS.opt, interval=2, trainable=True)
     model = eval(FLAGS.network)(z_dim=100, lr=FLAGS.lr, opt=FLAGS.opt, trainable=True)
     D_logits, D_logits_, G = model.inference(inputs, batch_size)
     dis_loss, gen_loss = model.loss(D_logits, D_logits_)
@@ -45,9 +44,6 @@ def main(args):
     d_op, g_op = model.optimize(d_loss=dis_loss, g_loss=gen_loss)
     update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
     train_op = tf.group([d_op, g_op] + update_ops)
-    #predict = model.predict()
-    #correct_prediction = tf.equal(dis_true, 1) + tf.equal(dis_fake, 0)
-    #accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
     # logging for tensorboard
     util = Utils(prefix=FLAGS.network)
@@ -77,7 +73,7 @@ def main(args):
         "global_step": global_step,
         "discriminator_loss": dis_loss,
         "generator_loss": gen_loss}
-        #"accuracy": accuracy}
+
     hooks.append(MyLoggerHook(message, util.log_dir, metrics, every_n_iter=50))
     hooks.append(tf.train.NanTensorHook(dis_loss))
     if max_steps:
@@ -94,7 +90,10 @@ def main(args):
 
     with session:
         while not session.should_stop():
-            session.run([train_op])
+            _, step, image = session.run([train_op, global_step, G])
+            if step % 1000 == 0:
+                util.gan_plot(image[:16])
+
     return
 
 if __name__ == '__main__':

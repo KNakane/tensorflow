@@ -15,8 +15,10 @@ class Generator(Module):
         self.img_chan = 1
         self.img_size = 28
 
-    def __call__(self, logits):
+    def __call__(self, logits, reuse=False):
         with tf.variable_scope(self.name):
+            if reuse:
+                tf.get_variable_scope().reuse_variables()
             for l in range(len(self.model)):
                 logits = (eval('self.' + self.model[l][0])(logits, self.model[l][1:]))
             return logits
@@ -39,7 +41,7 @@ class Discriminator(Module):
                 tf.get_variable_scope().reuse_variables()
             for l in range(len(self.model)):
                 logits = (eval('self.' + self.model[l][0])(logits, self.model[l][1:]))
-            return tf.nn.sigmoid(logits), logits
+            return tf.nn.sigmoid(logits)
 
     @property
     def var(self):

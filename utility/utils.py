@@ -4,6 +4,7 @@ import numpy as np
 import datetime
 import tensorflow as tf
 import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
 
 
 class Utils():
@@ -142,3 +143,29 @@ class Utils():
         plt.figure(figsize=(8, 8)) 
         plt.imshow(decoded_imgs, cmap="gray")
         plt.savefig(self.log_dir + '/construct_figure.png')
+
+    def gan_plot(self, samples):
+        fig = plt.figure(figsize=(4, 4))
+        gs = gridspec.GridSpec(4, 4)
+        gs.update(wspace=0.05, hspace=0.05)
+
+        for i, sample in enumerate(samples):
+            ax = plt.subplot(gs[i])
+            plt.axis('off')
+            ax.set_xticklabels([])
+            ax.set_yticklabels([])
+            ax.set_aspect('equal')
+            plt.imshow(sample.reshape(28, 28), cmap='Greys_r')
+
+        i = 0
+        while(True):
+            name = self.log_dir + '/{}.png'.format(str(i).zfill(3))
+            if os.path.isfile(name):
+                i += 1
+            else:
+                plt.savefig(name, bbox_inches='tight')
+                break
+
+        plt.close(fig)
+
+        return 

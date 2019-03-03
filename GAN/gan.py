@@ -8,11 +8,9 @@ class GAN(BasedGAN):
 
     def build(self):
         
-        self.generator_model = [['fc', 256, tf.nn.leaky_relu],
+        self.generator_model = [['fc', 128, tf.nn.leaky_relu],
                                 ['BN'],
-                                ['fc', 512, tf.nn.leaky_relu],
-                                ['BN'],
-                                ['fc', 1024, tf.nn.leaky_relu],
+                                ['fc', 256, tf.nn.leaky_relu],
                                 ['BN'],
                                 ['fc', self.size*self.size*self.channel, tf.nn.tanh],
                                 ['reshape', [-1, self.size, self.size, self.channel]]]
@@ -29,25 +27,19 @@ class GAN(BasedGAN):
         self.G = Generator(self.generator_model)
 
     def predict(self, inputs):
-        pass
+        return self.G(inputs, reuse=True)
 
     def inference(self, inputs, batch_size):
         self.z = tf.random_normal((batch_size, self._z_dim), dtype=tf.float32)
         fake_img = self.G(self.z)
 
-        self.real, real_logit = self.D(inputs)
-        self.fake, fake_logit = self.D(fake_img, reuse=True)
+        real_logit = self.D(inputs)
+        fake_logit = self.D(fake_img, reuse=True)
         return real_logit, fake_logit, fake_img
 
     def loss(self, real_logit, fake_logit):
-        d_loss_real = tf.nn.sigmoid_cross_entropy_with_logits(logits=real_logit, labels=tf.ones_like(self.real))
-        d_loss_fake = tf.nn.sigmoid_cross_entropy_with_logits(logits=fake_logit, labels=tf.zeros_like(self.fake))
-        d_loss = tf.reduce_mean(d_loss_real + d_loss_fake)
-        g_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=fake_logit, labels=tf.ones_like(fake_logit)))
-        """
-        d_loss = - (tf.reduce_mean(tf.log(real_logit + self.eps)) + tf.reduce_mean(tf.log(tf.ones_like(fake_logit) - fake_logit + self.eps)))
-        g_loss = - tf.reduce_mean(tf.log(fake_logit + self.eps))
-        """
+        d_loss = -tf.reduce_mean(tf.log(real_logit) + tf.log(1. - fake_logit))
+        g_loss = -tf.reduce_mean(tf.log(fake_logit))
         return d_loss, g_loss
     
     def optimize(self, d_loss, g_loss):
