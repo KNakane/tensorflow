@@ -51,6 +51,8 @@ class Discriminator(Module):
 class BasedGAN(Module):
     def __init__(self,
                  z_dim=100,
+                 size=28,
+                 channel=1,
                  opt=Adam,   # Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]
                  lr=0.001,
                  l2_reg=False,
@@ -62,10 +64,11 @@ class BasedGAN(Module):
         self.opt = opt
         self.lr = lr
         self.trainable = trainable
-        self.eps = 1e-14
-        self.size = 28     # あとで要修正
-        self.channel = 1   # あとで要修正
+        self.size = size
+        self.channel = channel
         self.build()
+        if self._trainable:
+            self.optimizer = eval(opt)(learning_rate=lr)
 
     def conv_out_size_same(self, size, stride):
         return int(math.ceil(float(size) / float(stride)))
@@ -85,4 +88,7 @@ class BasedGAN(Module):
         raise NotImplementedError()
 
     def optimize(self, d_loss, g_loss):
-        raise NotImplementedError()
+        global_step = tf.train.get_or_create_global_step()
+        opt_D = self.optimizer.optimize(loss=d_loss, global_step=global_step, var_list=self.D.var)
+        opt_G = self.optimizer.optimize(loss=g_loss, global_step=global_step, var_list=self.G.var)
+        return opt_D, opt_G

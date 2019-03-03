@@ -31,13 +31,13 @@ def main(args):
     data = Load(FLAGS.data)
     dataset = data.load(data.x_train, data.y_train, batch_size=batch_size, is_training=True)
     iterator = dataset.make_initializable_iterator()
-    inputs, labels = iterator.get_next()
+    inputs, _ = iterator.get_next()
     inputs = tf.reshape(inputs, (-1, data.size, data.size, data.channel))
 
     # build train operation
     global_step = tf.train.get_or_create_global_step()
 
-    model = eval(FLAGS.network)(z_dim=100, lr=FLAGS.lr, opt=FLAGS.opt, trainable=True)
+    model = eval(FLAGS.network)(z_dim=100, size=data.size, channel=data.channel, lr=FLAGS.lr, opt=FLAGS.opt, trainable=True)
     D_logits, D_logits_, G = model.inference(inputs, batch_size)
     dis_loss, gen_loss = model.loss(D_logits, D_logits_)
     

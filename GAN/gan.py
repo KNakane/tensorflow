@@ -41,11 +41,5 @@ class GAN(BasedGAN):
         d_loss = -tf.reduce_mean(tf.log(real_logit) + tf.log(1. - fake_logit))
         g_loss = -tf.reduce_mean(tf.log(fake_logit))
         return d_loss, g_loss
-    
-    def optimize(self, d_loss, g_loss):
-        global_step = tf.train.get_or_create_global_step()
-        opt_D = tf.train.AdamOptimizer(1e-4, beta1=0.5).minimize(d_loss, global_step, var_list=self.D.var)
-        opt_G = tf.train.AdamOptimizer(2e-4, beta1=0.5).minimize(g_loss, global_step, var_list=self.G.var)
-        return opt_D, opt_G
 
 
