@@ -47,6 +47,42 @@ class DCGAN(GAN):
         super().__init__(*args, **kwargs)
 
     def build(self):
+        """
+        s_h = 28
+        s_h2 = self.conv_out_size_same(s_h, 2)
+        s_h4 = self.conv_out_size_same(s_h2, 2)
+        s_h8 = self.conv_out_size_same(s_h4, 2)
+        s_h16 = self.conv_out_size_same(s_h8, 2)
+        
+        gen_model = [['fc', 512*s_h16*s_h16, None],
+                     ['reshape', [-1, s_h16, s_h16, 512]],
+                     ['BN'],
+                     ['ReLU'],
+                     ['deconv', s_h8, 256, 2, None],
+                     ['BN'],
+                     ['ReLU'],
+                     ['deconv', s_h4, 128, 2, None],
+                     ['BN'],
+                     ['ReLU'],
+                     ['deconv', s_h2, 64, 2, None],
+                     ['BN'],
+                     ['ReLU'],
+                     ['deconv', s_h, 1, 2, None],
+                     ['tanh']]
+        dis_model = [['conv', 5, 64, 2, tf.nn.leaky_relu],
+                     ['conv', 5, 128, 2, None],
+                     ['BN'],
+                     ['Leaky_ReLU'],
+                     ['conv', 5, 256, 2, None],
+                     ['BN'],
+                     ['Leaky_ReLU'],
+                     ['conv', 5, 512, 2, None],
+                     ['BN'],
+                     ['Leaky_ReLU'],
+                     ['fc', 1, None]
+                     ]
+        """
+        
         gen_model = [
             ['fc', 4*4*512, None],
             ['reshape', [-1, 4, 4, 512]],
