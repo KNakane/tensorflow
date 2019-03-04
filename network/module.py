@@ -55,13 +55,16 @@ class Module(object):
         ----------
         padding = same
         """
-        assert len(args) == 4, '[conv] Not enough Argument -> [kernel, filter, strides, activation]'
+        assert len(args) >= 4, '[deconv] Not enough Argument -> [kernel, filter, strides, activation, padding]'
+        assert len(args) < 6, '[deconv] Not enough Argument -> [kernel, filter, strides, activation, padding]'
+        if len(args) == 4:
+            args.append('same')
         regularizer = tf.contrib.layers.l2_regularizer(scale=self._l2_reg_scale) if self._l2_reg else None
         return tf.layers.conv2d(inputs=x,
                                 filters=args[1],
                                 kernel_size=[args[0], args[0]],
                                 strides=[args[2], args[2]],
-                                padding='same',
+                                padding=args[4],
                                 activation=args[3],
                                 kernel_regularizer=regularizer,
                                 trainable=self._trainable,
@@ -75,7 +78,7 @@ class Module(object):
         x : tensor
             input image 4D
         args : list
-            [kernel, filter, strides, activation]
+            [kernel, filter, strides, activation, padding]
         name : str
             layer name
         
@@ -88,14 +91,17 @@ class Module(object):
         ----------
         padding = same
         """
-        assert len(args) == 4, '[deconv] Not enough Argument -> [kernel, filter, strides, activation]'
+        assert len(args) >= 4, '[deconv] Not enough Argument -> [kernel, filter, strides, activation, padding]'
+        assert len(args) < 6, '[deconv] Not enough Argument -> [kernel, filter, strides, activation, padding]'
+        if len(args) == 4:
+            args.append('same')
         assert len(x.shape) == 4
         regularizer = tf.contrib.layers.l2_regularizer(scale=self._l2_reg_scale) if self._l2_reg else None
         return tf.layers.conv2d_transpose(inputs=x,
                                           filters=args[1],
                                           kernel_size=[args[0], args[0]],
                                           strides=[args[2], args[2]],
-                                          padding='same',
+                                          padding=args[4],
                                           activation=args[3],
                                           kernel_regularizer=regularizer,
                                           trainable=self._trainable)

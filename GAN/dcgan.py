@@ -11,6 +11,7 @@ class DCGAN(BasedGAN):
         super().__init__(**kwargs)
 
     def build(self):
+        """
         s_h = 28
         s_h2 = self.conv_out_size_same(s_h, 2)
         s_h4 = self.conv_out_size_same(s_h2, 2)
@@ -46,6 +47,31 @@ class DCGAN(BasedGAN):
                      ['Leaky_ReLU'],
                      ['fc', 1, None]
                      ]
+        """
+
+        gen_model = [
+            ['fc', 4*4*512, None],
+            ['reshape', [-1, 4, 4, 512]],
+            ['BN'],
+            ['Leaky_ReLU'],
+            ['deconv', 5, 256, 3, None],
+            ['BN'],
+            ['Leaky_ReLU'],
+            ['deconv', 5, 128, 2, None],
+            ['BN'],
+            ['Leaky_ReLU'],
+            ['deconv', 5, 1, 1, None, 'valid'],
+            ['tanh']]
+
+        dis_model = [
+            ['conv', 5, 64, 2, None],
+            ['Leaky_ReLU'],
+            ['conv', 5, 128, 2, None],
+            ['BN'],
+            ['Leaky_ReLU'],
+            ['reshape', [-1, 4*4*256]],
+            ['fc', 1, None]
+        ]
 
         self.D = Discriminator(dis_model)
         self.G = Generator(gen_model)
@@ -53,24 +79,16 @@ class DCGAN(BasedGAN):
     def inference(self, inputs, batch_size):
         self.z = tf.random_normal((batch_size, self._z_dim), dtype=tf.float32)
         fake_img = self.G(self.z)
-        real_logit = self.D(inputs)
-        fake_logit = self.D(fake_img, reuse=True)
+
+        real_logit = tf.nn.sigmoid(self.D(inputs))
+        fake_logit = tf.nn.sigmoid(self.D(fake_img, reuse=True))
         return real_logit, fake_logit, fake_img
 
-    def predict(self):
-        return self.generator.inference(self.z)
+    def predict(self, inputs):
+        return self.G(inputs, reuse=True)
 
     def loss(self, real_logit, fake_logit):
-        d_loss_real = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=real_logit, labels=tf.ones_like(real_logit)))
-        d_loss_fake = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=fake_logit, labels=tf.zeros_like(fake_logit)))
-        d_loss = d_loss_real + d_loss_fake
-        g_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=fake_logit, labels=tf.ones_like(fake_logit)))
-
+        d_loss = -tf.reduce_mean(tf.log(real_logit) + tf.log(1. - fake_logit))
+        g_loss = -tf.reduce_mean(tf.log(fake_logit))
         return d_loss, g_loss
-
-    def optimize(self, d_loss, g_loss):
-        global_step = tf.train.get_or_create_global_step()
-        opt_D = tf.train.AdamOptimizer(1e-4, beta1=0.5).minimize(d_loss, global_step, var_list=self.D.var)
-        opt_G = tf.train.AdamOptimizer(2e-4, beta1=0.5).minimize(g_loss, global_step, var_list=self.G.var)
-        return opt_D, opt_G
 
