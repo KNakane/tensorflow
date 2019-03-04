@@ -3,6 +3,7 @@ sys.path.append('./network')
 sys.path.append('./utility')
 import tensorflow as tf
 import math
+import re
 from module import Module
 from optimizer import *
 
@@ -46,6 +47,10 @@ class Discriminator(Module):
     @property
     def var(self):
         return tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, self.name)
+
+    @property
+    def weight(self):
+        return [v for v in tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, self.name) if re.search('kernel', v.name)]
 
 
 class BasedGAN(Module):

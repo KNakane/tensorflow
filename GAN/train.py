@@ -27,7 +27,7 @@ def main(args):
     save_checkpoint_steps = FLAGS.save_checkpoint_steps
     batch_size = FLAGS.batch_size
     n_disc_update = FLAGS.n_disc_update
-    global_step = tf.train.get_or_create_global_step()
+    global_step = tf.train.create_global_step()
 
     # load dataset
     data = Load(FLAGS.data)

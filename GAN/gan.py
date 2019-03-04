@@ -58,7 +58,7 @@ class WGAN(GAN):
         return real_logit, fake_logit, fake_img
 
     def weight_clipping(self):
-        clip_D = [p.assign(tf.clip_by_value(p, -0.01, 0.01)) for p in self.D.var]
+        clip_D = [p.assign(tf.clip_by_value(p, -0.01, 0.01)) for p in self.D.weight]
         return clip_D
 
     def loss(self, real_logit, fake_logit):
