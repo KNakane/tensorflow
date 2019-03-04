@@ -42,6 +42,38 @@ class GAN(BasedGAN):
         g_loss = -tf.reduce_mean(tf.log(fake_logit))
         return d_loss, g_loss
 
+class DCGAN(GAN):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def build(self):
+        gen_model = [
+            ['fc', 4*4*512, None],
+            ['reshape', [-1, 4, 4, 512]],
+            ['BN'],
+            ['Leaky_ReLU'],
+            ['deconv', 5, 256, 3, None],
+            ['BN'],
+            ['Leaky_ReLU'],
+            ['deconv', 5, 128, 2, None],
+            ['BN'],
+            ['Leaky_ReLU'],
+            ['deconv', 5, 1, 1, None, 'valid'],
+            ['tanh']]
+
+        dis_model = [
+            ['conv', 5, 64, 2, None],
+            ['Leaky_ReLU'],
+            ['conv', 5, 128, 2, None],
+            ['BN'],
+            ['Leaky_ReLU'],
+            ['reshape', [-1, 4*4*256]],
+            ['fc', 1, None]
+        ]
+
+        self.D = Discriminator(dis_model)
+        self.G = Generator(gen_model)
+
 class WGAN(GAN):
     """
     Wesserstein GAN
