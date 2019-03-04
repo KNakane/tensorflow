@@ -79,7 +79,7 @@ class BasedGAN(Module):
     def predict(self):
         raise NotImplementedError()
 
-    def inference(self):
+    def inference(self, inputs, batch_size):
         assert hasattr(self, 'generator')
         assert hasattr(self, 'discriminator')
         raise NotImplementedError()

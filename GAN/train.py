@@ -31,7 +31,7 @@ def main(args):
     data = Load(FLAGS.data)
     dataset = data.load(data.x_train, data.y_train, batch_size=batch_size, is_training=True)
     iterator = dataset.make_initializable_iterator()
-    inputs, _ = iterator.get_next()
+    inputs, labels = iterator.get_next()
     inputs = tf.reshape(inputs, (-1, data.size, data.size, data.channel))
 
     # build train operation

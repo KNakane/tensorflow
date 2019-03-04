@@ -70,3 +70,30 @@ class WGAN_GP(WGAN):
         super().__init__(*args, **kwargs)
 
 
+class CGAN(GAN):
+    """
+    Conditional GAN
+    """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def combine_distribution(self, z, labels):
+        assert labels is not None
+        return tf.concat([z, labels], axis=0)
+    
+    def combine_image(self, image, labels):
+        assert labels is not None
+        return tf.concat([image, labels], axis=3)
+
+    def inference(self, inputs, batch_size, labels=None):
+        z = tf.random_normal((batch_size, self._z_dim), dtype=tf.float32)
+        self.z = self.combine_distribution(z, labels)
+
+        fake_img = self.G(self.z)
+        fake = self.combine_image(fake_img, labels)
+
+
+        real_logit = self.D(inputs)
+        fake_logit = self.D(fake, reuse=True)
+        return real_logit, fake_logit, fake_img
+
