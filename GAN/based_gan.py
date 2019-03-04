@@ -87,8 +87,7 @@ class BasedGAN(Module):
     def loss(self, real_logit, fake_logit):
         raise NotImplementedError()
 
-    def optimize(self, d_loss, g_loss):
-        global_step = tf.train.get_or_create_global_step()
+    def optimize(self, d_loss, g_loss, global_step=None):
         opt_D = self.optimizer.optimize(loss=d_loss, global_step=global_step, var_list=self.D.var)
         opt_G = self.optimizer.optimize(loss=g_loss, global_step=global_step, var_list=self.G.var)
         return opt_D, opt_G

@@ -2,7 +2,7 @@ import os,sys
 sys.path.append('./CNN')
 sys.path.append('./dataset')
 import tensorflow as tf
-from gan import GAN
+from gan import GAN, WGAN, WGAN_GP, CGAN
 from dcgan import DCGAN
 from utils import Utils
 from load import Load
@@ -26,6 +26,8 @@ def main(args):
     max_steps = FLAGS.n_epoch
     save_checkpoint_steps = FLAGS.save_checkpoint_steps
     batch_size = FLAGS.batch_size
+    n_disc_update = FLAGS.n_disc_update
+    global_step = tf.train.get_or_create_global_step()
 
     # load dataset
     data = Load(FLAGS.data)
@@ -34,16 +36,11 @@ def main(args):
     inputs, labels = iterator.get_next()
     inputs = tf.reshape(inputs, (-1, data.size, data.size, data.channel))
 
-    # build train operation
-    global_step = tf.train.get_or_create_global_step()
-
     model = eval(FLAGS.network)(z_dim=100, size=data.size, channel=data.channel, lr=FLAGS.lr, opt=FLAGS.opt, trainable=True)
     D_logits, D_logits_, G = model.inference(inputs, batch_size)
     dis_loss, gen_loss = model.loss(D_logits, D_logits_)
     
-    d_op, g_op = model.optimize(d_loss=dis_loss, g_loss=gen_loss)
-    update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-    train_op = tf.group([d_op, g_op] + update_ops)
+    d_op, g_op = model.optimize(d_loss=dis_loss, g_loss=gen_loss, global_step=global_step)
 
     # logging for tensorboard
     util = Utils(prefix=FLAGS.network)
@@ -75,8 +72,9 @@ def main(args):
         "discriminator_loss": dis_loss,
         "generator_loss": gen_loss}
 
-    hooks.append(MyLoggerHook(message, util.log_dir, metrics, every_n_iter=50))
+    hooks.append(MyLoggerHook(message, util.log_dir, metrics, every_n_iter=100))
     hooks.append(tf.train.NanTensorHook(dis_loss))
+    hooks.append(tf.train.NanTensorHook(gen_loss))
     if max_steps:
         hooks.append(tf.train.StopAtStepHook(last_step=max_steps))
 
@@ -91,7 +89,9 @@ def main(args):
 
     with session:
         while not session.should_stop():
-            _, step, image = session.run([train_op, global_step, G])
+            for _ in range(n_disc_update):
+                session.run([d_op])
+            _, image, step = session.run([g_op, G, global_step])
             if step % 1000 == 0:
                 util.gan_plot(image[:16])
 
@@ -108,6 +108,7 @@ if __name__ == '__main__':
     flags.DEFINE_string('opt', 'SGD', 'Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]')
     flags.DEFINE_string('aug','None','Choice the Augmentation -> ["shift","mirror","rotate","shift_rotate","cutout","random_erace"]')
     flags.DEFINE_bool('l2_norm', 'False', 'Input learning rate')
+    flags.DEFINE_integer('n_disc_update', '2', 'Input max epoch')
     flags.DEFINE_integer('checkpoints_to_keep', 5,'checkpoint keep count')
     flags.DEFINE_integer('keep_checkpoint_every_n_hours', 1, 'checkpoint create ')
     flags.DEFINE_integer('save_checkpoint_steps', 1000,'save checkpoint step')

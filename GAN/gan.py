@@ -57,10 +57,20 @@ class WGAN(GAN):
         fake_logit = self.D(fake_img, reuse=True)
         return real_logit, fake_logit, fake_img
 
+    def weight_clipping(self):
+        clip_D = [p.assign(tf.clip_by_value(p, -0.01, 0.01)) for p in self.D.var]
+        return clip_D
+
     def loss(self, real_logit, fake_logit):
-        d_loss = -(tf.reduce_mean(real_logit) + tf.reduce_mean(fake_logit))
+        d_loss = -(tf.reduce_mean(real_logit) - tf.reduce_mean(fake_logit))
         g_loss = -tf.reduce_mean(fake_logit)
         return d_loss, g_loss
+
+    def optimize(self, d_loss, g_loss, global_step=None):
+        clip_D = self.weight_clipping()
+        opt_D = self.optimizer.optimize(loss=d_loss, global_step=global_step, var_list=self.D.var)
+        opt_G = self.optimizer.optimize(loss=g_loss, global_step=global_step, var_list=self.G.var)
+        return tf.group([opt_D, clip_D]), opt_G
 
 class WGAN_GP(WGAN):
     """
