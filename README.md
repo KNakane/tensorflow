@@ -3,17 +3,36 @@ tensorflow
 
 # Overview
 tensorflowの勉強用  
-CNNと強化学習について触れる  
-## CNN
-MonitoredTrainingSessionを使用し、Graph Modeで学習を行っていく  
-tensorboardでgraphや各数値を確認することが出来ます  
+CNNと強化学習などについて触れる  
+## [AutoEncoder](./AutoEncoder/README.md)
+AutoEncoderによる画像生成を行う  
+通常のAEとVAEが使用できる
 
-## 強化学習
+## [CNN](./CNN/README.md)
+MonitoredTrainingSessionを使用し、Graph Modeで学習を行っていく  
+tensorboardでgraphや各数値を確認することが出来ます
+
+## [GAN](./GAN/README.md)
+GANによる画像生成ができる
+- vanilla GAN
+- DCGAN
+- Wasserstein GAN
+- WGAN-GP  
+以上を実装予定
+
+## [強化学習](./rl/README.md)
 tensorflowのEager Modeを使用している  
 [Eagerモード参考URL](https://www.hellocybernetics.tech/entry/2018/12/04/231714)
+ 
 
-使い方などは各ディレクトリのREADME.mdを見てください  
+## dataset
+使用できるデータセットは以下の通り
+- mnist
+- cifar10
+- cifar100
+- kuzushiji-mnist
 
+使い方などは各ディレクトリのREADME.mdを見てください 
 
 # Installation
 ```
