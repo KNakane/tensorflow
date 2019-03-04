@@ -51,6 +51,8 @@ def main(args):
     tf.summary.scalar('global_step', global_step)
     tf.summary.scalar('discriminator_loss', dis_loss)
     tf.summary.scalar('generator_loss', gen_loss)
+    tf.summary.histogram('generator_output', G)
+    tf.summary.histogram('True_image', inputs)
     tf.summary.image('image', inputs)
     tf.summary.image('fake_image', G)
 
@@ -100,7 +102,7 @@ if __name__ == '__main__':
     FLAGS = flags.FLAGS
     flags.DEFINE_string('network', 'GAN', 'Choice the training data name -> [GAN]')
     flags.DEFINE_string('data', 'mnist', 'Choice the training data name -> ["mnist","cifar10","cifar100", "kuzushiji"]')
-    flags.DEFINE_integer('n_epoch', '100000', 'Input max epoch')
+    flags.DEFINE_integer('n_epoch', '50000', 'Input max epoch')
     flags.DEFINE_integer('batch_size', '32', 'Input batch size')
     flags.DEFINE_float('lr', '2e-4', 'Input learning rate')
     flags.DEFINE_string('opt', 'SGD', 'Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]')

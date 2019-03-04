@@ -33,13 +33,40 @@ class GAN(BasedGAN):
         self.z = tf.random_normal((batch_size, self._z_dim), dtype=tf.float32)
         fake_img = self.G(self.z)
 
-        real_logit = self.D(inputs)
-        fake_logit = self.D(fake_img, reuse=True)
+        real_logit = tf.nn.sigmoid(self.D(inputs))
+        fake_logit = tf.nn.sigmoid(self.D(fake_img, reuse=True))
         return real_logit, fake_logit, fake_img
 
     def loss(self, real_logit, fake_logit):
         d_loss = -tf.reduce_mean(tf.log(real_logit) + tf.log(1. - fake_logit))
         g_loss = -tf.reduce_mean(tf.log(fake_logit))
         return d_loss, g_loss
+
+class WGAN(GAN):
+    """
+    Wesserstein GAN
+    """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+    
+    def inference(self, inputs, batch_size):
+        self.z = tf.random_normal((batch_size, self._z_dim), dtype=tf.float32)
+        fake_img = self.G(self.z)
+
+        real_logit = self.D(inputs)
+        fake_logit = self.D(fake_img, reuse=True)
+        return real_logit, fake_logit, fake_img
+
+    def loss(self, real_logit, fake_logit):
+        d_loss = -(tf.reduce_mean(real_logit) + tf.reduce_mean(fake_logit))
+        g_loss = -tf.reduce_mean(fake_logit)
+        return d_loss, g_loss
+
+class WGAN_GP(WGAN):
+    """
+    Wesserstein GAN + Gradient penalty
+    """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 

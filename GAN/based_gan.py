@@ -41,7 +41,7 @@ class Discriminator(Module):
                 tf.get_variable_scope().reuse_variables()
             for l in range(len(self.model)):
                 logits = (eval('self.' + self.model[l][0])(logits, self.model[l][1:]))
-            return tf.nn.sigmoid(logits)
+            return logits
 
     @property
     def var(self):
