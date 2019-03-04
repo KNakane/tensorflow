@@ -40,9 +40,12 @@ def main(args):
                                         data.test_labels_placeholder: data.y_test})
         utils = Utils(sess=sess)
         if utils.restore_model(FLAGS.ckpt_dir):
+            avg_accuracy = 0
             for i in range(iteration):
                 test_accuracy = sess.run(accuracy)
+                avg_accuracy += test_accuracy
                 print("accuracy_{} : {}".format(i, test_accuracy))
+            print("average_accuracy : {}".format(avg_accuracy / iteration))
             return
         else:
             return
