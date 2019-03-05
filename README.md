@@ -27,10 +27,10 @@ tensorflowのEager Modeを使用している
 
 ## dataset
 使用できるデータセットは以下の通り
-- mnist
-- cifar10
-- cifar100
-- kuzushiji-mnist
+- [mnist](http://yann.lecun.com/exdb/mnist/)
+- [cifar10](https://www.cs.toronto.edu/~kriz/cifar.html)
+- [cifar100](https://www.cs.toronto.edu/~kriz/cifar.html)
+- [kuzushiji-mnist](https://github.com/rois-codh/kmnist)
 
 使い方などは各ディレクトリのREADME.mdを見てください 
 
