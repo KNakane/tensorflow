@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import os,sys
-sys.path.append('./utility')
-sys.path.append('./network')
+sys.path.append('../utility')
+sys.path.append('../network')
 import numpy as np
 import tensorflow as tf
 from cnn import CNN
