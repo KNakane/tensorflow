@@ -2,8 +2,7 @@ import os,sys
 sys.path.append('./CNN')
 sys.path.append('./dataset')
 import tensorflow as tf
-from gan import GAN, WGAN, WGAN_GP, CGAN
-from dcgan import DCGAN
+from gan import GAN, DCGAN, WGAN, WGAN_GP, CGAN
 from utils import Utils
 from load import Load
 from collections import OrderedDict

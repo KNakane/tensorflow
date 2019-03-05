@@ -82,7 +82,7 @@ class DCGAN(GAN):
                      ['fc', 1, None]
                      ]
         """
-        
+
         gen_model = [
             ['fc', 4*4*512, None],
             ['reshape', [-1, 4, 4, 512]],
@@ -146,6 +146,56 @@ class WGAN_GP(WGAN):
     """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+    def build(self):
+        gen_model = [
+            ['fc', 4*4*512, None],
+            ['reshape', [-1, 4, 4, 512]],
+            ['BN'],
+            ['Leaky_ReLU'],
+            ['deconv', 5, 256, 3, None],
+            ['BN'],
+            ['Leaky_ReLU'],
+            ['deconv', 5, 128, 2, None],
+            ['BN'],
+            ['Leaky_ReLU'],
+            ['deconv', 5, 1, 1, None, 'valid'],
+            ['tanh']]
+
+        dis_model = [
+            ['conv', 5, 64, 2, None],
+            ['Leaky_ReLU'],
+            ['conv', 5, 128, 2, None],
+            ['BN'],
+            ['Leaky_ReLU'],
+            ['reshape', [-1, 4*4*256]],
+            ['fc', 1, None]
+        ]
+
+        self.D = Discriminator(dis_model)
+        self.G = Generator(gen_model)
+
+    def inference(self, inputs, batch_size):
+        self.z = tf.random_normal((batch_size, self._z_dim), dtype=tf.float32)
+        fake_img = self.G(self.z)
+        e = tf.random_uniform([batch_size, 1, 1, 1], 0, 1)
+        x_hat = e * inputs + (1 - e) * fake_img
+
+        real_logit = self.D(inputs)
+        fake_logit = self.D(fake_img, reuse=True)
+        x_hat_logit = self.D(x_hat, reuse=True)
+        self.grad = tf.gradients(x_hat_logit, x_hat)[0]
+        return real_logit, fake_logit, fake_img
+
+    def loss(self, real_logit, fake_logit):
+        d_loss = tf.reduce_mean(fake_logit - real_logit) + 10 * tf.reduce_mean(tf.square(tf.sqrt(tf.reduce_sum(tf.square(self.grad), axis=[1, 2, 3])) - 1))
+        g_loss = -tf.reduce_mean(fake_logit)
+        return d_loss, g_loss
+
+    def optimize(self, d_loss, g_loss, global_step=None):
+        opt_D = self.optimizer.optimize(loss=d_loss, global_step=global_step, var_list=self.D.var)
+        opt_G = self.optimizer.optimize(loss=g_loss, global_step=global_step, var_list=self.G.var)
+        return opt_D, opt_G
 
 
 class CGAN(GAN):
