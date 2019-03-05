@@ -6,7 +6,7 @@ from gan import GAN, DCGAN, WGAN, WGAN_GP, CGAN
 from utils import Utils
 from load import Load
 from collections import OrderedDict
-from hooks import SavedModelBuilderHook, MyLoggerHook
+from hooks import SavedModelBuilderHook, MyLoggerHook, GanHook
 
 
 def main(args):
@@ -72,6 +72,7 @@ def main(args):
         "generator_loss": gen_loss}
 
     hooks.append(MyLoggerHook(message, util.log_dir, metrics, every_n_iter=100))
+    hooks.append(GanHook(G, util.log_dir, every_n_iter=1000))
     hooks.append(tf.train.NanTensorHook(dis_loss))
     hooks.append(tf.train.NanTensorHook(gen_loss))
     if max_steps:
@@ -90,10 +91,7 @@ def main(args):
         while not session.should_stop():
             for _ in range(n_disc_update):
                 session.run([d_op])
-            _, image, step = session.run([g_op, G, global_step])
-            if step % 1000 == 0:
-                util.gan_plot(image[:16])
-
+            session.run([g_op])
     return
 
 if __name__ == '__main__':
