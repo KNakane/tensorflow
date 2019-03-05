@@ -12,9 +12,6 @@ class Generator(Module):
         super().__init__(l2_reg=l2_reg,l2_reg_scale=l2_reg_scale, trainable=trainable)
         self.model = model
         self.name = name
-        self.batch_size = 32
-        self.img_chan = 1
-        self.img_size = 28
 
     def __call__(self, logits, reuse=False):
         with tf.variable_scope(self.name):
@@ -34,7 +31,6 @@ class Discriminator(Module):
         super().__init__(l2_reg=l2_reg,l2_reg_scale=l2_reg_scale, trainable=trainable)
         self.model = model
         self.name = name
-        self.img_chan = 1
 
     def __call__(self, logits, reuse=False):
         with tf.variable_scope(self.name):
