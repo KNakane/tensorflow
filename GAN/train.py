@@ -36,7 +36,10 @@ def main(args):
     inputs = tf.reshape(inputs, (-1, data.size, data.size, data.channel))
 
     model = eval(FLAGS.network)(z_dim=100, size=data.size, channel=data.channel, lr=FLAGS.lr, opt=FLAGS.opt, trainable=True)
-    D_logits, D_logits_, G = model.inference(inputs, batch_size)
+    if FLAGS.network == 'CGAN':
+        D_logits, D_logits_, G = model.inference(inputs, batch_size, labels)
+    else:
+        D_logits, D_logits_, G = model.inference(inputs, batch_size)
     dis_loss, gen_loss = model.loss(D_logits, D_logits_)
     
     d_op, g_op = model.optimize(d_loss=dis_loss, g_loss=gen_loss, global_step=global_step)

@@ -204,14 +204,44 @@ class CGAN(GAN):
     """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.class_num = 10
 
-    def combine_distribution(self, z, labels):
+    def combine_distribution(self, z, labels=None):
+        """
+        latent vector Z と label情報をConcatする
+
+        parameters
+        ----------
+        z : 一様分布から生成した乱数
+
+        label : labelデータ
+
+        returns
+        ----------
+        image : labelをconcatしたデータ
+        """
         assert labels is not None
         return tf.concat([z, labels], axis=0)
     
-    def combine_image(self, image, labels):
+    def combine_image(self, image, labels=None):
+        """
+        Generatorで生成した画像とlabelをConcatする
+        
+        parameters
+        ----------
+        image : Generatorで生成した画像
+
+        label : labelデータ
+
+        returns
+        ----------
+        image : labelをconcatしたデータ
+
+        """
         assert labels is not None
-        return tf.concat([image, labels], axis=3)
+        label_image = tf.zeros((self.self.size, self.self.size, self.class_num))
+        label_image[:,:,labels] += 1
+        return tf.concat([image, label_image], axis=3)
 
     def inference(self, inputs, batch_size, labels=None):
         z = tf.random_normal((batch_size, self._z_dim), dtype=tf.float32)
@@ -219,7 +249,6 @@ class CGAN(GAN):
 
         fake_img = self.G(self.z)
         fake = self.combine_image(fake_img, labels)
-
 
         real_logit = self.D(inputs)
         fake_logit = self.D(fake, reuse=True)
