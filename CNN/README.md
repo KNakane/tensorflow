@@ -85,6 +85,7 @@ $ tensorboard --logdir=/path/to/logdir
 ```
  
 # Sample Result
+## Terminal
 ```bash
 ------Learning Details------
 Network : LeNet
@@ -132,3 +133,5 @@ INFO:tensorflow:No assets to save.
 INFO:tensorflow:No assets to write.
 INFO:tensorflow:SavedModel written to: results/190109_083846_LeNet/model/saved_model/saved_model.pb
 ```
+## tensorboard
+![代替テキスト](../sample_results/CNN/kuzushiji.png)
