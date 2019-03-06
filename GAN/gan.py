@@ -5,6 +5,7 @@ from based_gan import BasedGAN, Discriminator, Generator
 class GAN(BasedGAN):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.eps = 1e-14
 
     def build(self):
         
@@ -38,8 +39,8 @@ class GAN(BasedGAN):
         return real_logit, fake_logit, fake_img
 
     def loss(self, real_logit, fake_logit):
-        d_loss = -tf.reduce_mean(tf.log(real_logit) + tf.log(1. - fake_logit))
-        g_loss = -tf.reduce_mean(tf.log(fake_logit))
+        d_loss = -tf.reduce_mean(tf.log(real_logit + self.eps) + tf.log(1. - fake_logit + self.eps))
+        g_loss = -tf.reduce_mean(tf.log(fake_logit + self.eps))
         return d_loss, g_loss
 
 class DCGAN(GAN):
@@ -130,8 +131,8 @@ class WGAN(GAN):
         return clip_D
 
     def loss(self, real_logit, fake_logit):
-        d_loss = -(tf.reduce_mean(real_logit) - tf.reduce_mean(fake_logit))
-        g_loss = -tf.reduce_mean(fake_logit)
+        d_loss = -(tf.reduce_mean(real_logit + self.eps) - tf.reduce_mean(fake_logit + self.eps))
+        g_loss = -tf.reduce_mean(fake_logit + self.eps)
         return d_loss, g_loss
 
     def optimize(self, d_loss, g_loss, global_step=None):
@@ -221,7 +222,7 @@ class CGAN(GAN):
         image : labelをconcatしたデータ
         """
         assert labels is not None
-        return tf.concat([z, labels], axis=0)
+        return tf.concat([z, labels], axis=1)
     
     def combine_image(self, image, labels=None):
         """
@@ -239,8 +240,9 @@ class CGAN(GAN):
 
         """
         assert labels is not None
-        label_image = tf.zeros((self.self.size, self.self.size, self.class_num))
-        label_image[:,:,labels] += 1
+        labels = tf.reshape(labels, [-1, 1, 1, self.class_num])
+        label_image = tf.ones((labels.shape[0], self.size, self.size, self.class_num))
+        label_image = tf.multiply(labels, label_image)
         return tf.concat([image, label_image], axis=3)
 
     def inference(self, inputs, batch_size, labels=None):
@@ -250,7 +252,6 @@ class CGAN(GAN):
         fake_img = self.G(self.z)
         fake = self.combine_image(fake_img, labels)
 
-        real_logit = self.D(inputs)
+        real_logit = self.D(self.combine_image(inputs, labels))
         fake_logit = self.D(fake, reuse=True)
         return real_logit, fake_logit, fake_img
-

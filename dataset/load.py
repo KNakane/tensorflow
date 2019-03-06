@@ -46,7 +46,7 @@ class Load():
         self.size, self.channel = 28, 1
         self.output_dim = 49
 
-    def load(self, images, labels, batch_size, buffer_size=1000, is_training=False, augmentation=None, conditional=False):
+    def load(self, images, labels, batch_size, buffer_size=1000, is_training=False, augmentation=None):
         with tf.variable_scope('{}_dataset'.format('training' if is_training is True else 'validation')):
             def preprocess_fn(image, label):
                 '''A transformation function to preprocess raw data
@@ -60,10 +60,6 @@ class Load():
             if augmentation is not None and is_training:
                 augment = Augment(images, labels)
                 images, labels = eval('augment.'+ augmentation)()
-
-            if conditional:
-                self.combine_label(images, labels)
-                pass
 
             if is_training: # training dataset
                 self.x_train, self.y_train = images, labels
@@ -123,12 +119,7 @@ class Load():
                 for chunk in tqdm(r.iter_content(chunk_size=1024), total=int(total_length / 1024) + 1, unit="KB"):
                     if chunk:
                         f.write(chunk)
-    
-    def combine_label(self, image, label):
-        """
-        conditional GAN用にimageにlabel情報をconcatする関数
-        """
-        return
+
 
 
 if __name__ == '__main__':
