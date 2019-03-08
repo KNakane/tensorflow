@@ -90,11 +90,17 @@ def main(args):
         save_checkpoint_steps=save_checkpoint_steps,
         summary_dir=util.tf_board)
 
-    with session:
+    def _train(session, d_op, g_op, n_disc_update):
         while not session.should_stop():
             for _ in range(n_disc_update):
-                session.run([d_op])
-            session.run([g_op])
+                c_op_vals = session.run(d_op)
+
+            g_op_vals = session.run(g_op)
+        return c_op_vals, g_op_vals
+
+
+    with session:
+        _train(session, d_op, g_op, n_disc_update)
     return
 
 if __name__ == '__main__':
