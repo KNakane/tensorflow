@@ -1,4 +1,5 @@
 import os,sys
+import numpy as np
 import tensorflow as tf
 from based_gan import BasedGAN, Discriminator, Generator
 
@@ -26,9 +27,10 @@ class GAN(BasedGAN):
 
         self.D = Discriminator(self.discriminator_model)
         self.G = Generator(self.generator_model)
+        self.G_ = Generator(self.generator_model, trainable=False)
 
     def predict(self, inputs):
-        return self.G(inputs, reuse=True)
+        return self.G_(inputs, reuse=True)
 
     def inference(self, inputs, batch_size):
         self.z = tf.random_normal((batch_size, self._z_dim), dtype=tf.float32)
@@ -36,12 +38,17 @@ class GAN(BasedGAN):
 
         real_logit = tf.nn.sigmoid(self.D(inputs))
         fake_logit = tf.nn.sigmoid(self.D(fake_img, reuse=True))
-        return real_logit, fake_logit, fake_img
+        return real_logit, fake_logit#, fake_img
 
     def loss(self, real_logit, fake_logit):
-        d_loss = -tf.reduce_mean(tf.log(real_logit + self.eps) + tf.log(1. - fake_logit + self.eps))
-        g_loss = -tf.reduce_mean(tf.log(fake_logit + self.eps))
-        return d_loss, g_loss
+        with tf.variable_scope('loss'):
+            d_loss = -tf.reduce_mean(tf.log(real_logit + self.eps) + tf.log(1. - fake_logit + self.eps))
+            g_loss = -tf.reduce_mean(tf.log(fake_logit + self.eps))
+            return d_loss, g_loss
+
+    def evaluate(self, real_logit, fake_logit):
+        with tf.variable_scope('Accuracy'):
+            return  (tf.reduce_mean(tf.cast(self.fake_logit < 0.5, tf.float32)) + tf.reduce_mean(tf.cast(self.real_logit > 0.5, tf.float32))) / 2.
 
 class DCGAN(GAN):
     def __init__(self, *args, **kwargs):
@@ -110,6 +117,7 @@ class DCGAN(GAN):
 
         self.D = Discriminator(dis_model)
         self.G = Generator(gen_model)
+        self.G_ = Generator(gen_model, trainable=False)
 
 class WGAN(GAN):
     """
@@ -118,22 +126,53 @@ class WGAN(GAN):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
     
+    def build(self):
+        gen_model = [
+            ['fc', 4*4*512, None],
+            ['reshape', [-1, 4, 4, 512]],
+            ['BN'],
+            ['Leaky_ReLU'],
+            ['deconv', 5, 256, 3, None],
+            ['BN'],
+            ['Leaky_ReLU'],
+            ['deconv', 5, 128, 2, None],
+            ['BN'],
+            ['Leaky_ReLU'],
+            ['deconv', 5, 1, 1, None, 'valid'],
+            ['tanh']]
+
+        dis_model = [
+            ['conv', 5, 64, 2, None],
+            ['Leaky_ReLU'],
+            ['conv', 5, 128, 2, None],
+            ['BN'],
+            ['Leaky_ReLU'],
+            ['reshape', [-1, 4*4*256]],
+            ['fc', 1, None]
+        ]
+
+        self.D = Discriminator(dis_model)
+        self.G = Generator(gen_model)
+        self.G_ = Generator(gen_model, trainable=False)
+    
     def inference(self, inputs, batch_size):
         self.z = tf.random_normal((batch_size, self._z_dim), dtype=tf.float32)
         fake_img = self.G(self.z)
 
         real_logit = self.D(inputs)
         fake_logit = self.D(fake_img, reuse=True)
-        return real_logit, fake_logit, fake_img
+        return real_logit, fake_logit#, fake_img
 
     def weight_clipping(self):
-        clip_D = [p.assign(tf.clip_by_value(p, -0.01, 0.01)) for p in self.D.weight]
-        return clip_D
+        with tf.variable_scope('weight_clipping'):
+            clip_D = [p.assign(tf.clip_by_value(p, -0.01, 0.01)) for p in self.D.weight]
+            return clip_D
 
     def loss(self, real_logit, fake_logit):
-        d_loss = -(tf.reduce_mean(real_logit + self.eps) - tf.reduce_mean(fake_logit + self.eps))
-        g_loss = -tf.reduce_mean(fake_logit + self.eps)
-        return d_loss, g_loss
+        with tf.variable_scope('loss'):
+            d_loss = -(tf.reduce_mean(real_logit + self.eps) - tf.reduce_mean(fake_logit + self.eps))
+            g_loss = -tf.reduce_mean(fake_logit + self.eps)
+            return d_loss, g_loss
 
     def optimize(self, d_loss, g_loss, global_step=None):
         clip_D = self.weight_clipping()
@@ -175,6 +214,7 @@ class WGAN_GP(WGAN):
 
         self.D = Discriminator(dis_model)
         self.G = Generator(gen_model)
+        self.G_ = Generator(self.generator_model, trainable=False)
 
     def inference(self, inputs, batch_size):
         self.z = tf.random_normal((batch_size, self._z_dim), dtype=tf.float32)
@@ -186,7 +226,7 @@ class WGAN_GP(WGAN):
         fake_logit = self.D(fake_img, reuse=True)
         x_hat_logit = self.D(x_hat, reuse=True)
         self.grad = tf.gradients(x_hat_logit, x_hat)[0]
-        return real_logit, fake_logit, fake_img
+        return real_logit, fake_logit#, fake_img
 
     def loss(self, real_logit, fake_logit):
         d_loss = tf.reduce_mean(fake_logit - real_logit) + 10 * tf.reduce_mean(tf.square(tf.sqrt(tf.reduce_sum(tf.square(self.grad), axis=[1, 2, 3])) - 1))
@@ -245,6 +285,11 @@ class CGAN(GAN):
         label_image = tf.multiply(labels, label_image)
         return tf.concat([image, label_image], axis=3)
 
+    def predict(self, inputs):
+        labels = np.array([x%self.class_num for x in range(16)],dtype=np.int32)
+        z = self.combine_distribution(inputs, labels)
+        return self.G_(z, reuse=True)
+
     def inference(self, inputs, batch_size, labels=None):
         z = tf.random_normal((batch_size, self._z_dim), dtype=tf.float32)
         self.z = self.combine_distribution(z, labels)
@@ -254,4 +299,4 @@ class CGAN(GAN):
 
         real_logit = self.D(self.combine_image(inputs, labels))
         fake_logit = self.D(fake, reuse=True)
-        return real_logit, fake_logit, fake_img
+        return real_logit, fake_logit#, fake_img

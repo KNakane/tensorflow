@@ -34,15 +34,25 @@ def main(args):
     iterator = dataset.make_initializable_iterator()
     inputs, labels = iterator.get_next()
     inputs = tf.reshape(inputs, (-1, data.size, data.size, data.channel))
+    test_inputs = tf.random.uniform([batch_size, 100],-1,+1)
 
     model = eval(FLAGS.network)(z_dim=100, size=data.size, channel=data.channel, lr=FLAGS.lr, opt=FLAGS.opt, trainable=True)
     if FLAGS.network == 'CGAN':
-        D_logits, D_logits_, G = model.inference(inputs, batch_size, labels)
+        D_logits, D_logits_ = model.inference(inputs, batch_size, labels)
+    elif FLAGS.network == 'WGAN' or FLAGS.network == 'WGAN-GP':
+        D_logits, D_logits_ = model.inference(inputs, batch_size)
+        n_disc_update = 5
     else:
-        D_logits, D_logits_, G = model.inference(inputs, batch_size)
+        D_logits, D_logits_ = model.inference(inputs, batch_size)
     dis_loss, gen_loss = model.loss(D_logits, D_logits_)
     
     d_op, g_op = model.optimize(d_loss=dis_loss, g_loss=gen_loss, global_step=global_step)
+    try:
+        train_accuracy = self.model.evaluate(D_logits, D_logits_)
+    except:
+        train_accuracy = 'Not evaluate'
+
+    G = model.predict(test_inputs)
 
     # logging for tensorboard
     util = Utils(prefix=FLAGS.network)
@@ -72,7 +82,8 @@ def main(args):
     metrics = {
         "global_step": global_step,
         "discriminator_loss": dis_loss,
-        "generator_loss": gen_loss}
+        "generator_loss": gen_loss,
+        "train_accuracy": train_accuracy}
 
     hooks.append(MyLoggerHook(message, util.log_dir, metrics, every_n_iter=100))
     hooks.append(GanHook(G, util.log_dir, every_n_iter=1000))
