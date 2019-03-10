@@ -235,6 +235,19 @@ class WGAN_GP(WGAN):
         opt_G = self.optimizer.optimize(loss=g_loss, global_step=global_step, var_list=self.G.var)
         return opt_D, opt_G
 
+class LSGAN(GAN):
+    """
+    Least Square GAN
+    """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def loss(self, real_logit, fake_logit):
+        with tf.variable_scope('loss'):
+            d_loss = tf.reduce_mean(0.5 * tf.square(real_logit - 1) + 0.5 * tf.square(fake_logit))
+            g_loss = tf.reduce_mean(0.5 * tf.square(fake_logit - 1))
+            return d_loss, g_loss
+
 
 class CGAN(GAN):
     """
