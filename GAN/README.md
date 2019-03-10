@@ -10,8 +10,7 @@ tensorflowの練習用
 
 # Description
 GANを用いた画像生成のプログラム  
-現在、全結合のみ利用可能(DCGAN等は利用不可)  
-
+epochごとに画像生成し、resultsに保存する  
 
 
 # Requirement
@@ -24,7 +23,7 @@ GeneratorとDiscriminatorの両方を作成する必要があり、各GANのプ�
 
 ## Learning
 ```
-$ python GAN/train.py --network (GAN,DCGAN and so on)
+$ python GAN/train.py --network (GAN,DCGAN,CGAN)
                       --data (mnist,cifar10,cifar100,kuzushiji)
                       --n_epoch (epoch数)
                       --batch_size
@@ -32,6 +31,7 @@ $ python GAN/train.py --network (GAN,DCGAN and so on)
                       --opt (optimizer)
                       --aug (shift,mirror,rotate,shift_rotate,cutout,random_erace)
                       --l2_norm (True / False)
+                      --n_disc_update (int)
 ```
 ## Test
 
