@@ -47,11 +47,7 @@ def main(args):
     dis_loss, gen_loss = model.loss(D_logits, D_logits_)
     
     d_op, g_op = model.optimize(d_loss=dis_loss, g_loss=gen_loss, global_step=global_step)
-    try:
-        train_accuracy = self.model.evaluate(D_logits, D_logits_)
-    except:
-        train_accuracy = 'Not evaluate'
-
+    train_accuracy = model.evaluate(D_logits, D_logits_)
     G = model.predict(test_inputs)
 
     # logging for tensorboard

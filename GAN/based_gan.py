@@ -89,9 +89,13 @@ class BasedGAN(Module):
         raise NotImplementedError()
 
     def evaluate(self, real_logit, fake_logit):
-        raise NotImplementedError()
+        with tf.variable_scope('Accuracy'):
+            return  (tf.reduce_mean(tf.cast(fake_logit < 0.5, tf.float32)) + tf.reduce_mean(tf.cast(real_logit > 0.5, tf.float32))) / 2.
 
     def optimize(self, d_loss, g_loss, global_step=None):
-        opt_D = self.optimizer.optimize(loss=d_loss, global_step=global_step, var_list=self.D.var)
-        opt_G = self.optimizer.optimize(loss=g_loss, global_step=global_step, var_list=self.G.var)
-        return opt_D, opt_G
+        with tf.variable_scope('Loss'):
+            with tf.variable_scope('Discriminator_loss'):
+                opt_D = self.optimizer.optimize(loss=d_loss, global_step=global_step, var_list=self.D.var)
+            with tf.variable_scope('Generator_loss'):
+                opt_G = self.optimizer.optimize(loss=g_loss, global_step=global_step, var_list=self.G.var)
+            return opt_D, opt_G

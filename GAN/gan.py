@@ -46,9 +46,6 @@ class GAN(BasedGAN):
             g_loss = -tf.reduce_mean(tf.log(fake_logit + self.eps))
             return d_loss, g_loss
 
-    def evaluate(self, real_logit, fake_logit):
-        with tf.variable_scope('Accuracy'):
-            return  (tf.reduce_mean(tf.cast(self.fake_logit < 0.5, tf.float32)) + tf.reduce_mean(tf.cast(self.real_logit > 0.5, tf.float32))) / 2.
 
 class DCGAN(GAN):
     def __init__(self, *args, **kwargs):
@@ -214,7 +211,7 @@ class WGAN_GP(WGAN):
 
         self.D = Discriminator(dis_model)
         self.G = Generator(gen_model)
-        self.G_ = Generator(self.generator_model, trainable=False)
+        self.G_ = Generator(gen_model, trainable=False)
 
     def inference(self, inputs, batch_size):
         self.z = tf.random_normal((batch_size, self._z_dim), dtype=tf.float32)
@@ -246,6 +243,35 @@ class CGAN(GAN):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.class_num = 10
+
+    def build(self):
+        gen_model = [
+            ['fc', 4*4*512, None],
+            ['reshape', [-1, 4, 4, 512]],
+            ['BN'],
+            ['Leaky_ReLU'],
+            ['deconv', 5, 256, 3, None],
+            ['BN'],
+            ['Leaky_ReLU'],
+            ['deconv', 5, 128, 2, None],
+            ['BN'],
+            ['Leaky_ReLU'],
+            ['deconv', 5, 1, 1, None, 'valid'],
+            ['tanh']]
+
+        dis_model = [
+            ['conv', 5, 64, 2, None],
+            ['Leaky_ReLU'],
+            ['conv', 5, 128, 2, None],
+            ['BN'],
+            ['Leaky_ReLU'],
+            ['reshape', [-1, 4*4*256]],
+            ['fc', 1, None]
+        ]
+
+        self.D = Discriminator(dis_model)
+        self.G = Generator(gen_model)
+        self.G_ = Generator(gen_model, trainable=False)
 
     def combine_distribution(self, z, labels=None):
         """
@@ -286,7 +312,8 @@ class CGAN(GAN):
         return tf.concat([image, label_image], axis=3)
 
     def predict(self, inputs):
-        labels = np.array([x%self.class_num for x in range(16)],dtype=np.int32)
+        indices = np.array([x%self.class_num for x in range(32)],dtype=np.int32)
+        labels = tf.one_hot(indices, depth=self.class_num, dtype=tf.float32)
         z = self.combine_distribution(inputs, labels)
         return self.G_(z, reuse=True)
 
@@ -297,6 +324,6 @@ class CGAN(GAN):
         fake_img = self.G(self.z)
         fake = self.combine_image(fake_img, labels)
 
-        real_logit = self.D(self.combine_image(inputs, labels))
-        fake_logit = self.D(fake, reuse=True)
+        real_logit = tf.nn.sigmoid(self.D(self.combine_image(inputs, labels)))
+        fake_logit = tf.nn.sigmoid(self.D(fake, reuse=True))
         return real_logit, fake_logit#, fake_img
