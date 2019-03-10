@@ -6,7 +6,10 @@ tensorflowの勉強用
 CNNと強化学習などについて触れる  
 ## [AutoEncoder](./AutoEncoder/README.md)
 AutoEncoderによる画像生成を行う  
-通常のAEとVAEが使用できる
+- AutoEncoder(AE)  
+- Denosing AutoEncoder(DAE)  
+- Variable AutoEncoder(VAE)  
+- Conditional Variable AutoEncoder(CVAE)  
 
 ## [CNN](./CNN/README.md)
 MonitoredTrainingSessionを使用し、Graph Modeで学習を行っていく  
@@ -14,11 +17,11 @@ tensorboardでgraphや各数値を確認することが出来ます
 
 ## [GAN](./GAN/README.md)
 GANによる画像生成ができる
-- vanilla GAN
+- vanilla GAN(GAN)
 - DCGAN
-- Wasserstein GAN
+- Wasserstein GAN(WGAN)
 - WGAN-GP  
-以上を実装予定
+- Conditional GAN(CGAN)
 
 ## [強化学習](./rl/README.md)
 tensorflowのEager Modeを使用している  
