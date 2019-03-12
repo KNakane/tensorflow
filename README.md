@@ -13,7 +13,14 @@ AutoEncoderによる画像生成を行う
 
 ## [CNN](./CNN/README.md)
 MonitoredTrainingSessionを使用し、Graph Modeで学習を行っていく  
-tensorboardでgraphや各数値を確認することが出来ます
+tensorboardでgraphや各数値を確認することが出来ます  
+ネットワーク構造は自分で作成することができるが、以下のネットワークはすでに作成済み
+- LeNet
+- VGG
+- ResNet
+- ResNext
+- DenseNet
+- SENet
 
 ## [GAN](./GAN/README.md)
 GANによる画像生成ができる
