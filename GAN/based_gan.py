@@ -56,6 +56,8 @@ class BasedGAN(Module):
                  channel=1,
                  opt=Adam,   # Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]
                  lr=0.001,
+                 conditional=False,
+                 class_num=10,
                  l2_reg=False,
                  l2_reg_scale=0.0001,
                  trainable=False
@@ -65,11 +67,14 @@ class BasedGAN(Module):
         self.opt = opt
         self.lr = lr
         self.trainable = trainable
+        self.conditional = conditional
         self.size = size
         self.channel = channel
         self.build()
         if self._trainable:
             self.optimizer = eval(opt)(learning_rate=lr)
+        if self.conditional:
+            self.class_num = class_num
 
     def conv_out_size_same(self, size, stride):
         return int(math.ceil(float(size) / float(stride)))
@@ -99,3 +104,41 @@ class BasedGAN(Module):
             with tf.variable_scope('Generator_loss'):
                 opt_G = self.optimizer.optimize(loss=g_loss, global_step=global_step, var_list=self.G.var)
             return opt_D, opt_G
+
+    def combine_distribution(self, z, labels=None):
+        """
+        latent vector Z と label情報をConcatする
+
+        parameters
+        ----------
+        z : 一様分布から生成した乱数
+
+        label : labelデータ
+
+        returns
+        ----------
+        image : labelをconcatしたデータ
+        """
+        assert labels is not None
+        return tf.concat([z, labels], axis=1)
+
+    def combine_image(self, image, labels=None):
+        """
+        Generatorで生成した画像とlabelをConcatする
+        
+        parameters
+        ----------
+        image : Generatorで生成した画像
+
+        label : labelデータ
+
+        returns
+        ----------
+        image : labelをconcatしたデータ
+
+        """
+        assert labels is not None
+        labels = tf.reshape(labels, [-1, 1, 1, self.class_num])
+        label_image = tf.ones((labels.shape[0], self.size, self.size, self.class_num))
+        label_image = tf.multiply(labels, label_image)
+        return tf.concat([image, label_image], axis=3)

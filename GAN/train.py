@@ -2,7 +2,7 @@ import os,sys
 sys.path.append('./CNN')
 sys.path.append('./dataset')
 import tensorflow as tf
-from gan import GAN, DCGAN, WGAN, WGAN_GP, LSGAN, CGAN
+from gan import GAN, DCGAN, WGAN, WGAN_GP, LSGAN
 from utils import Utils
 from load import Load
 from collections import OrderedDict
@@ -12,7 +12,9 @@ from hooks import SavedModelBuilderHook, MyLoggerHook, GanHook
 def main(args):
     message = OrderedDict({
         "Network": FLAGS.network,
+        "Conditional": FLAGS.conditional,
         "data": FLAGS.data,
+        "z_dim": FLAGS.z_dim,
         "epoch":FLAGS.n_epoch,
         "batch_size": FLAGS.batch_size,
         "Optimizer":FLAGS.opt,
@@ -34,16 +36,24 @@ def main(args):
     iterator = dataset.make_initializable_iterator()
     inputs, labels = iterator.get_next()
     inputs = tf.reshape(inputs, (-1, data.size, data.size, data.channel))
-    test_inputs = tf.random.uniform([batch_size, 100],-1,+1)
+    test_inputs = tf.random.uniform([batch_size, FLAGS.z_dim],-1,+1)
 
-    model = eval(FLAGS.network)(z_dim=100, size=data.size, channel=data.channel, lr=FLAGS.lr, opt=FLAGS.opt, trainable=True)
+    model = eval(FLAGS.network)(z_dim=FLAGS.z_dim,
+                                size=data.size,
+                                channel=data.channel,
+                                lr=FLAGS.lr,
+                                class_num=data.output_dim,
+                                conditional=FLAGS.conditional,
+                                opt=FLAGS.opt,
+                                trainable=True)
+
     if FLAGS.network == 'CGAN':
         D_logits, D_logits_ = model.inference(inputs, batch_size, labels)
     elif FLAGS.network == 'WGAN' or FLAGS.network == 'WGAN-GP':
-        D_logits, D_logits_ = model.inference(inputs, batch_size)
+        D_logits, D_logits_ = model.inference(inputs, batch_size, labels)
         n_disc_update = 5
     else:
-        D_logits, D_logits_ = model.inference(inputs, batch_size)
+        D_logits, D_logits_ = model.inference(inputs, batch_size, labels)
     dis_loss, gen_loss = model.loss(D_logits, D_logits_)
     
     d_op, g_op = model.optimize(d_loss=dis_loss, g_loss=gen_loss, global_step=global_step)
@@ -121,6 +131,8 @@ if __name__ == '__main__':
     flags.DEFINE_string('opt', 'SGD', 'Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]')
     flags.DEFINE_string('aug','None','Choice the Augmentation -> ["shift","mirror","rotate","shift_rotate","cutout","random_erace"]')
     flags.DEFINE_bool('l2_norm', 'False', 'Input learning rate')
+    flags.DEFINE_integer('z_dim', '100', 'Latent z dimension')
+    flags.DEFINE_bool('conditional', 'False', 'Conditional true or false')
     flags.DEFINE_integer('n_disc_update', '2', 'Input max epoch')
     flags.DEFINE_integer('checkpoints_to_keep', 5,'checkpoint keep count')
     flags.DEFINE_integer('keep_checkpoint_every_n_hours', 1, 'checkpoint create ')

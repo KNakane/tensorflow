@@ -30,11 +30,19 @@ class GAN(BasedGAN):
         self.G_ = Generator(self.generator_model, trainable=False)
 
     def predict(self, inputs):
+        if self.conditional:
+            indices = np.array([x%self.class_num for x in range(32)],dtype=np.int32)
+            labels = tf.one_hot(indices, depth=self.class_num, dtype=tf.float32)
+            inputs = self.combine_distribution(inputs, labels)
         return self.G_(inputs, reuse=True)
 
-    def inference(self, inputs, batch_size):
+    def inference(self, inputs, batch_size, labels=None):
         self.z = tf.random_normal((batch_size, self._z_dim), dtype=tf.float32)
-        fake_img = self.G(self.z)
+        fake_img = self.G(self.combine_distribution(self.z, labels) if self.conditional else self.z)
+        
+        if self.conditional and labels is not None:
+            fake_img = self.combine_image(fake_img, labels)
+            inputs = self.combine_image(inputs, labels)
 
         real_logit = tf.nn.sigmoid(self.D(inputs))
         fake_logit = tf.nn.sigmoid(self.D(fake_img, reuse=True))
@@ -152,13 +160,17 @@ class WGAN(GAN):
         self.G = Generator(gen_model)
         self.G_ = Generator(gen_model, trainable=False)
     
-    def inference(self, inputs, batch_size):
+    def inference(self, inputs, batch_size, labels=None):
         self.z = tf.random_normal((batch_size, self._z_dim), dtype=tf.float32)
-        fake_img = self.G(self.z)
+        fake_img = self.G(self.combine_distribution(self.z, labels) if self.conditional else self.z)
+
+        if self.conditional and labels is not None:
+            fake_img = self.combine_image(fake_img, labels)
+            inputs = self.combine_image(inputs, labels)
 
         real_logit = self.D(inputs)
         fake_logit = self.D(fake_img, reuse=True)
-        return real_logit, fake_logit#, fake_img
+        return real_logit, fake_logit
 
     def weight_clipping(self):
         with tf.variable_scope('weight_clipping'):
@@ -213,9 +225,14 @@ class WGAN_GP(WGAN):
         self.G = Generator(gen_model)
         self.G_ = Generator(gen_model, trainable=False)
 
-    def inference(self, inputs, batch_size):
+    def inference(self, inputs, batch_size, labels=None):
         self.z = tf.random_normal((batch_size, self._z_dim), dtype=tf.float32)
-        fake_img = self.G(self.z)
+        fake_img = self.G(self.combine_distribution(self.z, labels) if self.conditional else self.z)
+
+        if self.conditional and labels is not None:
+            fake_img = self.combine_image(fake_img, labels)
+            inputs = self.combine_image(inputs, labels)
+
         e = tf.random_uniform([batch_size, 1, 1, 1], 0, 1)
         x_hat = e * inputs + (1 - e) * fake_img
 
@@ -247,96 +264,3 @@ class LSGAN(GAN):
             d_loss = tf.reduce_mean(0.5 * tf.square(real_logit - 1) + 0.5 * tf.square(fake_logit))
             g_loss = tf.reduce_mean(0.5 * tf.square(fake_logit - 1))
             return d_loss, g_loss
-
-
-class CGAN(GAN):
-    """
-    Conditional GAN
-    """
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.class_num = 10
-
-    def build(self):
-        gen_model = [
-            ['fc', 4*4*512, None],
-            ['reshape', [-1, 4, 4, 512]],
-            ['BN'],
-            ['Leaky_ReLU'],
-            ['deconv', 5, 256, 3, None],
-            ['BN'],
-            ['Leaky_ReLU'],
-            ['deconv', 5, 128, 2, None],
-            ['BN'],
-            ['Leaky_ReLU'],
-            ['deconv', 5, 1, 1, None, 'valid'],
-            ['tanh']]
-
-        dis_model = [
-            ['conv', 5, 64, 2, None],
-            ['Leaky_ReLU'],
-            ['conv', 5, 128, 2, None],
-            ['BN'],
-            ['Leaky_ReLU'],
-            ['reshape', [-1, 4*4*256]],
-            ['fc', 1, None]
-        ]
-
-        self.D = Discriminator(dis_model)
-        self.G = Generator(gen_model)
-        self.G_ = Generator(gen_model, trainable=False)
-
-    def combine_distribution(self, z, labels=None):
-        """
-        latent vector Z と label情報をConcatする
-
-        parameters
-        ----------
-        z : 一様分布から生成した乱数
-
-        label : labelデータ
-
-        returns
-        ----------
-        image : labelをconcatしたデータ
-        """
-        assert labels is not None
-        return tf.concat([z, labels], axis=1)
-    
-    def combine_image(self, image, labels=None):
-        """
-        Generatorで生成した画像とlabelをConcatする
-        
-        parameters
-        ----------
-        image : Generatorで生成した画像
-
-        label : labelデータ
-
-        returns
-        ----------
-        image : labelをconcatしたデータ
-
-        """
-        assert labels is not None
-        labels = tf.reshape(labels, [-1, 1, 1, self.class_num])
-        label_image = tf.ones((labels.shape[0], self.size, self.size, self.class_num))
-        label_image = tf.multiply(labels, label_image)
-        return tf.concat([image, label_image], axis=3)
-
-    def predict(self, inputs):
-        indices = np.array([x%self.class_num for x in range(32)],dtype=np.int32)
-        labels = tf.one_hot(indices, depth=self.class_num, dtype=tf.float32)
-        z = self.combine_distribution(inputs, labels)
-        return self.G_(z, reuse=True)
-
-    def inference(self, inputs, batch_size, labels=None):
-        z = tf.random_normal((batch_size, self._z_dim), dtype=tf.float32)
-        self.z = self.combine_distribution(z, labels)
-
-        fake_img = self.G(self.z)
-        fake = self.combine_image(fake_img, labels)
-
-        real_logit = tf.nn.sigmoid(self.D(self.combine_image(inputs, labels)))
-        fake_logit = tf.nn.sigmoid(self.D(fake, reuse=True))
-        return real_logit, fake_logit#, fake_img
