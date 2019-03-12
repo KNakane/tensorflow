@@ -51,7 +51,12 @@ $ tensorboard --logdir=/path/to/logdir
 |:--:|:--:|:--:|:--:|:--:|:--:|
 |![代替テキスト](../sample_results/GAN/DCGAN/000.png)|![代替テキスト](../sample_results/GAN/DCGAN/1000.png)|![代替テキスト](../sample_results/GAN/DCGAN/5000.png)|![代替テキスト](../sample_results/GAN/DCGAN/10000.png)|![代替テキスト](../sample_results/GAN/DCGAN/30000.png)|![代替テキスト](../sample_results/GAN/DCGAN/50000.png)|
 
-## Conditional GAN
+## WGAN
+|0回学習|1000回学習|5000回学習|10000回学習|30000回学習|50000回学習|
+|:--:|:--:|:--:|:--:|:--:|:--:|
+|![代替テキスト](../sample_results/GAN/WGAN/000.png)|![代替テキスト](../sample_results/GAN/WGAN/1000.png)|![代替テキスト](../sample_results/GAN/WGAN/5000.png)|![代替テキスト](../sample_results/GAN/WGAN/10000.png)|![代替テキスト](../sample_results/GAN/WGAN/30000.png)|![代替テキスト](../sample_results/GAN/WGAN/50000.png)|
+
+## Conditional GAN(DCGAN)
 |0回学習|1000回学習|5000回学習|10000回学習|30000回学習|50000回学習|
 |:--:|:--:|:--:|:--:|:--:|:--:|
 |![代替テキスト](../sample_results/GAN/CGAN/000.png)|![代替テキスト](../sample_results/GAN/CGAN/1000.png)|![代替テキスト](../sample_results/GAN/CGAN/5000.png)|![代替テキスト](../sample_results/GAN/CGAN/10000.png)|![代替テキスト](../sample_results/GAN/CGAN/30000.png)|![代替テキスト](../sample_results/GAN/CGAN/50000.png)|
