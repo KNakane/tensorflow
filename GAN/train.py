@@ -28,6 +28,7 @@ def main(args):
     save_checkpoint_steps = FLAGS.save_checkpoint_steps
     batch_size = FLAGS.batch_size
     n_disc_update = FLAGS.n_disc_update
+    restore_dir = FLAGS.init_model
     global_step = tf.train.create_global_step()
 
     # load dataset
@@ -117,6 +118,11 @@ def main(args):
 
 
     with session:
+        if restore_dir is not None:
+            ckpt = tf.train.get_checkpoint_state(restore_dir)
+            if ckpt and ckpt.model_checkpoint_path:
+                # Restores from checkpoint
+                saver.restore(session, ckpt.model_checkpoint_path)
         _train(session, d_op, g_op, n_disc_update)
     return
 
@@ -134,6 +140,7 @@ if __name__ == '__main__':
     flags.DEFINE_integer('z_dim', '100', 'Latent z dimension')
     flags.DEFINE_bool('conditional', 'False', 'Conditional true or false')
     flags.DEFINE_integer('n_disc_update', '2', 'Input max epoch')
+    flags.DEFINE_string('init_model', 'None', 'Choice the checkpoint directpry(ex. ./results/181225_193106/model)')
     flags.DEFINE_integer('checkpoints_to_keep', 5,'checkpoint keep count')
     flags.DEFINE_integer('keep_checkpoint_every_n_hours', 1, 'checkpoint create ')
     flags.DEFINE_integer('save_checkpoint_steps', 1000,'save checkpoint step')
