@@ -1,4 +1,5 @@
 wget
+tqdm
 numpy
 keras
 gym
