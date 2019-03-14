@@ -49,6 +49,7 @@ class AutoEncoder(CNN):
         return tf.clip_by_value(outputs, 1e-8, 1 - 1e-8)
 
     def inference(self, outputs, reuse=False):
+        self.inputs = outputs
         with tf.variable_scope(self.name):
             if self.denoise:
                 outputs = self.noise(outputs)
@@ -60,7 +61,7 @@ class AutoEncoder(CNN):
         return self.inference(outputs)
         
     def loss(self, logits, labels):
-        loss = tf.reduce_mean(tf.square(logits - labels))
+        loss = tf.reduce_mean(tf.square(logits - self.inputs))
         return loss
 
 
@@ -90,6 +91,7 @@ class VAE(AutoEncoder):
             return mu, var
 
     def inference(self, outputs, reuse=False):
+        self.inputs = outputs
         with tf.variable_scope(self.name):
             if self.denoise:
                 outputs = self.noise(outputs)
@@ -117,9 +119,9 @@ class VAE(AutoEncoder):
         with tf.variable_scope('loss'):
             if len(logits.shape) > 2:
                 logits = tf.layers.flatten(logits)
-            if len(labels.shape) > 2:
-                labels = tf.layers.flatten(labels)
-            reconstruct_loss = -tf.reduce_mean(tf.reduce_sum(labels * tf.log(epsilon + logits) + (1 - labels) * tf.log(epsilon + 1 - logits), axis=1))
+            if len(self.inputs.shape) > 2:
+                self.inputs = tf.layers.flatten(self.inputs)
+            reconstruct_loss = -tf.reduce_mean(tf.reduce_sum(self.inputs * tf.log(epsilon + logits) + (1 - self.inputs) * tf.log(epsilon + 1 - logits), axis=1))
             KL_divergence = tf.reduce_mean(-0.5 * tf.reduce_sum(1 + self.var - tf.square(self.mu - tf.exp(self.var)), axis=1))
             return reconstruct_loss + KL_divergence
         
@@ -128,6 +130,7 @@ class CVAE(VAE):
     def __init__(self, 
                  encode=None,
                  decode=None,
+                 denoise=False,
                  name='VAE',
                  out_dim=10,
                  opt=Adam,   # Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]

@@ -5,7 +5,7 @@ sys.path.append('./dataset')
 import tensorflow as tf
 from utils import Utils
 from collections import OrderedDict
-from hooks import SavedModelBuilderHook, MyLoggerHook, OptunaHook
+from hooks import SavedModelBuilderHook, MyLoggerHook, OptunaHook, AEHook
 
 class Train():
     def __init__(self,
@@ -30,6 +30,8 @@ class Train():
         self.global_step = tf.train.get_or_create_global_step()
         self.model = model
         self.restore_dir = FLAGS.init_model
+        self.util = Utils(prefix=self.name)
+        self.util.conf_log()
 
     def load(self):
         # Load Dataset
@@ -91,9 +93,9 @@ class Train():
             "test loss": test_loss,
             "test accuracy":test_accuracy})
 
+        hooks = []
         if self.name == 'tuning':
             config = tf.ConfigProto(allow_soft_placement=True, log_device_placement=False, gpu_options=tf.GPUOptions(per_process_gpu_memory_fraction=0.7))
-            hooks = []
             hooks.append(OptunaHook(metrics))
             hooks.append(tf.train.NanTensorHook(train_loss))
             if self.max_steps:
@@ -115,27 +117,24 @@ class Train():
             tf.summary.scalar('test/accuracy', test_accuracy)
             tf.summary.image('test/image', valid_inputs)
             if self.name == 'AutoEncoder' or self.name == 'VAE':
+                hooks.append(AEHook(test_logits, self.util.log_dir, every_n_iter=100))
                 tf.summary.image('train/encode_image', train_logits)
                 tf.summary.image('test/encode_image', test_logits)
 
-            util = Utils(prefix=self.name)
-            util.conf_log()
-
-            hooks = []
-            hooks.append(MyLoggerHook(self.message, util.log_dir, metrics, every_n_iter=100))
+            hooks.append(MyLoggerHook(self.message, self.util.log_dir, metrics, every_n_iter=100))
             hooks.append(tf.train.NanTensorHook(train_loss))
-            hooks.append(SavedModelBuilderHook(util.saved_model_path, signature_def_map))
+            hooks.append(SavedModelBuilderHook(self.util.saved_model_path, signature_def_map))
             if self.max_steps:
                 hooks.append(tf.train.StopAtStepHook(last_step=self.max_steps))
             
             session = tf.train.MonitoredTrainingSession(
                 config=config,
-                checkpoint_dir=util.model_path,
+                checkpoint_dir=self.util.model_path,
                 hooks=hooks,
                 scaffold=scaffold,
                 save_summaries_steps=1,
                 save_checkpoint_steps=self.save_checkpoint_steps,
-                summary_dir=util.tf_board)
+                summary_dir=self.util.tf_board)
         
         with session:
             if self.restore_dir is not None:
@@ -146,5 +145,5 @@ class Train():
             while not session.should_stop():
                 _, loss, train_acc, test_acc, test_input, test_output = session.run([train_op, train_loss, train_accuracy, test_accuracy, valid_inputs, test_logits])
         if self.name == 'AutoEncoder' or self.name == 'VAE':
-            util.construct_figure(test_input, test_output)
+            self.util.construct_figure(test_input, test_output)
         return loss, train_acc, test_acc

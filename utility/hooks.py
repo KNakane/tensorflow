@@ -290,3 +290,82 @@ class GanHook(tf.train.SessionRunHook):
         plt.close(fig)
 
         return 
+
+
+class AEHook(tf.train.SessionRunHook):
+    """
+    AutoEncoderで生成した画像をepochごとに保存するHook
+    ----------
+    image : 生成した画像 
+    
+    log_dir : string logを出力するdirectory
+    
+    every_n_iter : int
+
+    every_n_secs : int
+    
+    at_end : bool
+
+    """
+    def __init__(self, image, log_dir, every_n_iter=None, every_n_secs=None, at_end=True):
+        self.log_dir = log_dir
+        self.image = image
+        if not os.path.isdir(self.log_dir):
+            tf.gfile.MakeDirs(self.log_dir)
+        only_log_at_end = (
+            at_end and (every_n_iter is None) and (every_n_secs is None))
+        if (not only_log_at_end and
+            (every_n_iter is None) == (every_n_secs is None)):
+            raise ValueError(
+                "either at_end and/or exactly one of every_n_iter and every_n_secs "
+                "must be provided.")
+        if every_n_iter is not None and every_n_iter <= 0:
+            raise ValueError("invalid every_n_iter=%s." % every_n_iter)
+        self._timer = (
+            NeverTriggerTimer() if only_log_at_end else
+            tf.train.SecondOrStepTimer(every_secs=every_n_secs, every_steps=every_n_iter))
+        self._log_at_end = at_end
+
+    def begin(self):
+        self._timer.reset()
+        self._iter_count = 0
+        return
+
+    def before_run(self, run_context):  # pylint: disable=unused-argument
+        self._should_trigger = self._timer.should_trigger_for_step(self._iter_count)
+        if self._should_trigger:
+            return tf.train.SessionRunArgs(self.image)
+        else:
+            return None
+
+    def after_run(self, run_context, run_values):
+        _ = run_context
+        if self._should_trigger:
+            self._timer.update_last_triggered_step(self._iter_count)
+            self.plot_figure(run_values.results, self._iter_count)
+
+        self._iter_count += 1
+
+    def end(self, session):
+       if self._log_at_end:
+           self.plot_figure(session.run([self.image])[0], self._iter_count)
+
+    def plot_figure(self, samples, iteration):
+        fig = plt.figure(figsize=(4, 4))
+        gs = gridspec.GridSpec(4, 4)
+        gs.update(wspace=0.05, hspace=0.05)
+
+        for i in range(16):
+            ax = plt.subplot(gs[i])
+            plt.axis('off')
+            ax.set_xticklabels([])
+            ax.set_yticklabels([])
+            ax.set_aspect('equal')
+            plt.imshow(samples[i].reshape(28, 28), cmap='Greys_r')
+
+        
+        name = self.log_dir + '/{}.png'.format(str(iteration).zfill(3))
+        plt.savefig(name, bbox_inches='tight')
+        plt.close(fig)
+
+        return 
