@@ -51,8 +51,6 @@ class Trainer():
         board_writer = tf.contrib.summary.create_file_writer(self.util.tf_board)
         board_writer.set_as_default()
         self.util.save_init(self.agent)
-        if self.init_model_dir is not None:
-            self.util.restore_agent(self.init_model_dir)
         total_steps = 0
         learning_flag = 0
         for episode in range(1, self.n_episode+1):
@@ -141,6 +139,8 @@ class Trainer():
         """
         testを行う
         """
+        if self.init_model_dir is not None:
+            self.util.restore_agent(self.init_model_dir)
         print('-------------------- test -------------------------------------')
         for test_episode in range(1, self.test_episode+1):
             with tf.contrib.summary.always_record_summaries():

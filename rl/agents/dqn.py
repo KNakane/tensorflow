@@ -87,6 +87,7 @@ class DQN(Agent):
 
         self._iteration += 1
 
+    @tf.contrib.eager.defun
     def update_target_net(self):
         for param, target_param in zip(self.q_eval.weights, self.q_next.weights):
             target_param.assign(param)

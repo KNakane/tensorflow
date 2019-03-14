@@ -75,7 +75,11 @@ def main(argv):
     print("n_warmup : {}".format(FLAGS.n_warmup))
     print("model_update : {}".format(FLAGS.model_update))
     print("-----------------------")
-    trainer.train()
+    
+    if FLAGS.model is not 'None':
+        trainer.test()
+    else:
+        trainer.train()
 
 
 if __name__ == '__main__':
@@ -95,5 +99,6 @@ if __name__ == '__main__':
     flags.DEFINE_boolean('category', 'False', 'Categorical DQN')
     flags.DEFINE_boolean('noise', 'False', 'Noisy Net')
     flags.DEFINE_float('lr', '1e-4', 'Input learning rate')
+    flags.DEFINE_string('model','None','Choice the initial model directory')
     flags.DEFINE_string('opt','RMSProp','Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]')
     tf.app.run()
