@@ -33,6 +33,9 @@ class CNN(Module):
             outputs  = tf.identity(outputs, name="output_logits")
             return outputs
 
+    def test_inference(self, outputs, reuse=False):
+        return self.inference(outputs, reuse)
+
     @property
     def variables(self):
         v = []

@@ -190,3 +190,6 @@ class CVAE(VAE):
             outputs = tf.clip_by_value(self.Decode(compose_img, reuse), 1e-8, 1 - 1e-8)
             
             return outputs
+
+    def test_inference(self, outputs, labels, reuse):
+        return self.inference(outputs, labels, reuse)

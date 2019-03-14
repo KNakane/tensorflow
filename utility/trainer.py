@@ -56,7 +56,7 @@ class Train():
         train_accuracy = self.model.evaluate(train_logits, corrects)
 
         #test
-        test_logits = self.model.inference(valid_inputs, reuse=True)
+        test_logits = self.model.test_inference(valid_inputs, reuse=True)
         test_loss = self.model.loss(test_logits, valid_labels)
         test_accuracy = self.model.evaluate(test_logits, valid_labels)
 
