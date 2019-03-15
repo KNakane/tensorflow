@@ -292,7 +292,7 @@ class GanHook(tf.train.SessionRunHook):
         return 
 
 
-class AEHook(tf.train.SessionRunHook):
+class AEHook(GanHook):
     """
     AutoEncoderで生成した画像をepochごとに保存するHook
     ----------
@@ -308,23 +308,7 @@ class AEHook(tf.train.SessionRunHook):
 
     """
     def __init__(self, image, log_dir, every_n_iter=None, every_n_secs=None, at_end=True):
-        self.log_dir = log_dir
-        self.image = image
-        if not os.path.isdir(self.log_dir):
-            tf.gfile.MakeDirs(self.log_dir)
-        only_log_at_end = (
-            at_end and (every_n_iter is None) and (every_n_secs is None))
-        if (not only_log_at_end and
-            (every_n_iter is None) == (every_n_secs is None)):
-            raise ValueError(
-                "either at_end and/or exactly one of every_n_iter and every_n_secs "
-                "must be provided.")
-        if every_n_iter is not None and every_n_iter <= 0:
-            raise ValueError("invalid every_n_iter=%s." % every_n_iter)
-        self._timer = (
-            NeverTriggerTimer() if only_log_at_end else
-            tf.train.SecondOrStepTimer(every_secs=every_n_secs, every_steps=every_n_iter))
-        self._log_at_end = at_end
+        super().__init__(image, log_dir, every_n_iter, every_n_secs, at_end)
 
     def begin(self):
         self._timer.reset()

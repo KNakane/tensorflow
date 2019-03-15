@@ -8,6 +8,36 @@ from cnn import CNN
 from module import Module
 from optimizer import *
 
+class Encode(Module):
+    def __init__(self, model, l2_reg=False, l2_reg_scale=0.0001, name='Encode', trainable=True):
+        super().__init__(l2_reg=l2_reg,l2_reg_scale=l2_reg_scale, trainable=trainable)
+        self.model = model
+        self.name = name
+
+    def __call__(self, outputs, reuse=False):
+        with tf.variable_scope(self.name):
+            if reuse:
+                tf.get_variable_scope().reuse_variables()
+            for l in range(len(self.model)):
+                outputs = (eval('self.' + self.model[l][0])(outputs, self.model[l][1:]))
+            return outputs
+
+
+class Decode(Module):
+    def __init__(self, model, l2_reg=False, l2_reg_scale=0.0001, name='Decode', trainable=True):
+        super().__init__(l2_reg=l2_reg,l2_reg_scale=l2_reg_scale, trainable=trainable)
+        self.model = model
+        self.name = name
+
+    def __call__(self, outputs, reuse=False):
+        with tf.variable_scope(self.name):
+            if reuse:
+                tf.get_variable_scope().reuse_variables()
+            for l in range(len(self.model)):
+                outputs = (eval('self.' + self.model[l][0])(outputs, self.model[l][1:]))
+            return outputs
+
+
 class AutoEncoder(CNN):
     def __init__(self, 
                  encode=None,
@@ -24,25 +54,10 @@ class AutoEncoder(CNN):
         assert encode is not None, "Please set encode model"
         assert decode is not None, "Please set decode model"
         super().__init__(name=name, out_dim=out_dim, opt=opt, lr=lr, l2_reg=l2_reg, l2_reg_scale=l2_reg_scale, trainable=trainable)
-        self.encode = encode
-        self.decode = decode
+        self.encode = Encode(encode, l2_reg, l2_reg_scale)
+        self.decode = Decode(decode, l2_reg, l2_reg_scale)
+        self.decode_ = Decode(decode, trainable=False)
         self.denoise = denoise
-
-    def Encode(self, outputs, reuse=False):
-        with tf.variable_scope('Encode'):
-            if reuse:
-                tf.get_variable_scope().reuse_variables()
-            for l in range(len(self.encode)):
-                outputs = (eval('self.' + self.encode[l][0])(outputs, self.encode[l][1:]))
-            return outputs
-    
-    def Decode(self, outputs, reuse=False):
-        with tf.variable_scope('Decode'):
-            if reuse:
-                tf.get_variable_scope().reuse_variables()
-            for l in range(len(self.decode)):
-                outputs = (eval('self.' + self.decode[l][0])(outputs, self.decode[l][1:]))
-            return outputs
 
     def noise(self, outputs):
         outputs += tf.random_normal(tf.shape(outputs))
@@ -53,12 +68,12 @@ class AutoEncoder(CNN):
         with tf.variable_scope(self.name):
             if self.denoise:
                 outputs = self.noise(outputs)
-            outputs = self.Encode(outputs, reuse)
-            outputs = self.Decode(outputs, reuse)
+            outputs = self.encode(outputs, reuse)
+            outputs = self.decode(outputs, reuse)
             return outputs
 
-    def test_inference(self, outputs):
-        return self.inference(outputs)
+    def test_inference(self, outputs, reuse):
+        return self.inference(outputs, reuse)
         
     def loss(self, logits, labels):
         loss = tf.reduce_mean(tf.square(logits - self.inputs))
@@ -81,31 +96,23 @@ class VAE(AutoEncoder):
                  ):
         super().__init__(encode=encode, decode=decode, name=name, out_dim=out_dim, opt=opt, lr=lr, l2_reg=l2_reg, l2_reg_scale=l2_reg_scale, trainable=trainable)
 
-    def Encode(self, outputs, reuse=False):
-        with tf.variable_scope('Encode'):
-            if reuse:
-                tf.get_variable_scope().reuse_variables()
-            for l in range(len(self.encode)):
-                outputs = (eval('self.' + self.encode[l][0])(outputs, self.encode[l][1:]))
-            mu, var = tf.split(outputs, num_or_size_splits=2, axis=1)
-            return mu, var
-
     def inference(self, outputs, reuse=False):
         self.inputs = outputs
         with tf.variable_scope(self.name):
             if self.denoise:
                 outputs = self.noise(outputs)
-            self.mu, self.var = self.Encode(outputs, reuse)
+            outputs = self.encode(outputs, reuse)
+            self.mu, self.var = tf.split(outputs, num_or_size_splits=2, axis=1)
             compose_img = self.re_parameterization(self.mu, self.var)
-            outputs = tf.clip_by_value(self.Decode(compose_img, reuse), 1e-8, 1 - 1e-8)
+            outputs = tf.clip_by_value(self.decode(compose_img, reuse), 1e-8, 1 - 1e-8)
             
             return outputs
 
-    def test_inference(self, outputs):
-        n = 20
+    def test_inference(self, outputs, reuse=True):
+        n = 32
         x = tf.convert_to_tensor(np.linspace(0.05, 0.95, n))
         z = tf.tile(tf.expand_dims(x, 0), [2,1])
-        return self.Decode(z)
+        return self.decode_(z, reuse)
 
     
     def re_parameterization(self, mu, var):
