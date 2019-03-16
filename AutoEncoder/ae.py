@@ -43,6 +43,8 @@ class AutoEncoder(CNN):
                  encode=None,
                  decode=None,
                  denoise=False,
+                 size=28,
+                 channel=1,
                  name='AutoEncoder',
                  out_dim=10,
                  opt=Adam,   # Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]
@@ -58,6 +60,8 @@ class AutoEncoder(CNN):
         self.decode = Decode(decode, l2_reg, l2_reg_scale)
         self.decode_ = Decode(decode, trainable=False)
         self.denoise = denoise
+        self.size = size
+        self.channel = channel
 
     def noise(self, outputs):
         outputs += tf.random_normal(tf.shape(outputs))
@@ -72,11 +76,16 @@ class AutoEncoder(CNN):
             outputs = self.decode(outputs, reuse)
             return outputs
 
-    def test_inference(self, outputs, reuse):
-        return self.inference(outputs, reuse)
+    def predict(self, outputs):
+        with tf.variable_scope(self.name):
+            if self.denoise:
+                outputs = self.noise(outputs)
+            outputs = self.encode(outputs, reuse=True)
+            outputs = self.decode_(outputs, reuse=True)
+            return outputs
         
     def loss(self, logits, labels):
-        loss = tf.reduce_mean(tf.square(logits - self.inputs))
+        loss = tf.reduce_mean(tf.square(logits - labels))
         return loss
 
 
@@ -86,6 +95,8 @@ class VAE(AutoEncoder):
                  encode=None,
                  decode=None,
                  denoise=False,
+                 size=28,
+                 channel=1,
                  name='VAE',
                  out_dim=10,
                  opt=Adam,   # Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]
@@ -94,10 +105,9 @@ class VAE(AutoEncoder):
                  l2_reg_scale=0.0001,
                  trainable=False
                  ):
-        super().__init__(encode=encode, decode=decode, name=name, out_dim=out_dim, opt=opt, lr=lr, l2_reg=l2_reg, l2_reg_scale=l2_reg_scale, trainable=trainable)
+        super().__init__(encode=encode, decode=decode, denoise=denoise, size=size, channel=channel, name=name, out_dim=out_dim, opt=opt, lr=lr, l2_reg=l2_reg, l2_reg_scale=l2_reg_scale, trainable=trainable)
 
     def inference(self, outputs, reuse=False):
-        self.inputs = outputs
         with tf.variable_scope(self.name):
             if self.denoise:
                 outputs = self.noise(outputs)
@@ -108,12 +118,16 @@ class VAE(AutoEncoder):
             
             return outputs
 
-    def test_inference(self, outputs, reuse=True):
-        n = 32
-        x = tf.convert_to_tensor(np.linspace(0.05, 0.95, n))
-        z = tf.tile(tf.expand_dims(x, 0), [2,1])
-        return self.decode_(z, reuse)
-
+    def predict(self, outputs, reuse=True):
+        with tf.variable_scope(self.name):
+            if self.denoise:
+                outputs = self.noise(outputs)
+            outputs = self.encode(outputs, reuse)
+            self.mu, self.var = tf.split(outputs, num_or_size_splits=2, axis=1)
+            compose_img = self.re_parameterization(self.mu, self.var)
+            outputs = tf.clip_by_value(self.decode_(compose_img, reuse), 1e-8, 1 - 1e-8)
+            
+            return outputs
     
     def re_parameterization(self, mu, var):
         with tf.variable_scope('re_parameterization'):
@@ -126,9 +140,9 @@ class VAE(AutoEncoder):
         with tf.variable_scope('loss'):
             if len(logits.shape) > 2:
                 logits = tf.layers.flatten(logits)
-            if len(self.inputs.shape) > 2:
-                self.inputs = tf.layers.flatten(self.inputs)
-            reconstruct_loss = -tf.reduce_mean(tf.reduce_sum(self.inputs * tf.log(epsilon + logits) + (1 - self.inputs) * tf.log(epsilon + 1 - logits), axis=1))
+            if len(labels.shape) > 2:
+                labels = tf.layers.flatten(labels)
+            reconstruct_loss = -tf.reduce_mean(tf.reduce_sum(labels * tf.log(epsilon + logits) + (1 - labels) * tf.log(epsilon + 1 - logits), axis=1))
             KL_divergence = tf.reduce_mean(-0.5 * tf.reduce_sum(1 + self.var - tf.square(self.mu - tf.exp(self.var)), axis=1))
             return reconstruct_loss + KL_divergence
         
@@ -138,6 +152,8 @@ class CVAE(VAE):
                  encode=None,
                  decode=None,
                  denoise=False,
+                 size=28,
+                 channel=1,
                  name='VAE',
                  out_dim=10,
                  opt=Adam,   # Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]
@@ -146,7 +162,8 @@ class CVAE(VAE):
                  l2_reg_scale=0.0001,
                  trainable=False
                  ):
-        super().__init__(encode=encode, decode=decode, name=name, out_dim=out_dim, opt=opt, lr=lr, l2_reg=l2_reg, l2_reg_scale=l2_reg_scale, trainable=trainable)
+        super().__init__(encode=encode, decode=decode, denoise=denoise, size=size, channel=channel, name=name, out_dim=out_dim, opt=opt, lr=lr, l2_reg=l2_reg, l2_reg_scale=l2_reg_scale, trainable=trainable)
+        self.class_num = 10
 
     def combine_distribution(self, z, labels=None):
         """
@@ -186,17 +203,17 @@ class CVAE(VAE):
         label_image = tf.multiply(labels, label_image)
         return tf.concat([image, label_image], axis=3)
 
-    def inference(self, outputs, labels, reuse=False):
+    def inference(self, outputs, labels=None, reuse=False):
         with tf.variable_scope(self.name):
             if self.denoise:
                 outputs = self.noise(outputs)
-            outputs = self.combine_distribution(outputs, labels)
-            self.mu, self.var = self.Encode(outputs, reuse)
+            outputs = self.combine_image(outputs, labels)
+            self.mu, self.var = self.encode(outputs, reuse)
             compose_img = self.re_parameterization(self.mu, self.var)
-            compose_img = self.combine_image(compose_img, labels)
-            outputs = tf.clip_by_value(self.Decode(compose_img, reuse), 1e-8, 1 - 1e-8)
+            compose_img = self.combine_distribution(compose_img, labels)
+            outputs = tf.clip_by_value(self.decode(compose_img, reuse), 1e-8, 1 - 1e-8)
             
             return outputs
 
-    def test_inference(self, outputs, labels, reuse):
+    def predict(self, outputs, labels, reuse=True):
         return self.inference(outputs, labels, reuse)
