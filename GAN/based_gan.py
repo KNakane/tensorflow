@@ -70,6 +70,8 @@ class BasedGAN(Module):
         self.conditional = conditional
         self.size = size
         self.channel = channel
+        self.l2_reg = l2_reg
+        self.l2_reg_scale = l2_reg_scale
         self.build()
         if self._trainable:
             self.optimizer = eval(opt)(learning_rate=lr)

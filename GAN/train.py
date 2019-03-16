@@ -36,8 +36,7 @@ def main(args):
     dataset = data.load(data.x_train, data.y_train, batch_size=batch_size, is_training=True)
     iterator = dataset.make_initializable_iterator()
     inputs, labels = iterator.get_next()
-    inputs = tf.reshape(inputs, (-1, data.size, data.size, data.channel))
-    test_inputs = tf.random.uniform([batch_size, FLAGS.z_dim],-1,+1)
+    test_inputs = tf.random.uniform([batch_size*3, FLAGS.z_dim],-1,+1)
 
     model = eval(FLAGS.network)(z_dim=FLAGS.z_dim,
                                 size=data.size,

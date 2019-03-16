@@ -25,8 +25,8 @@ class GAN(BasedGAN):
                                     ['BN'],
                                     ['fc', 1, None]]
 
-        self.D = Discriminator(self.discriminator_model)
-        self.G = Generator(self.generator_model)
+        self.D = Discriminator(self.discriminator_model, self.l2_reg, self.l2_reg_scale)
+        self.G = Generator(self.generator_model, self.l2_reg, self.l2_reg_scale)
         self.G_ = Generator(self.generator_model, trainable=False)
 
     def predict(self, inputs):
