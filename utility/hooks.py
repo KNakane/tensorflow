@@ -272,11 +272,11 @@ class GanHook(tf.train.SessionRunHook):
            self.plot_figure(session.run([self.image])[0], self._iter_count)
 
     def plot_figure(self, samples, iteration):
-        fig = plt.figure(figsize=(4, 4))
-        gs = gridspec.GridSpec(4, 4)
+        fig = plt.figure(figsize=(6, 6))
+        gs = gridspec.GridSpec(6, 6)
         gs.update(wspace=0.05, hspace=0.05)
 
-        for i in range(16):
+        for i in range(36):
             ax = plt.subplot(gs[i])
             plt.axis('off')
             ax.set_xticklabels([])
@@ -335,11 +335,11 @@ class AEHook(GanHook):
            self.plot_figure(session.run([self.image])[0], self._iter_count)
 
     def plot_figure(self, samples, iteration):
-        fig = plt.figure(figsize=(4, 4))
-        gs = gridspec.GridSpec(4, 4)
+        fig = plt.figure(figsize=(6, 6))
+        gs = gridspec.GridSpec(6, 6)
         gs.update(wspace=0.05, hspace=0.05)
 
-        for i in range(16):
+        for i in range(36):
             ax = plt.subplot(gs[i])
             plt.axis('off')
             ax.set_xticklabels([])
