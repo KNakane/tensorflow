@@ -52,7 +52,7 @@ $ pyenv install 3.6.7
 $ pyenv global 3.6.7
 $ git clone https://github.com/KNakane/tensorflow.git
 $ pip install -r requirements.txt
-$ pip install tensorflow or pip install tensorflow-gpu
+$ pip install tensorflow==1.12.0 or pip install tensorflow-gpu==1.12.0
 ```
 
 # Usage
