@@ -16,15 +16,14 @@ class Augment():
         for i in trange(self.img.shape[0], desc="Augmentation -> Shift"):
             vertical = 2*v * np.random.rand() - v
             horizontal = 2*h * np.random.rand() - h
-            if len(self.img.shape) > 3:
-                sys.exit()
-                """
-                for j in range(self.img.shape[3]):
-                    self.img[i,:,:,j] = shift(self.img[i,:,:,j], [vertical, horizontal], cval=0)
-                aug.append(self.img)
-                """
-            else:
+            if len(self.img[i].shape) == 2:
                 aug.append(shift(self.img[i], [vertical, horizontal], cval=0))
+            elif len(self.img[i].shape) == 3:
+                aug.append(shift(self.img[i], [vertical, horizontal, 0], cval=0))
+            else:
+                print('Image data_shape -> {}'.format(self.img[i].shape))
+                raise NotImplementedError()
+        
         self.aug_img = np.vstack((self.aug_img, np.asarray(aug)))
         self.aug_label = np.hstack((self.aug_label, self.label))
         return self.aug_img, self.aug_label
@@ -53,7 +52,13 @@ class Augment():
         for i in trange(self.img.shape[0], desc="Augmentation -> Shift & Rotate"):
             vertical = 2*v * np.random.rand() - v
             horizontal = 2*h * np.random.rand() - h
-            self.img[i] = shift(self.img[i], [vertical, horizontal], cval=0)
+            if len(self.img[i].shape) == 2:
+                self.img[i] = shift(self.img[i], [vertical, horizontal], cval=0)
+            elif len(self.img[i].shape) == 3:
+                self.img[i] = shift(self.img[i], [vertical, horizontal, 0], cval=0)
+            else:
+                print('Image data_shape -> {}'.format(self.img[i].shape))
+                raise NotImplementedError()
             h, w = self.img[i].shape[0], self.img[i].shape[1]
             angle = np.random.randint(*angle_range)
             image = rotate(self.img[i], angle)
