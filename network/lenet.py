@@ -73,8 +73,8 @@ class VGG(CNN):
             featmap = self.conv(featmap, [3, 512, 1, tf.nn.relu], 'conv13')
             featmap = self.max_pool(featmap, [2, 2, 'SAME'])
 
-            featmap = self.fc(featmap, [4096, tf.nn.relu])
-            featmap = self.fc(featmap, [4096, tf.nn.relu])
+            featmap = self.fc(featmap, [500, tf.nn.relu])
+            featmap = self.fc(featmap, [200, tf.nn.relu])
             featmap = self.fc(featmap, [self.out_dim, tf.nn.relu])
             logits  = tf.identity(featmap, name="output_logits")
             return logits
