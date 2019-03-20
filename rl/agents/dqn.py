@@ -15,7 +15,6 @@ class DQN(Agent):
             self.Vmax, self.Vmin = 10.0, -10.0
             self.delta_z = (self.Vmax - self.Vmin) / (self.q_eval.N_atoms - 1)
             self.z_list = tf.constant([self.Vmin + i * self.delta_z for i in range(self.q_eval.N_atoms)],dtype=tf.float32)
-            self.z_list_broadcasted = tf.tile(tf.reshape(self.z_list,[1,self.q_eval.N_atoms]), tf.constant([self.n_actions,1]))
 
         
     def _build_net(self):
@@ -49,7 +48,7 @@ class DQN(Agent):
         with tf.GradientTape() as tape:
             if self.is_categorical:
                 q_next, q_eval = self.q_next.inference(bs_), self.q_eval.inference(self.bs)
-                next_action = tf.cast(tf.argmax(tf.reduce_sum(tf.multiply(q_next, self.z_list_broadcasted), axis=2), axis=1), tf.int32)
+                next_action = tf.cast(tf.argmax(tf.reduce_sum(tf.multiply(q_next, self.z_list), axis=2), axis=1), tf.int32)
                 Q_distributional_chosen_by_action_target = tf.gather_nd(q_next,
                     tf.concat([tf.reshape(tf.range(self.batch_size), [-1, 1]),
                                tf.reshape(next_action,[-1,1])], axis = 1))
@@ -129,9 +128,8 @@ class DDQN(DQN):
                 u_id, l_id = tf.cast(u, tf.int32), tf.cast(l, tf.int32)
                 u_minus_b, b_minus_l = u - b, b - l
                 
-                Q_distributional_chosen_by_action_target = np.full((self.batch_size, self.q_eval.N_atoms), 1.0/self.q_eval.N_atoms)
-                Q_distributional_chosen_by_action_target[bs_] = q_next[batch_index, next_action]
-                Q_distributional_chosen_by_action_online = tf.gather_nd(q_eval, list(enumerate(eval_act_index)))
+                Q_distributional_chosen_by_action_target = q_next[batch_index, next_action]
+                Q_distributional_chosen_by_action_online = q_eval#tf.gather_nd(q_eval, list(enumerate(eval_act_index)))
 
                 index_help = tf.tile(tf.reshape(tf.range(self.batch_size),[-1, 1]), tf.constant([1, self.q_eval.N_atoms]))
                 index_help = tf.expand_dims(index_help, -1)
