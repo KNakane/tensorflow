@@ -16,7 +16,15 @@ class Augment():
         for i in trange(self.img.shape[0], desc="Augmentation -> Shift"):
             vertical = 2*v * np.random.rand() - v
             horizontal = 2*h * np.random.rand() - h
-            aug.append(shift(self.img[i], [vertical, horizontal], cval=0))
+            if len(self.img.shape) > 3:
+                sys.exit()
+                """
+                for j in range(self.img.shape[3]):
+                    self.img[i,:,:,j] = shift(self.img[i,:,:,j], [vertical, horizontal], cval=0)
+                aug.append(self.img)
+                """
+            else:
+                aug.append(shift(self.img[i], [vertical, horizontal], cval=0))
         self.aug_img = np.vstack((self.aug_img, np.asarray(aug)))
         self.aug_label = np.hstack((self.aug_label, self.label))
         return self.aug_img, self.aug_label
@@ -97,7 +105,7 @@ class Augment():
             mask_area = np.random.randint(h * w * s[0], h * w * s[1])
 
             # マスクのアスペクト比をr(0.3~3)の範囲からランダムに決める
-            mask_aspect_ratio = np.random.rand() * r[1] + r[0]
+            mask_aspect_ratio = np.random.rand() * (r[1] - r[0]) + r[0]
 
             # マスクのサイズとアスペクト比からマスクの高さと幅を決める
             # 算出した高さと幅(のどちらか)が元画像より大きくなることがあるので修正する
