@@ -28,7 +28,7 @@ class EventGetter():
         res_list = self.gather_result()
         for key in res_list[0].keys():
             for i in range(len(res_list)):
-                print(res_list[i][key]) 
+                self.make_graph(key, res_list[i][key])
         #self.logger()
         return
     
@@ -85,7 +85,7 @@ class EventGetter():
 
         return dic
 
-    def make_graph(self, values):
+    def make_graph(self, key, values):
         fig = plt.figure(figsize=(10,3))
         colorlist = ["r", "g", "b", "c", "m", "y", "k", "w"]
         ax = fig.add_subplot(1, 2, 1)
