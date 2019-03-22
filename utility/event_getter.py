@@ -87,9 +87,9 @@ class EventGetter():
         colorlist = ["r", "g", "b", "c", "m", "y", "k", "w"]
         ax = fig.add_subplot(1, 1, 1)
         i = 0
+        if not len(values.keys()):
+            return 
         for key in values:
-            if key is None:
-                continue
             array = values[key]
             plt.plot(range(array.shape[0]), array, linestyle='solid', color=colorlist[i], label=key)
             i += 1
