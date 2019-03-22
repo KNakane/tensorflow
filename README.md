@@ -61,7 +61,13 @@ $ pip install tensorflow==1.12.0 or pip install tensorflow-gpu==1.12.0
 $ cd tensorflow
 $ python path/to/dir.py --args
 ```
-実行結果は```results```に格納される
+実行結果は```results```に格納される  
+
+以下のコマンドを用いて、```results```内にあるフォルダを指定することでグラフを作成することができる
+```bash
+$ cd tensorflow
+$ python utility/event_getter.py --dir hogehoge
+```
 
 # Directory
 ディレクトリ構造は以下の通り  
