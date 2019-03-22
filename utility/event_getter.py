@@ -83,6 +83,18 @@ class EventGetter():
         return 
 
     def make_graph(self, name, values):
+        """
+        項目ごとにグラフを作成する
+
+         parameters
+        ----------
+        name : result directory
+
+        values : dict
+
+        returns
+        ----------
+        """
         fig = plt.figure(figsize=(10,5))
         colorlist = ["r", "g", "b", "c", "m", "y", "k", "w"]
         ax = fig.add_subplot(1, 1, 1)
