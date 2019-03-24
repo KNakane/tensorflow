@@ -80,8 +80,8 @@ class DQN(Agent):
                         tf.log(tf.gather_nd(Q_distributional_chosen_by_action_online, l_id)) \
                     + Q_distributional_chosen_by_action_target * b_minus_l * \
                         tf.log(tf.gather_nd(Q_distributional_chosen_by_action_online, u_id))
-                self.td_error = tf.reduce_sum(error, axis=1)
-                self.loss = tf.negative(self.td_error * weights)
+                self.td_error = tf.negative(tf.reduce_sum(error, axis=1))
+                self.loss = self.td_error * weights
             else:
                 q_next, q_eval = self.q_next.inference(bs_), self.q_eval.inference(self.bs)
                 q_target = np.array(q_eval).copy()
@@ -150,8 +150,8 @@ class DDQN(DQN):
                         tf.log(tf.gather_nd(Q_distributional_chosen_by_action_online, l_id)) \
                     + Q_distributional_chosen_by_action_target * b_minus_l * \
                         tf.log(tf.gather_nd(Q_distributional_chosen_by_action_online, u_id))
-                self.td_error = tf.reduce_sum(error, axis=1)
-                self.loss = tf.negative(self.td_error * weights)
+                self.td_error = tf.negative(tf.reduce_sum(error, axis=1))
+                self.loss = self.td_error * weights
             else:
                 q_next, q_eval4next, q_eval = np.array(self.q_next.inference(bs_)), self.q_eval.inference(bs_), self.q_eval.inference(self.bs)
                 q_target = np.array(q_eval).copy()
