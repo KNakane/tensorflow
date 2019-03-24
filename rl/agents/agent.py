@@ -63,6 +63,8 @@ class Agent(tf.contrib.checkpoint.Checkpointable):
             actions_value = self.inference(observation)
             if self.on_policy:
                 action = np.random.choice(self.actions_list, size=1, p=np.array(actions_value)[0])[0]
+            elif self.is_categorical:
+                action = np.max(actions_value)
             else:
                 action = np.argmax(actions_value)
         else:
@@ -72,7 +74,10 @@ class Agent(tf.contrib.checkpoint.Checkpointable):
     def test_choose_action(self, observation):
         observation = observation[np.newaxis, :]
         actions_value = self.inference(observation)
-        return np.argmax(actions_value)
+        if self.is_categorical:
+            return np.max(actions_value)
+        else:
+            return np.argmax(actions_value)
 
     def update_q_net(self, replay_data):
         raise Exception('please set update_q_net')
