@@ -108,9 +108,8 @@ class EventGetter():
         if re.search('accuracy', name):
             ax.yaxis.set_major_formatter(ticker.PercentFormatter(xmax=1.0))
         plt.grid(which='major',color='gray',linestyle='-')
-        plt.title(name)
         plt.xlabel("epoch")
-        plt.ylabel("value")
+        plt.ylabel(name)
         plt.legend()
         plt.savefig(self.log_dir + '/{}.png'.format(name))
         return
