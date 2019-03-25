@@ -104,8 +104,7 @@ class Trainer():
                         tf.contrib.summary.scalar('train/e_greedy', self.agent.epsilon)
 
                         if (indexes != None):
-                            for i, value in enumerate(self.agent.td_error):
-                                td_error = value
+                            for i, td_error in enumerate(self.agent.td_error):
                                 self.replay_buf.update(indexes[i], td_error)
 
                     if done or step == self.max_steps:
