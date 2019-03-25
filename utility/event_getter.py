@@ -17,7 +17,6 @@ class EventGetter():
         self.events_list = events_list
         self.log_dir = "results/" + dt_now.strftime("%y%m%d_%H%M%S") + "_events"
         self.result_dic = {}
-        self.name_list = []
         self._init_log()
 
     def _init_log(self):
@@ -32,12 +31,13 @@ class EventGetter():
         # 格納したdictから各項目ごとにグラフを作成する
         for key in self.result_dic:
             self.make_graph(key, self.result_dic[key])
-        #self.logger()
+            self.make_graph_moving_avg(key, self.result_dic[key])
+        self.logger()
         return
     
     def logger(self):
         """ どのファイルのeventを読み込んでグラフを作成したかテキストファイルに書き出す"""
-        str_ = '\n'.join(self.name_list)
+        str_ = '\n'.join(self.events_list)
         with open(self.log_dir + "/filelist.txt", 'wt') as f:
             f.write(str_)
         return
@@ -103,7 +103,7 @@ class EventGetter():
             return 
         for key in values:
             array = values[key]
-            plt.plot(range(array.shape[0]), array, linestyle='solid', color=colorlist[i], label=key)
+            plt.plot(range(array.shape[0]), array, linestyle='solid', color=colorlist[i], label=key, alpha=0.6)
             i += 1
         if re.search('accuracy', name):
             ax.yaxis.set_major_formatter(ticker.PercentFormatter(xmax=1.0))
@@ -112,6 +112,38 @@ class EventGetter():
         plt.ylabel(name)
         plt.legend()
         plt.savefig(self.log_dir + '/{}.png'.format(name))
+        return
+
+    def make_graph_moving_avg(self, name, values, rate=3):
+        """
+        項目ごとに移動平均したグラフを作成する
+
+         parameters
+        ----------
+        name : result directory
+
+        values : dict
+
+        returns
+        ----------
+        """
+        fig = plt.figure(figsize=(10,5))
+        colorlist = ["r", "g", "b", "c", "m", "y", "k", "w"]
+        ax = fig.add_subplot(1, 1, 1)
+        i = 0
+        if not len(values.keys()):
+            return 
+        for key in values:
+            array = np.convolve(values[key], np.ones(rate)/float(rate), 'valid')
+            plt.plot(range(array.shape[0]), array, linestyle='solid', color=colorlist[i], label=key, alpha=0.6)
+            i += 1
+        if re.search('accuracy', name):
+            ax.yaxis.set_major_formatter(ticker.PercentFormatter(xmax=1.0))
+        plt.grid(which='major',color='gray',linestyle='-')
+        plt.xlabel("epoch")
+        plt.ylabel(name)
+        plt.legend()
+        plt.savefig(self.log_dir + '/{}_moving_avg.png'.format(name))
         return
 
 def main(args):
