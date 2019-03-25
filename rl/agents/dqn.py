@@ -81,13 +81,13 @@ class DQN(Agent):
                     + Q_distributional_chosen_by_action_target * b_minus_l * \
                         tf.log(tf.gather_nd(Q_distributional_chosen_by_action_online, u_id))
                 self.td_error = tf.negative(tf.reduce_sum(error, axis=1))
-                self.loss = self.td_error * weights
+                self.loss = tf.reduce_sum(self.td_error * weights)
             else:
                 q_next, q_eval = self.q_next.inference(bs_), self.q_eval.inference(self.bs)
                 q_target = np.array(q_eval).copy()
                 q_target[batch_index, eval_act_index] = reward + self.discount ** p_idx * np.max(q_next, axis=1) * (1. - done)
                 self.td_error = abs(q_target[batch_index, eval_act_index] - np.array(q_eval)[batch_index, eval_act_index])
-                self.loss = tf.reduce_sum(tf.losses.huber_loss(labels=q_target, predictions=q_eval) * weights, keep_dims=True)
+                self.loss = tf.reduce_sum(tf.losses.huber_loss(labels=q_target, predictions=q_eval) * weights)
         self.q_eval.optimize(self.loss, global_step, tape)
         
         # increasing epsilon
@@ -151,7 +151,7 @@ class DDQN(DQN):
                     + Q_distributional_chosen_by_action_target * b_minus_l * \
                         tf.log(tf.gather_nd(Q_distributional_chosen_by_action_online, u_id))
                 self.td_error = tf.negative(tf.reduce_sum(error, axis=1))
-                self.loss = self.td_error * weights
+                self.loss = tf.reduce_sum(self.td_error * weights)
             else:
                 q_next, q_eval4next, q_eval = np.array(self.q_next.inference(bs_)), self.q_eval.inference(bs_), self.q_eval.inference(self.bs)
                 q_target = np.array(q_eval).copy()
@@ -159,7 +159,7 @@ class DDQN(DQN):
                 selected_q_next = q_next[batch_index, max_act4next]  # Double DQN, select q_next depending on above actions
                 q_target[batch_index, eval_act_index] = reward + self.discount ** p_idx * selected_q_next * (1. - done)
                 self.td_error = abs(q_target[batch_index, eval_act_index] - np.array(q_eval)[batch_index, eval_act_index])
-                self.loss = tf.reduce_sum(tf.losses.huber_loss(labels=q_target, predictions=q_eval) * weights, keep_dims=True)
+                self.loss = tf.reduce_sum(tf.losses.huber_loss(labels=q_target, predictions=q_eval) * weights)
         self.q_eval.optimize(self.loss, global_step, tape)
 
         # increasing epsilon
