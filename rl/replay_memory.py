@@ -67,7 +67,7 @@ class PrioritizeReplayBuffer(ReplayBuffer):
             (idx, priority, data) = self.tree.get(rand)
             list.append(data)
             indexes.append(idx)
-            weights[i] = (self.capacity * priority / total) ** (-beta)
+            weights[i] = (self.capacity * (priority + 1e-8) / total) ** (-beta)
 
         return (indexes, list, weights / weights.max())
 
