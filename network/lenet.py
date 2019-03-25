@@ -63,15 +63,18 @@ class VGG(CNN):
             featmap = self.conv(featmap, [3, 256, 1, tf.nn.relu], 'conv7')
             featmap = self.max_pool(featmap, [2, 2, 'SAME'])
 
+            """
             featmap = self.conv(featmap, [3, 512, 1, tf.nn.relu], 'conv8')
             featmap = self.conv(featmap, [3, 512, 1, tf.nn.relu], 'conv9')
             featmap = self.conv(featmap, [3, 512, 1, tf.nn.relu], 'conv10')
             featmap = self.max_pool(featmap, [2, 2, 'SAME'])
 
+            
             featmap = self.conv(featmap, [3, 512, 1, tf.nn.relu], 'conv11')
             featmap = self.conv(featmap, [3, 512, 1, tf.nn.relu], 'conv12')
             featmap = self.conv(featmap, [3, 512, 1, tf.nn.relu], 'conv13')
             featmap = self.max_pool(featmap, [2, 2, 'SAME'])
+            """
 
             featmap = self.fc(featmap, [500, tf.nn.relu])
             featmap = self.fc(featmap, [200, tf.nn.relu])
