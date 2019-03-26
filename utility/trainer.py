@@ -43,22 +43,26 @@ class Train():
         valid_inputs, valid_labels = self.valid_iter.get_next()
         return inputs, labels, valid_inputs, valid_labels
 
-    def train(self):
-        
-        #train
-        inputs, corrects, valid_inputs, valid_labels = self.load()
-        train_logits = self.model.inference(inputs)
-        train_loss = self.model.loss(train_logits, corrects)
-        predict = self.model.predict(inputs)
+    def build_logits(self, train_data, train_ans, valid_data, valid_ans):
+        # train
+        train_logits = self.model.inference(train_data, train_ans) if self.name == 'CVAE' else self.model.inference(train_data)
+        train_loss = self.model.loss(train_logits, train_data) if self.name == 'AutoEncoder' or self.name == 'VAE' or self.name == 'CVAE' else self.model.loss(train_logits, train_ans)
+        predict = self.model.predict(train_data)
         opt_op = self.model.optimize(train_loss, self.global_step)
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
         train_op = tf.group([opt_op] + update_ops)
-        train_accuracy = self.model.evaluate(train_logits, corrects)
+        train_accuracy = self.model.evaluate(train_logits, train_ans)
 
-        #test
-        test_logits = self.model.test_inference(valid_inputs, reuse=True)
-        test_loss = self.model.loss(test_logits, valid_labels)
-        test_accuracy = self.model.evaluate(test_logits, valid_labels)
+        # test
+        test_logits = self.model.test_inference(valid_data, reuse=True)
+        test_loss = self.model.loss(test_logits, valid_data) if self.name == 'AutoEncoder' or self.name == 'VAE' or self.name == 'CVAE' else self.model.loss(test_logits, valid_ans)
+        test_accuracy = self.model.evaluate(test_logits, valid_ans)
+
+        return train_logits, train_loss, train_op, train_accuracy, predict, test_logits, test_loss, test_accuracy
+
+    def train(self):
+        inputs, corrects, valid_inputs, valid_labels = self.load()
+        train_logits, train_loss, train_op, train_accuracy, predict, test_logits, test_loss, test_accuracy  = self.build_logits(inputs, corrects, valid_inputs, valid_labels)
 
         def init_fn(scaffold, session):
             session.run([self.iterator.initializer,self.valid_iter.initializer],
