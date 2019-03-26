@@ -58,6 +58,7 @@ def main(argv):
                       render=FLAGS.render,
                       test_episode=2,
                       test_interval=50,
+                      test_frame=FLAGS.rec,
                       init_model_dir=FLAGS.init_model)
 
     print()
@@ -85,6 +86,8 @@ if __name__ == '__main__':
     FLAGS = flags.FLAGS
     flags.DEFINE_string('agent', 'DDPG', 'Choise Agents -> [DDPG, TD3]')
     flags.DEFINE_string('env', 'Pendulum-v0', 'Choice environment -> [Pendulum-v0,MountainCarContinuous-v0,LunarLanderContinuous-v2]')
+    flags.DEFINE_float('lr', '1e-3', 'Input learning rate')
+    flags.DEFINE_string('opt','RMSProp','Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]')
     flags.DEFINE_integer('n_episode', '100000', 'Input max episode')
     flags.DEFINE_integer('step', '400', 'Input max steps')
     flags.DEFINE_integer('batch_size', '32', 'Input batch size')
@@ -96,6 +99,5 @@ if __name__ == '__main__':
     flags.DEFINE_boolean('category', 'False', 'Categorical DQN')
     flags.DEFINE_boolean('noise', 'False', 'Noisy Net')
     flags.DEFINE_string('init_model','None','Choice the initial model directory')
-    flags.DEFINE_float('lr', '1e-3', 'Input learning rate')
-    flags.DEFINE_string('opt','RMSProp','Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]')
+    flags.DEFINE_boolean('rec', 'False', 'Create test frame -> True/False')
     tf.app.run()

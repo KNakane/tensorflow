@@ -26,6 +26,7 @@ class Trainer():
                  render=False,
                  test_episode=5,
                  test_interval=1000,
+                 test_frame=False,
                  init_model_dir=None):
         self.agent = agent
         self.env = env
@@ -45,6 +46,7 @@ class Trainer():
         self.state_deque = deque(maxlen=self.multi_step)
         self.reward_deque = deque(maxlen=self.multi_step)
         self.action_deque = deque(maxlen=self.multi_step)
+        self.test_frame = test_frame
         self.init_model_dir = init_model_dir
     
     def train(self):
@@ -148,7 +150,8 @@ class Trainer():
                 test_total_reward = 0
                 test_state = self.env.reset()
                 for test_step in range(1, self.max_steps+1):
-                    #frames.append(self.env.render(mode='rgb_array'))
+                    if self.test_frame:
+                        frames.append(self.env.render(mode='rgb_array'))
                     test_action = self.agent.test_choose_action(test_state)
                     test_next_state, test_reward, test_done, _ = self.env.step(test_action)
                     test_total_reward += test_reward
@@ -168,7 +171,8 @@ class Trainer():
                         self.util.write_log(message=metrics, test=True)
                         break
                     test_state = test_next_state
-            #display_frames_as_gif(frames, "test_{}_{}".format(episode, test_episode), self.util.res_dir)
+            if len(frames) > 0:
+                display_frames_as_gif(frames, "test_{}_{}".format(episode, test_episode), self.util.res_dir)
         print('---------------------------------------------------------------')
         return
 

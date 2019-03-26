@@ -61,7 +61,8 @@ def main(argv):
                       multi_step=FLAGS.multi_step,
                       render=FLAGS.render,
                       test_episode=2,
-                      test_interval=50)
+                      test_interval=50,
+                      test_frame=FLAGS.rec)
 
     print()
     print("---Start Learning------")
@@ -103,5 +104,6 @@ if __name__ == '__main__':
     flags.DEFINE_boolean('noise', 'False', 'Noisy Net')
     flags.DEFINE_float('lr', '1e-4', 'Input learning rate')
     flags.DEFINE_string('model','None','Choice the initial model directory')
+    flags.DEFINE_boolean('rec', 'False', 'Create test frame -> True/False')
     flags.DEFINE_string('opt','RMSProp','Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]')
     tf.app.run()
