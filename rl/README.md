@@ -14,7 +14,8 @@ rl
 |:----:|:-----:|:----:|
 |DQN|atari,cartpole,pygame|-|
 |DDQN|atari,cartpole,pygame|-|
-|Rainbow|atari,cartpole,pygame|NoisyNetは未実装|
+|Rainbow|atari,cartpole,pygame|-|
+|A3C||未実装|
 |A2C||未実装|
 |DDPG|continuous||
 |TD3|continuous||
