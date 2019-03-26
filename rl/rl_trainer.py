@@ -142,7 +142,7 @@ class Trainer():
         """
         if self.init_model_dir is not None:
             self.util.restore_agent(self.init_model_dir)
-        print('-------------------- test -------------------------------------')
+        print('--------------------------- test --------------------------------------------')
         for test_episode in range(1, self.test_episode+1):
             with tf.contrib.summary.always_record_summaries():
                 frames = []
@@ -173,7 +173,7 @@ class Trainer():
                     test_state = test_next_state
             if len(frames) > 0:
                 display_frames_as_gif(frames, "test_{}_{}".format(episode, test_episode), self.util.res_dir)
-        print('---------------------------------------------------------------')
+        print('-----------------------------------------------------------------------------')
         return
 
 
