@@ -24,6 +24,7 @@ class Trainer():
                  priority=False,
                  multi_step=1,
                  render=False,
+                 test_render=True,
                  test_episode=5,
                  test_interval=1000,
                  test_frame=False,
@@ -46,6 +47,7 @@ class Trainer():
         self.state_deque = deque(maxlen=self.multi_step)
         self.reward_deque = deque(maxlen=self.multi_step)
         self.action_deque = deque(maxlen=self.multi_step)
+        self.test_render = test_render
         self.test_frame = test_frame
         self.init_model_dir = init_model_dir
     
@@ -150,6 +152,8 @@ class Trainer():
                 test_total_reward = 0
                 test_state = self.env.reset()
                 for test_step in range(1, self.max_steps+1):
+                    if self.test_render:
+                        self.env.render()
                     if self.test_frame:
                         frames.append(self.env.render(mode='rgb_array'))
                     test_action = self.agent.test_choose_action(test_state)
