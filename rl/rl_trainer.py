@@ -160,6 +160,12 @@ class Trainer():
                         tf.contrib.summary.scalar('test/total_reward', test_total_reward)
                         tf.contrib.summary.scalar('test/average_reward', test_total_reward / test_step)
                         print("test_episode: %d total_steps: %d  steps/episode: %d  total_reward: %0.2f"%(test_episode, test_total_steps, test_step, test_total_reward))
+                        metrics = OrderedDict({
+                            "episode": test_episode,
+                            "total_steps": test_total_steps,
+                            "steps/episode":test_step,
+                            "total_reward": test_total_reward})
+                        self.util.write_log(message=metrics, test=True)
                         break
                     test_state = test_next_state
             #display_frames_as_gif(frames, "test_{}_{}".format(episode, test_episode), self.util.res_dir)

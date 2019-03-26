@@ -46,7 +46,7 @@ class EagerModule(tf.keras.Model):
         assert len(args) == 2, '[FC] Not enough Argument -> [units, activation]'
         regularizer = tf.keras.regularizers.l2(self._l2_reg_scale) if self._l2_reg else None
         if self.is_noise:  # noisy net
-            x = tf.keras.layers.Dense(units=args[0], activation=args[1], kernel_initializer=self.noisy_init, kernel_regularizer=regularizer, use_bias=True)
+            x = tf.keras.layers.Dense(units=args[0], activation=args[1], kernel_initializer=self.noisy_weight, bias_initializer=self.noisy_bias, kernel_regularizer=regularizer, use_bias=True)
         else:
             x = tf.keras.layers.Dense(units=args[0], activation=args[1], kernel_regularizer=regularizer, use_bias=True)
         return x
@@ -55,20 +55,34 @@ class EagerModule(tf.keras.Model):
         assert len(args) == 1, '[Dropout] Not enough Argument -> [rate]'
         return tf.keras.layers.Dropout (rate=args[2])
 
-    def noisy_init(self, shape, dtype=None):
+    def noisy_weight(self, shape, dtype=None, partition_info=None):
+        fan_in, fan_out = shape[0], shape[1]
         # based on https://github.com/wenh123/NoisyNet-DQN/blob/master/tf_util.py
         def f(x):
             return tf.multiply(tf.sign(x), tf.pow(tf.abs(x), 0.5))
-        mu_init = tf.random_uniform_initializer(minval=-1*1/np.power(shape, 0.5),     
-                                                maxval=1*1/np.power(shape, 0.5))
-        sigma_init = tf.constant_initializer(0.4/np.power(shape, 0.5))
+        mu_init = tf.random_uniform(shape=[fan_in, fan_out], minval=-1*1/np.power(fan_in, 0.5),     
+                                                            maxval=1*1/np.power(fan_in, 0.5))
+        sigma_init = tf.constant(0.4/np.power(fan_in, 0.5),dtype=tf.float32, shape=[fan_in, fan_out])
         # Sample noise from gaussian
-        p = tf.random_normal([shape, 1])
-        q = tf.random_normal([1, size])
+        p = tf.random_normal([fan_in, 1])
+        q = tf.random_normal([1, fan_out])
         f_p = f(p); f_q = f(q)
-        w_epsilon = f_p*f_q; b_epsilon = tf.squeeze(f_q)
+        w_epsilon = f_p*f_q
 
         # w = w_mu + w_sigma*w_epsilon
-        w_mu = tf.get_variable(name + "/w_mu", [shape, size], initializer=mu_init)
-        w_sigma = tf.get_variable(name + "/w_sigma", [shape, size], initializer=sigma_init)
-        w = w_mu + tf.multiply(w_sigma, w_epsilon)
+        w = mu_init + tf.multiply(sigma_init, w_epsilon)
+        return w
+
+    def noisy_bias(self, shape, dtype=None, partition_info=None):
+        fan_out = shape[0]
+        def f(x):
+            return tf.multiply(tf.sign(x), tf.pow(tf.abs(x), 0.5))
+        mu_init = tf.random_uniform(shape=[fan_out], minval=-1*1/np.power(fan_out, 0.5),     
+                                                            maxval=1*1/np.power(fan_out, 0.5))
+        sigma_init = tf.constant(0.4/np.power(fan_out, 0.5),dtype=tf.float32, shape=[fan_out])
+        q = tf.random_normal([1, fan_out])
+        f_q = f(q)
+        b_epsilon = tf.squeeze(f_q)
+        b = mu_init + tf.multiply(sigma_init, b_epsilon)
+
+        return b

@@ -20,7 +20,7 @@ class BasedEagerNN(EagerModule):
                  is_categorical=False,
                  is_noise=False
                  ):
-        super().__init__(l2_reg=l2_reg,l2_reg_scale=l2_reg_scale, trainable=trainable)
+        super().__init__(l2_reg=l2_reg,l2_reg_scale=l2_reg_scale, trainable=trainable,is_noise=is_noise)
 
         self.out_dim = out_dim
         self.model = model
@@ -57,10 +57,7 @@ class EagerNN(BasedEagerNN):
             # categorical DQN
             if l == len(self.model) - 1 and self.is_categorical:
                 self.model[l][1] = self.out_dim * self.N_atoms
-            if self.is_noisy and self.model[l][0]=='fc':
-                my_layer = self.noisy_dense(self.model[l][1:]) #noisy_net
-            else:
-                my_layer = eval('self.' + self.model[l][0])(self.model[l][1:])
+            my_layer = eval('self.' + self.model[l][0])(self.model[l][1:])
             self._layers.append(my_layer)
 
     def inference(self, x, softmax=True):
@@ -90,10 +87,7 @@ class Dueling_Net(BasedEagerNN):
             if l == len(self.model) - 1:
                 # 状態価値V用に1unit追加するが、categoricalの場合も考慮
                 self.model[l][1] = (self.out_dim + 1) * self.N_atoms if self.is_categorical else self.out_dim + 1
-            if self.is_noisy and self.model[l][0]=='fc':
-                my_layer = self.noisy_dense(self.model[l][1:]) #noisy_net
-            else:
-                my_layer = eval('self.' + self.model[l][0])(self.model[l][1:])
+            my_layer = eval('self.' + self.model[l][0])(self.model[l][1:])
             self._layers.append(my_layer)
 
     def inference(self, x):
@@ -152,10 +146,7 @@ class CriticNet(BasedEagerNN):
             # categorical DQN
             if l == len(self.model) - 1 and self.is_categorical:
                 self.model[l][1] = self.out_dim * self.N_atoms   # 
-            if self.is_noisy and self.model[l][0]=='fc':
-                my_layer = self.noisy_dense(self.model[l][1:]) #noisy_net
-            else:
-                my_layer = eval('self.' + self.model[l][0])(self.model[l][1:])
+            my_layer = eval('self.' + self.model[l][0])(self.model[l][1:])
             self._layers.append(my_layer)
 
     def inference(self, inputs):
@@ -182,10 +173,7 @@ class A2CNet(BasedEagerNN):
             if l == len(self.model) - 1:
                 # 状態価値V用に1unit追加
                 self.model[l][1] = self.out_dim + 1
-            if self.is_noisy and self.model[l][0]=='fc':
-                my_layer = self.noisy_dense(self.model[l][1:]) #noisy_net
-            else:
-                my_layer = eval('self.' + self.model[l][0])(self.model[l][1:])
+            my_layer = eval('self.' + self.model[l][0])(self.model[l][1:])
             self._layers.append(my_layer)
 
     def inference(self, x):

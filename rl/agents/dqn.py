@@ -21,11 +21,11 @@ class DQN(Agent):
     def _build_net(self):
         # ------------------ build eval_net ------------------
         with tf.variable_scope('eval_net'):
-            self.q_eval = eval(self.network)(model=self.model, out_dim=self.n_actions, name='Q_net', opt=self._optimizer, lr=self.lr, trainable=True, is_categorical=self.is_categorical)
+            self.q_eval = eval(self.network)(model=self.model, out_dim=self.n_actions, name='Q_net', opt=self._optimizer, lr=self.lr, trainable=True, is_categorical=self.is_categorical, is_noise=self.is_noise)
 
         # ------------------ build target_net ------------------
         with tf.variable_scope('target_net'):
-            self.q_next = eval(self.network)(model=self.model, out_dim=self.n_actions, name='target_net', trainable=False, is_categorical=self.is_categorical)
+            self.q_next = eval(self.network)(model=self.model, out_dim=self.n_actions, name='target_net', trainable=False, is_categorical=self.is_categorical, is_noise=self.is_noise)
 
     def inference(self, state):
         if self.is_categorical:
@@ -48,6 +48,7 @@ class DQN(Agent):
 
         with tf.GradientTape() as tape:
             if self.is_categorical:
+                # based on https://github.com/cmusjtuliuyuan/RainBow/blob/master/agent.py
                 reward = tf.cast(reward, tf.float32)
                 done = tf.cast(done, tf.float32)
                 q_next = self.q_next.inference(bs_)           #target network Q'(s', a)

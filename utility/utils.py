@@ -47,20 +47,26 @@ class Utils():
         return 
 
 
-    def write_log(self, message):
+    def write_log(self, message, test=False):
         """
         学習状況をテキストに出力する
 
         parameters
         -------
         message : dict
+
+        test : bool
         """
         stats = []
         for key, info in message.items():
             stats.append("%s = %s" % (key, info))
         info = "%s\n"%(", ".join(stats))
-        with open(self.log_dir + '/log.txt', 'a') as f:
-            f.write(str(info))
+        if test:
+            with open(self.log_dir + '/test_log.txt', 'a') as f:
+                f.write(str(info))
+        else:
+            with open(self.log_dir + '/log.txt', 'a') as f:
+                f.write(str(info))
         return 
 
     def save_init(self, model):

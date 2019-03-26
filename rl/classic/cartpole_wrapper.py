@@ -42,7 +42,8 @@ def main(argv):
                               e_greedy_increment=0.001,
                               optimizer=FLAGS.opt,
                               network='Dueling_Net' if FLAGS.agent == 'Rainbow' else FLAGS.network,
-                              is_categorical=FLAGS.category
+                              is_categorical=FLAGS.category,
+                              is_noise=FLAGS.noise
                               )
 
     trainer = Trainer(agent=agent, 
@@ -72,6 +73,7 @@ def main(argv):
     print("priority : {}".format(FLAGS.priority))
     print("multi_step : {}".format(FLAGS.multi_step))
     print("categorical : {}".format(FLAGS.category))
+    print("noisy : {}".format(FLAGS.noise))
     print("n_warmup : {}".format(FLAGS.n_warmup))
     print("model_update : {}".format(FLAGS.model_update))
     if FLAGS.init_model is not None:

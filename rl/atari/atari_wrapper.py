@@ -260,6 +260,8 @@ def main(argv):
         FLAGS.network = 'Dueling_Net'
         FLAGS.priority = True
         FLAGS.multi_step = 3
+        FLAGS.category = True
+        FLAGS.noise = True
 
     agent = eval(FLAGS.agent)(model=set_model(outdim=env.action_space.n),
                 n_actions=env.action_space.n,
@@ -271,7 +273,8 @@ def main(argv):
                 e_greedy_increment=0.0001,
                 optimizer=FLAGS.opt,
                 network=FLAGS.network,
-                is_categorical=FLAGS.category
+                is_categorical=FLAGS.category,
+                is_noise=FLAGS.noise
                 )
 
     trainer = Trainer(agent=agent, 
