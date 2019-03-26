@@ -131,12 +131,12 @@ class Trainer():
                     state = state_
             # test
             if episode % self.test_interval == 0 and learning_flag:
-                self.test()
+                self.test(episode)
 
         self.env.close()
 
 
-    def test(self):
+    def test(self, episode):
         """
         testを行う
         """
