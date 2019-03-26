@@ -45,24 +45,24 @@ class Train():
 
     def build_logits(self, train_data, train_ans, valid_data, valid_ans):
         # train
-        train_logits = self.model.inference(train_data, train_ans) if self.name == 'CVAE' else self.model.inference(train_data)
-        train_loss = self.model.loss(train_logits, train_data) if self.name == 'AutoEncoder' or self.name == 'VAE' or self.name == 'CVAE' else self.model.loss(train_logits, train_ans)
-        predict = self.model.predict(train_data)
-        opt_op = self.model.optimize(train_loss, self.global_step)
+        self.train_logits = self.model.inference(train_data, train_ans) if self.name == 'CVAE' else self.model.inference(train_data)
+        self.train_loss = self.model.loss(self.train_logits, train_data) if self.name == 'AutoEncoder' or self.name == 'VAE' or self.name == 'CVAE' else self.model.loss(self.train_logits, train_ans)
+        self.predict = self.model.predict(train_data)
+        opt_op = self.model.optimize(self.train_loss, self.global_step)
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-        train_op = tf.group([opt_op] + update_ops)
-        train_accuracy = self.model.evaluate(train_logits, train_ans)
+        self.train_op = tf.group([opt_op] + update_ops)
+        self.train_accuracy = self.model.evaluate(self.train_logits, train_ans)
 
         # test
-        test_logits = self.model.test_inference(valid_data, reuse=True)
-        test_loss = self.model.loss(test_logits, valid_data) if self.name == 'AutoEncoder' or self.name == 'VAE' or self.name == 'CVAE' else self.model.loss(test_logits, valid_ans)
-        test_accuracy = self.model.evaluate(test_logits, valid_ans)
+        self.test_logits = self.model.test_inference(valid_data, reuse=True)
+        self.test_loss = self.model.loss(self.test_logits, valid_data) if self.name == 'AutoEncoder' or self.name == 'VAE' or self.name == 'CVAE' else self.model.loss(self.test_logits, valid_ans)
+        self.test_accuracy = self.model.evaluate(self.test_logits, valid_ans)
 
-        return train_logits, train_loss, train_op, train_accuracy, predict, test_logits, test_loss, test_accuracy
+        return 
 
     def train(self):
         inputs, corrects, valid_inputs, valid_labels = self.load()
-        train_logits, train_loss, train_op, train_accuracy, predict, test_logits, test_loss, test_accuracy  = self.build_logits(inputs, corrects, valid_inputs, valid_labels)
+        self.build_logits(inputs, corrects, valid_inputs, valid_labels)
 
         def init_fn(scaffold, session):
             session.run([self.iterator.initializer,self.valid_iter.initializer],
@@ -92,16 +92,16 @@ class Train():
 
         metrics = OrderedDict({
             "global_step": self.global_step,
-            "train loss": train_loss,
-            "train accuracy":train_accuracy,
-            "test loss": test_loss,
-            "test accuracy":test_accuracy})
+            "train loss": self.train_loss,
+            "train accuracy":self.train_accuracy,
+            "test loss": self.test_loss,
+            "test accuracy":self.test_accuracy})
 
         hooks = []
         if self.name == 'tuning':
             config = tf.ConfigProto(allow_soft_placement=True, log_device_placement=False, gpu_options=tf.GPUOptions(per_process_gpu_memory_fraction=0.7))
             hooks.append(OptunaHook(metrics))
-            hooks.append(tf.train.NanTensorHook(train_loss))
+            hooks.append(tf.train.NanTensorHook(self.train_loss))
             if self.max_steps:
                 hooks.append(tf.train.StopAtStepHook(last_step=self.max_steps))
 
@@ -113,20 +113,20 @@ class Train():
 
         else:
             # tensorboard
-            tf.summary.scalar('train/loss', train_loss)
-            tf.summary.scalar('train/accuracy', train_accuracy)
+            tf.summary.scalar('train/loss', self.train_loss)
+            tf.summary.scalar('train/accuracy', self.train_accuracy)
             tf.summary.scalar('train/Learning_rate', self.model.optimizer.lr)
             tf.summary.image('train/image', inputs)
-            tf.summary.scalar('test/loss', test_loss)
-            tf.summary.scalar('test/accuracy', test_accuracy)
+            tf.summary.scalar('test/loss', self.test_loss)
+            tf.summary.scalar('test/accuracy', self.test_accuracy)
             tf.summary.image('test/image', valid_inputs)
             if self.name == 'AutoEncoder' or self.name == 'VAE':
-                hooks.append(AEHook(test_logits, self.util.log_dir, every_n_iter=100))
-                tf.summary.image('train/encode_image', train_logits)
-                tf.summary.image('test/encode_image', test_logits)
+                hooks.append(AEHook(self.test_logits, self.util.log_dir, every_n_iter=100))
+                tf.summary.image('train/encode_image', self.train_logits)
+                tf.summary.image('test/encode_image', self.test_logits)
 
             hooks.append(MyLoggerHook(self.message, self.util.log_dir, metrics, every_n_iter=100))
-            hooks.append(tf.train.NanTensorHook(train_loss))
+            hooks.append(tf.train.NanTensorHook(self.train_loss))
             hooks.append(SavedModelBuilderHook(self.util.saved_model_path, signature_def_map))
             if self.max_steps:
                 hooks.append(tf.train.StopAtStepHook(last_step=self.max_steps))
@@ -147,7 +147,7 @@ class Train():
                     # Restores from checkpoint
                     saver.restore(session, ckpt.model_checkpoint_path)
             while not session.should_stop():
-                _, loss, train_acc, test_acc, test_input, test_output = session.run([train_op, train_loss, train_accuracy, test_accuracy, valid_inputs, test_logits])
+                _, loss, train_acc, test_acc, test_input, test_output = session.run([self.train_op, self.train_loss, self.train_accuracy, self.test_accuracy, valid_inputs, self.test_logits])
         if self.name == 'AutoEncoder' or self.name == 'VAE':
             self.util.construct_figure(test_input, test_output)
         return loss, train_acc, test_acc
