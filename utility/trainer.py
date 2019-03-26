@@ -60,9 +60,44 @@ class Train():
 
         return 
 
+    def summary(self, train_inputs, valid_inputs):
+        """
+        tensorboardに表示するデータをまとめる関数
+        """
+        # tensorboard
+        tf.summary.scalar('train/loss', self.train_loss)
+        tf.summary.scalar('train/accuracy', self.train_accuracy)
+        tf.summary.scalar('train/Learning_rate', self.model.optimizer.lr)
+        tf.summary.image('train/image', train_inputs)
+        tf.summary.scalar('test/loss', self.test_loss)
+        tf.summary.scalar('test/accuracy', self.test_accuracy)
+        tf.summary.image('test/image', valid_inputs)
+        if self.name == 'AutoEncoder' or self.name == 'VAE' or self.name == 'CVAE':
+            tf.summary.image('train/encode_image', self.train_logits)
+            tf.summary.image('test/encode_image', self.test_logits)
+        return
+
+    def hook_append(self, metrics, signature_def_map):
+        """
+        hooksをまとめる関数
+        """
+        hooks = []
+        hooks.append(tf.train.NanTensorHook(self.train_loss))
+        if self.max_steps:
+            hooks.append(tf.train.StopAtStepHook(last_step=self.max_steps))
+        if self.name == 'tuning':
+            hooks.append(OptunaHook(metrics))
+        else:
+            hooks.append(MyLoggerHook(self.message, self.util.log_dir, metrics, every_n_iter=100))
+            hooks.append(SavedModelBuilderHook(self.util.saved_model_path, signature_def_map))
+            if self.name == 'AutoEncoder' or self.name == 'VAE':
+                hooks.append(AEHook(self.test_logits, self.util.log_dir, every_n_iter=100))
+        return hooks
+
     def train(self):
         inputs, corrects, valid_inputs, valid_labels = self.load()
         self.build_logits(inputs, corrects, valid_inputs, valid_labels)
+        self.summary(inputs, valid_inputs)
 
         def init_fn(scaffold, session):
             session.run([self.iterator.initializer,self.valid_iter.initializer],
@@ -71,22 +106,23 @@ class Train():
                                    self.data.valid_placeholder: self.data.x_test,
                                    self.data.valid_labels_placeholder: self.data.y_test})
         
+        # create saver
         saver = tf.train.Saver(
                 max_to_keep=self.checkpoints_to_keep,
                 keep_checkpoint_every_n_hours=self.keep_checkpoint_every_n_hours)
 
-        # create saver
         scaffold = tf.train.Scaffold(
             init_fn=init_fn,
             saver=saver)
 
         tf.logging.set_verbosity(tf.logging.INFO)
-        config = tf.ConfigProto(allow_soft_placement=True, log_device_placement=False)
+        config = tf.ConfigProto(allow_soft_placement=True, log_device_placement=False, gpu_options=tf.GPUOptions(per_process_gpu_memory_fraction=0.7)) if self.name == 'tuning' else tf.ConfigProto(allow_soft_placement=True, log_device_placement=False)
 
+        # saved model
         signature_def_map = {
                         'predict': tf.saved_model.signature_def_utils.build_signature_def(
                             inputs={'inputs': tf.saved_model.utils.build_tensor_info(self.data.features_placeholder)},
-                            outputs={'predict':  tf.saved_model.utils.build_tensor_info(predict)},
+                            outputs={'predict': tf.saved_model.utils.build_tensor_info(self.predict)},
                             method_name=tf.saved_model.signature_constants.PREDICT_METHOD_NAME,)
                         }
 
@@ -97,40 +133,15 @@ class Train():
             "test loss": self.test_loss,
             "test accuracy":self.test_accuracy})
 
-        hooks = []
-        if self.name == 'tuning':
-            config = tf.ConfigProto(allow_soft_placement=True, log_device_placement=False, gpu_options=tf.GPUOptions(per_process_gpu_memory_fraction=0.7))
-            hooks.append(OptunaHook(metrics))
-            hooks.append(tf.train.NanTensorHook(self.train_loss))
-            if self.max_steps:
-                hooks.append(tf.train.StopAtStepHook(last_step=self.max_steps))
+        hooks = self.hook_append(metrics, signature_def_map)
 
-            # training
+        if self.name == 'tuning':
             session = tf.train.MonitoredTrainingSession(
                 config=config,
                 hooks=hooks,
                 scaffold=scaffold)
 
         else:
-            # tensorboard
-            tf.summary.scalar('train/loss', self.train_loss)
-            tf.summary.scalar('train/accuracy', self.train_accuracy)
-            tf.summary.scalar('train/Learning_rate', self.model.optimizer.lr)
-            tf.summary.image('train/image', inputs)
-            tf.summary.scalar('test/loss', self.test_loss)
-            tf.summary.scalar('test/accuracy', self.test_accuracy)
-            tf.summary.image('test/image', valid_inputs)
-            if self.name == 'AutoEncoder' or self.name == 'VAE':
-                hooks.append(AEHook(self.test_logits, self.util.log_dir, every_n_iter=100))
-                tf.summary.image('train/encode_image', self.train_logits)
-                tf.summary.image('test/encode_image', self.test_logits)
-
-            hooks.append(MyLoggerHook(self.message, self.util.log_dir, metrics, every_n_iter=100))
-            hooks.append(tf.train.NanTensorHook(self.train_loss))
-            hooks.append(SavedModelBuilderHook(self.util.saved_model_path, signature_def_map))
-            if self.max_steps:
-                hooks.append(tf.train.StopAtStepHook(last_step=self.max_steps))
-            
             session = tf.train.MonitoredTrainingSession(
                 config=config,
                 checkpoint_dir=self.util.model_path,
