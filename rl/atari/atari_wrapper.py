@@ -290,6 +290,7 @@ def main(argv):
                       test_episode=5,
                       test_interval=10000,
                       test_frame=FLAGS.rec,
+                      test_render=FLAGS.test_render,
                       init_model_dir=FLAGS.init_model)
 
     print()
@@ -327,5 +328,6 @@ if __name__ == '__main__':
     flags.DEFINE_float('lr', '1e-4', 'Input learning rate')
     flags.DEFINE_string('init_model','None','Choice the initial model directory')
     flags.DEFINE_boolean('rec', 'False', 'Create test frame -> True/False')
+    flags.DEFINE_boolean('test_render', 'False', 'test render -> True/False')
     flags.DEFINE_string('opt','RMSProp','Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]')
     tf.app.run()

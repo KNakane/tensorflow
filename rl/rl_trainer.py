@@ -24,7 +24,7 @@ class Trainer():
                  priority=False,
                  multi_step=1,
                  render=False,
-                 test_render=True,
+                 test_render=False,
                  test_episode=5,
                  test_interval=1000,
                  test_frame=False,
