@@ -14,7 +14,6 @@ class Train():
                  data,
                  model,
                  name):
-
         self.checkpoints_to_keep = FLAGS.checkpoints_to_keep
         self.keep_checkpoint_every_n_hours = FLAGS.keep_checkpoint_every_n_hours
         self.max_steps = FLAGS.n_epoch
@@ -31,7 +30,6 @@ class Train():
         self.model = model
         self.restore_dir = FLAGS.init_model
         self.util = Utils(prefix=self.name)
-        self.util.conf_log()
 
     def load(self):
         # Load Dataset
@@ -77,24 +75,25 @@ class Train():
             tf.summary.image('test/encode_image', self.test_logits)
         return
 
-    def hook_append(self, metrics, signature_def_map):
+    def hook_append(self, metrics, signature_def_map=None):
         """
         hooksをまとめる関数
         """
         hooks = []
         hooks.append(tf.train.NanTensorHook(self.train_loss))
-        if self.max_steps:
-            hooks.append(tf.train.StopAtStepHook(last_step=self.max_steps))
         if self.name == 'tuning':
             hooks.append(OptunaHook(metrics))
         else:
             hooks.append(MyLoggerHook(self.message, self.util.log_dir, metrics, every_n_iter=100))
             hooks.append(SavedModelBuilderHook(self.util.saved_model_path, signature_def_map))
+            if self.max_steps:
+                hooks.append(tf.train.StopAtStepHook(last_step=self.max_steps))
             if self.name == 'AutoEncoder' or self.name == 'VAE':
                 hooks.append(AEHook(self.test_logits, self.util.log_dir, every_n_iter=100))
         return hooks
 
     def train(self):
+        self.util.conf_log()
         inputs, corrects, valid_inputs, valid_labels = self.load()
         self.build_logits(inputs, corrects, valid_inputs, valid_labels)
         self.summary(inputs, valid_inputs)
@@ -116,7 +115,7 @@ class Train():
             saver=saver)
 
         tf.logging.set_verbosity(tf.logging.INFO)
-        config = tf.ConfigProto(allow_soft_placement=True, log_device_placement=False, gpu_options=tf.GPUOptions(per_process_gpu_memory_fraction=0.7)) if self.name == 'tuning' else tf.ConfigProto(allow_soft_placement=True, log_device_placement=False)
+        config = tf.ConfigProto(allow_soft_placement=True, log_device_placement=False)
 
         # saved model
         signature_def_map = {
@@ -135,21 +134,14 @@ class Train():
 
         hooks = self.hook_append(metrics, signature_def_map)
 
-        if self.name == 'tuning':
-            session = tf.train.MonitoredTrainingSession(
-                config=config,
-                hooks=hooks,
-                scaffold=scaffold)
-
-        else:
-            session = tf.train.MonitoredTrainingSession(
-                config=config,
-                checkpoint_dir=self.util.model_path,
-                hooks=hooks,
-                scaffold=scaffold,
-                save_summaries_steps=1,
-                save_checkpoint_steps=self.save_checkpoint_steps,
-                summary_dir=self.util.tf_board)
+        session = tf.train.MonitoredTrainingSession(
+            config=config,
+            checkpoint_dir=self.util.model_path,
+            hooks=hooks,
+            scaffold=scaffold,
+            save_summaries_steps=1,
+            save_checkpoint_steps=self.save_checkpoint_steps,
+            summary_dir=self.util.tf_board)
         
         with session:
             if self.restore_dir is not None:
@@ -162,3 +154,49 @@ class Train():
         if self.name == 'AutoEncoder' or self.name == 'VAE':
             self.util.construct_figure(test_input, test_output)
         return loss, train_acc, test_acc
+
+    
+    def optuna_train(self):
+        """
+        optunaを用いた場合のtrainer
+        """
+        inputs, corrects, valid_inputs, valid_labels = self.load()
+        iteration = self.data.x_test.shape[0] // self.batch_size
+        self.build_logits(inputs, corrects, valid_inputs, valid_labels)
+
+        def init_fn(scaffold, session):
+            session.run([self.iterator.initializer,self.valid_iter.initializer],
+                        feed_dict={self.data.features_placeholder: self.data.x_train,
+                                   self.data.labels_placeholder: self.data.y_train,
+                                   self.data.valid_placeholder: self.data.x_test,
+                                   self.data.valid_labels_placeholder: self.data.y_test})
+
+        scaffold = tf.train.Scaffold(init_fn=init_fn)
+
+        tf.logging.set_verbosity(tf.logging.INFO)
+        metrics = OrderedDict({
+            "global_step": self.global_step,
+            "train loss": self.train_loss,
+            "train accuracy":self.train_accuracy,
+            "test loss": self.test_loss,
+            "test accuracy":self.test_accuracy})
+
+        hooks = self.hook_append(metrics)
+        config = tf.ConfigProto(allow_soft_placement=True, log_device_placement=False, gpu_options=tf.GPUOptions(per_process_gpu_memory_fraction=0.7))
+
+        session = tf.train.MonitoredTrainingSession(
+                    config=config,
+                    hooks=hooks,
+                    scaffold=scaffold)
+
+        with session:
+            for _ in range(self.max_steps):
+                step,_ = session.run([self.global_step,self.train_op])
+                print(step)
+                avg_accuracy = 0
+                for i in range(iteration):
+                    test_accuracy = session.run(self.test_accuracy)
+                    avg_accuracy += test_accuracy
+        print("average_accuracy : {}".format(avg_accuracy / iteration))
+
+        return avg_accuracy / iteration

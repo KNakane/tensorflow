@@ -4,6 +4,8 @@ import sys
 import argparse
 from search import Optuna
 
+def make_graph():
+    return
 
 def main(args):
     op = Optuna('example-study')

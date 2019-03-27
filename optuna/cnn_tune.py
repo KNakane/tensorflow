@@ -42,7 +42,7 @@ def objective(trial):
 
     #training
     trainer = Train(FLAGS=FLAGS, message=None, data=data, model=model, name='tuning')
-    _, _, test_accuracy = trainer.train()
+    test_accuracy = trainer.optuna_train()
     return -test_accuracy
     
 
@@ -64,5 +64,5 @@ if __name__ == '__main__':
     flags.DEFINE_string('init_model', 'None', 'Choice the checkpoint directpry(ex. ./results/181225_193106/model)')
     flags.DEFINE_integer('checkpoints_to_keep', 5,'checkpoint keep count')
     flags.DEFINE_integer('keep_checkpoint_every_n_hours', 1, 'checkpoint create ')
-    flags.DEFINE_integer('save_checkpoint_steps', 1000,'save checkpoint step')
+    flags.DEFINE_integer('save_checkpoint_steps', 100,'save checkpoint step')
     tf.app.run()
