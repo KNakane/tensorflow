@@ -29,13 +29,18 @@ class DDPG(Agent):
     def choose_action(self, observation):
         observation = observation[np.newaxis, :]
         action = self.inference(observation) + np.expand_dims(self.noise.generate(),axis=0)
-        return action[0]
+        return np.array(action[0])
+    
+    def test_choose_action(self, observation):
+        observation = observation[np.newaxis, :]
+        action = self.inference(observation)
+        return np.array(action[0])
 
     def update_q_net(self, replay_data, weights):
         bs, ba, done, bs_, br, p_idx = replay_data
         self.bs = np.array(bs, dtype=np.float32)
         bs_ = np.array(bs_, dtype=np.float32)
-        eval_act_index = np.reshape(ba,(self.batch_size,1))
+        eval_act_index = np.reshape(ba,(self.batch_size, self.n_actions))
         reward = np.reshape(br,(self.batch_size,1))
         done = np.reshape(done,(self.batch_size,1))
         p_idx = np.reshape(p_idx,(self.batch_size,1))
@@ -99,13 +104,18 @@ class TD3(Agent):
     def choose_action(self, observation):
         observation = observation[np.newaxis, :]
         action = self.inference(observation) + np.expand_dims(self.noise.generate(),axis=0)
+        return np.array(action[0])
+
+    def test_choose_action(self, observation):
+        observation = observation[np.newaxis, :]
+        action = self.inference(observation)
         return action[0]
 
     def update_q_net(self, replay_data, weights, noise_clip=0.5):
         bs, ba, done, bs_, br, p_idx = replay_data
         self.bs = np.array(bs, dtype=np.float32)
         bs_ = np.array(bs_, dtype=np.float32)
-        eval_act_index = np.reshape(ba,(self.batch_size,1))
+        eval_act_index = np.reshape(ba,(self.batch_size,self.n_actions))
         reward = np.reshape(br,(self.batch_size,1))
         done = np.reshape(done,(self.batch_size,1))
         p_idx = np.reshape(p_idx,(self.batch_size,1))

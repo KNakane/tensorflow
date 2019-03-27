@@ -175,6 +175,7 @@ class Trainer():
                         self.util.write_log(message=metrics, test=True)
                         break
                     test_state = test_next_state
+                self.env.close()
             if len(frames) > 0:
                 display_frames_as_gif(frames, "test_{}_{}".format(episode, test_episode), self.util.res_dir)
         print('-----------------------------------------------------------------------------')

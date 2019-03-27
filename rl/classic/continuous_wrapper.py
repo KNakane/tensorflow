@@ -85,7 +85,7 @@ if __name__ == '__main__':
     flags = tf.app.flags
     FLAGS = flags.FLAGS
     flags.DEFINE_string('agent', 'DDPG', 'Choise Agents -> [DDPG, TD3]')
-    flags.DEFINE_string('env', 'Pendulum-v0', 'Choice environment -> [Pendulum-v0,MountainCarContinuous-v0,LunarLanderContinuous-v2]')
+    flags.DEFINE_string('env', 'Pendulum-v0', 'Choice environment -> [Pendulum-v0,MountainCarContinuous-v0,LunarLanderContinuous-v2,InvertedPendulum-v2,InvertedDoublePendulum-v2]')
     flags.DEFINE_float('lr', '1e-3', 'Input learning rate')
     flags.DEFINE_string('opt','RMSProp','Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]')
     flags.DEFINE_integer('n_episode', '100000', 'Input max episode')
