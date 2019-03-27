@@ -85,53 +85,14 @@ $ tensorboard --logdir=/path/to/logdir
 ```
  
 # Sample Result
-## Terminal
-```bash
-------Learning Details------
-Network : LeNet
-data : mnist
-epoch : 1000
-batch_size : 32
-Optimizer : Adam
-learning_rate : 0.001
-----------------------------
-INFO:tensorflow:Graph was finalized.
-2019-01-09 08:38:46.580738: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 FMA
-INFO:tensorflow:Running local_init_op.
-INFO:tensorflow:Done running local_init_op.
-INFO:tensorflow:Saving checkpoints for 0 into results/190109_083846_LeNet/model/model.ckpt.
-INFO:tensorflow:global_step = 1, train loss = 2.3049936, train accuracy = 0.15625, test loss = 2.3102922, test accuracy = 0.104166664
-INFO:tensorflow:Saving checkpoints for 100 into results/190109_083846_LeNet/model/model.ckpt.
-INFO:tensorflow:global_step/sec: 25.5454
-INFO:tensorflow:global_step = 101, train loss = 0.14169851, train accuracy = 0.9375, test loss = 0.49837124, test accuracy = 0.8541667 (3.915 sec)
-INFO:tensorflow:Saving checkpoints for 200 into results/190109_083846_LeNet/model/model.ckpt.
-INFO:tensorflow:global_step/sec: 24.0406
-INFO:tensorflow:global_step = 201, train loss = 0.14052512, train accuracy = 0.90625, test loss = 0.32796296, test accuracy = 0.8958333 (4.160 sec)
-INFO:tensorflow:Saving checkpoints for 300 into results/190109_083846_LeNet/model/model.ckpt.
-INFO:tensorflow:global_step/sec: 20.2842
-INFO:tensorflow:global_step = 301, train loss = 0.045304425, train accuracy = 1.0, test loss = 0.20235687, test accuracy = 0.9270833 (4.930 sec)
-INFO:tensorflow:Saving checkpoints for 400 into results/190109_083846_LeNet/model/model.ckpt.
-INFO:tensorflow:global_step/sec: 18.9074
-INFO:tensorflow:global_step = 401, train loss = 0.12073513, train accuracy = 0.96875, test loss = 0.18668492, test accuracy = 0.9270833 (5.289 sec)
-INFO:tensorflow:Saving checkpoints for 500 into results/190109_083846_LeNet/model/model.ckpt.
-INFO:tensorflow:global_step/sec: 19.7883
-INFO:tensorflow:global_step = 501, train loss = 0.053041346, train accuracy = 1.0, test loss = 0.120652616, test accuracy = 0.9479167 (5.054 sec)
-INFO:tensorflow:Saving checkpoints for 600 into results/190109_083846_LeNet/model/model.ckpt.
-INFO:tensorflow:global_step/sec: 19.1117
-INFO:tensorflow:global_step = 601, train loss = 0.01414567, train accuracy = 1.0, test loss = 0.029330222, test accuracy = 0.9895833 (5.232 sec)
-INFO:tensorflow:Saving checkpoints for 700 into results/190109_083846_LeNet/model/model.ckpt.
-INFO:tensorflow:global_step/sec: 21.0739
-INFO:tensorflow:global_step = 701, train loss = 0.35343158, train accuracy = 0.9375, test loss = 0.068792515, test accuracy = 0.96875 (4.745 sec)
-INFO:tensorflow:Saving checkpoints for 800 into results/190109_083846_LeNet/model/model.ckpt.
-INFO:tensorflow:global_step/sec: 20.199
-INFO:tensorflow:global_step = 801, train loss = 0.08725928, train accuracy = 0.96875, test loss = 0.16032778, test accuracy = 0.9270833 (4.951 sec)
-INFO:tensorflow:Saving checkpoints for 900 into results/190109_083846_LeNet/model/model.ckpt.
-INFO:tensorflow:global_step/sec: 19.3936
-INFO:tensorflow:global_step = 901, train loss = 0.14643487, train accuracy = 0.9375, test loss = 0.054370016, test accuracy = 0.9791667 (5.156 sec)
-INFO:tensorflow:Saving checkpoints for 1000 into results/190109_083846_LeNet/model/model.ckpt.
-INFO:tensorflow:No assets to save.
-INFO:tensorflow:No assets to write.
-INFO:tensorflow:SavedModel written to: results/190109_083846_LeNet/model/saved_model/saved_model.pb
-```
-## tensorboard
+## cifar10
+|種類|グラフ||
+|:--:|:--:|:--:|
+|train_loss|![代替テキスト](../sample_results/CNN/cifar10/train_loss.png)|
+|train_accuracy|![代替テキスト](../sample_results/CNN/cifar10/train_accuracy.png)|
+|train_accuracy_moving_avg|![代替テキスト](../sample_results/CNN/cifar10/train_accuracy_moving_avg.png)|
+|test_loss|![代替テキスト](../sample_results/CNN/cifar10/test_loss.png)|
+|test_accuracy|![代替テキスト](../sample_results/CNN/cifar10/test_accuracy.png)|
+|test_accuracy_moving_avg|![代替テキスト](../sample_results/CNN/cifar10/test_accuracy_moving_avg.png)|
+## kuzushiji-mnist
 ![代替テキスト](../sample_results/CNN/kuzushiji.png)
