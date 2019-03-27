@@ -53,8 +53,10 @@ class DDPG(Agent):
             target_Q = reward + self.discount ** p_idx * critic_next * (1. - done)
             target_Q = tf.stop_gradient(target_Q)
             # ↓critic_loss
-            self.td_error = tf.reduce_mean(tf.losses.huber_loss(labels=target_Q, predictions=critic_eval) * weights, keep_dims=True)
-        self.critic.optimize(self.td_error, global_step, tape)
+            error = tf.losses.huber_loss(labels=target_Q, predictions=critic_eval)
+            self.td_error = np.abs(tf.reduce_mean(target_Q - critic_eval, axis=1))
+            self.critic_loss = tf.reduce_mean(error * weights, keep_dims=True)
+        self.critic.optimize(self.critic_loss, global_step, tape)
 
         # update actor_net
         with tf.GradientTape() as tape:
@@ -132,12 +134,14 @@ class TD3(Agent):
         # update critic_net1
         with tf.GradientTape() as tape:
             critic_eval1 = self.critic1.inference([self.bs, eval_act_index])
-            self.critic_loss1 = tf.losses.huber_loss(labels=target_Q, predictions=critic_eval1)
+            error = tf.losses.huber_loss(labels=target_Q, predictions=critic_eval1)
+            self.td_error = np.abs(tf.reduce_mean(target_Q - critic_eval1, axis=1))
+            self.critic_loss1 = tf.reduce_mean(error * weights, keep_dims=True)
         self.critic1.optimize(self.critic_loss1, global_step, tape)
 
         with tf.GradientTape() as tape:
             critic_eval2 = self.critic2.inference([self.bs, eval_act_index])
-            self.critic_loss2 = tf.losses.huber_loss(labels=target_Q, predictions=critic_eval2)
+            self.critic_loss2 = tf.reduce_mean(tf.losses.huber_loss(labels=target_Q, predictions=critic_eval2) * weights, keep_dims=True)
         self.critic2.optimize(self.critic_loss2, global_step, tape)
 
         if self._iteration % self.policy_freq == 0:

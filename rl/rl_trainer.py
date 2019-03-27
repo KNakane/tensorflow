@@ -97,7 +97,7 @@ class Trainer():
                             image = tf.expand_dims(self.agent.bs[:3,:,:,0],3)
                             tf.contrib.summary.image('train/input_img', tf.cast(image * 255.0, tf.uint8))
                         if self.agent.__class__.__name__ == 'DDPG':
-                            tf.contrib.summary.scalar('train/critic_loss', self.agent.td_error)
+                            tf.contrib.summary.scalar('train/critic_loss', self.agent.critic_loss)
                             tf.contrib.summary.scalar('train/actor_loss', self.agent.actor_loss)
                         elif self.agent.__class__.__name__ == 'TD3':
                             tf.contrib.summary.scalar('train/critic_loss1', self.agent.critic_loss1)
