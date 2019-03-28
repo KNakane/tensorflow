@@ -193,8 +193,8 @@ class Train():
             for _ in range(self.max_steps):
                 session.run([self.train_op])
                 avg_accuracy = 0
-                for __ in range(iteration):
-                    test_accuracy = session.run(self.test_accuracy)
-                    avg_accuracy += test_accuracy
+            for __ in range(iteration):
+                test_accuracy = session.run(self.test_accuracy)
+                avg_accuracy += test_accuracy
 
         return avg_accuracy / iteration
