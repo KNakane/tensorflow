@@ -9,7 +9,7 @@ class Agent(tf.contrib.checkpoint.Checkpointable):
             n_actions,
             n_features,
             learning_rate=0.01,
-            reward_decay=0.9,
+            reward_decay=0.99,
             e_greedy=0.9,
             replace_target_iter=300,
             batch_size=32,

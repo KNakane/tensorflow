@@ -31,8 +31,13 @@ python hogehoge_wrpper.py --env (environment名) \
 |DDQN|![代替テキスト](../../sample_results/rl/cartpole/DDQN_100.gif)|![代替テキスト](../../sample_results/rl/cartpole/DDQN_150.gif)|
 |DQN + Dueling|![代替テキスト](../../sample_results/rl/cartpole/DQN_Duel_100.gif)|![代替テキスト](../../sample_results/rl/cartpole/DQN_Duel_150.gif)|
 |DDQN + Dueling|![代替テキスト](../../sample_results/rl/cartpole/DDQN_Duel_100.gif)|![代替テキスト](../../sample_results/rl/cartpole/DDQN_Duel_150.gif)|
-## continuous_wrapper
+## Pendulum
 |Agent|100回学習|150回学習|
 |:--:|:--:|:--:|
 |DDPG|![代替テキスト](../../sample_results/rl/pendulum/DDPG_50.gif)|![代替テキスト](../../sample_results/rl/pendulum/DDPG_100.gif)|
 |TD3|![代替テキスト](../../sample_results/rl/pendulum/TD3_50.gif)|![代替テキスト](../../sample_results/rl/pendulum/TD3_100.gif)|
+
+## Half Cheetah
+|Agent|0回学習|200回学習|
+|:--:|:--:|:--:|
+|DDPG+PER+multi_step|![代替テキスト](../../sample_results/rl/half_cheetah/DDPG_PER_multi_0.gif)|![代替テキスト](../../sample_results/rl/half_cheetah/DDPG_PER_multi_200.gif)|

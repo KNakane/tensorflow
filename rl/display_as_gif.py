@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 from matplotlib import animation
 
 
-def display_frames_as_gif(frames, prefix, save_dir, fps=30):
+def display_frames_as_gif(frames, prefix, save_dir, fps=25):
     if len(frames) > 0:
         plt.figure(figsize=(frames[0].shape[1] / 72.0, frames[0].shape[0] / 72.0), dpi=72)
         patch = plt.imshow(frames[0])
