@@ -38,6 +38,6 @@ python hogehoge_wrpper.py --env (environment名) \
 |TD3|![代替テキスト](../../sample_results/rl/pendulum/TD3_50.gif)|![代替テキスト](../../sample_results/rl/pendulum/TD3_100.gif)|
 
 ## Half Cheetah
-|Agent|0回学習|200回学習|
-|:--:|:--:|:--:|
-|DDPG+PER+multi_step|![代替テキスト](../../sample_results/rl/half_cheetah/DDPG_PER_multi_0.gif)|![代替テキスト](../../sample_results/rl/half_cheetah/DDPG_PER_multi_200.gif)|
+|Agent|0回学習|200回学習|1000回学習|4000回学習
+|:--:|:--:|:--:|:--:|:--:|
+|DDPG+PER+multi_step|![代替テキスト](../../sample_results/rl/half_cheetah/DDPG_PER_multi_0.gif)|![代替テキスト](../../sample_results/rl/half_cheetah/DDPG_PER_multi_200.gif)|![代替テキスト](../../sample_results/rl/half_cheetah/DDPG_PER_multi_1000.gif)|![代替テキスト](../../sample_results/rl/half_cheetah/DDPG_PER_multi_4000.gif)|
