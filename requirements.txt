@@ -10,5 +10,6 @@ requests
 opencv-python
 optuna
 pygame==1.9.4
+box2d-py
 -e git+https://github.com/ntasfi/PyGame-Learning-Environment.git#egg=ple
 -e git+https://github.com/lusob/gym-ple.git#egg=gym-ple
