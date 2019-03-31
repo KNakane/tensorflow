@@ -268,7 +268,7 @@ def main(argv):
                 n_features=env.observation_space.shape,
                 learning_rate=FLAGS.lr,
                 e_greedy=0.9,
-                reward_decay=0.9,
+                reward_decay=0.99,
                 replace_target_iter=100,
                 e_greedy_increment=0.0001,
                 optimizer=FLAGS.opt,
