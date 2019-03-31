@@ -9,7 +9,10 @@ class RNN_Load():
     def __init__(self, name):
         if name == "imdb":
             (self.x_train, self.y_train), (self.x_test, self.y_test) = imdb.load_data(num_words=10000)
-            self.output_dim = 2
+        elif name == 'sample':
+            self.x_train, self.y_train = self.create_data(1000, 10)
+            self.x_test, self.y_test = self.create_data(1000, 10)
+            self.output_dim = 1
         else:
             NotImplementedError
 
@@ -19,7 +22,7 @@ class RNN_Load():
                 '''A transformation function to preprocess raw data
                 into trainable input. '''
                 x = tf.reshape(tf.cast(inputs, tf.float32), (10, 1))
-                y = tf.one_hot(tf.cast(answer, tf.uint8), self.output_dim)
+                y = tf.cast(answer, tf.float32)
                 return x, y
 
             answer = answer.reshape(answer.shape[0])
