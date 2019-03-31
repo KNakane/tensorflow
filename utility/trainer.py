@@ -66,10 +66,11 @@ class Train():
         tf.summary.scalar('train/loss', self.train_loss)
         tf.summary.scalar('train/accuracy', self.train_accuracy)
         tf.summary.scalar('train/Learning_rate', self.model.optimizer.lr)
-        tf.summary.image('train/image', train_inputs)
         tf.summary.scalar('test/loss', self.test_loss)
         tf.summary.scalar('test/accuracy', self.test_accuracy)
-        tf.summary.image('test/image', valid_inputs)
+        if len(train_inputs.shape) == 4:
+            tf.summary.image('train/image', train_inputs)
+            tf.summary.image('test/image', valid_inputs)
         if self.name == 'AutoEncoder' or self.name == 'VAE' or self.name == 'CVAE':
             tf.summary.image('train/encode_image', self.train_logits)
             tf.summary.image('test/encode_image', self.test_logits)
