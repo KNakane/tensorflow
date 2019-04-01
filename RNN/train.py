@@ -22,6 +22,8 @@ def main(argv):
     # prepare training
     ## load dataset
     data = RNN_Load(FLAGS.data)
+    print(data.x_train.shape)
+    sys.exit()
     ## setting models
     model_set = None #set_model(data.output_dim)
     model = eval(FLAGS.network)(model=model_set, name=FLAGS.network, out_dim=data.output_dim, lr=FLAGS.lr, opt=FLAGS.opt, l2_reg=FLAGS.l2_norm, trainable=True)

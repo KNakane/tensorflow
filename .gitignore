@@ -18,3 +18,4 @@ optuna/__pycache__
 src
 rl/env/__pycache__
 AutoEncoder/__pycache__
+dataset/ptb

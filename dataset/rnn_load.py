@@ -1,28 +1,42 @@
-import os, sys
+import os,sys,wget
+import glob
+import tarfile
 import random
 import numpy as np
 from tqdm import tqdm
 import tensorflow as tf
 from keras.datasets import *
+from ptb_reader import ptb_raw_data
 
 class RNN_Load():
     def __init__(self, name):
         if name == "imdb":
-            (self.x_train, self.y_train), (self.x_test, self.y_test) = imdb.load_data(num_words=10000)
+            self.sequence = 10000
+            (x_train, self.y_train), (x_test, self.y_test) = imdb.load_data(num_words=self.sequence)
+            self.x_train = self.vectorize_sequences(x_train); self.x_test = self.vectorize_sequences(x_test)
+            self.output_dim = 2
+        elif name == 'ptb':
+            (self.x_train, self.y_train), (self.x_test, self.y_test) = self.get_ptb()
         elif name == 'sample':
-            self.x_train, self.y_train = self.create_data(1000, 10)
+            self.sequence = 10000
+            self.x_train, self.y_train = self.create_data(self.sequence, 10)
             self.x_test, self.y_test = self.create_data(1000, 10)
             self.output_dim = 1
         else:
             NotImplementedError
+        self.name = name
 
     def load(self, inputs, answer, batch_size, buffer_size=1000, is_training=False, augmentation=None):
         with tf.variable_scope('{}_dataset'.format('training' if is_training is True else 'validation')):
             def preprocess_fn(inputs, answer):
                 '''A transformation function to preprocess raw data
                 into trainable input. '''
-                x = tf.reshape(tf.cast(inputs, tf.float32), (10, 1))
-                y = tf.cast(answer, tf.float32)
+                if self.name == 'sample': 
+                    x = tf.reshape(tf.cast(inputs, tf.float32), (10, 1))
+                    y = tf.cast(answer, tf.float32)
+                else:
+                    x = tf.cast(inputs, tf.float32)
+                    y = tf.one_hot(tf.cast(answer, tf.uint8), self.output_dim)
                 return x, y
 
             answer = answer.reshape(answer.shape[0])
@@ -63,3 +77,37 @@ class RNN_Load():
         # Create the targets for each sequence
         t = np.sum(X, axis=1)
         return X, t
+
+    def get_ptb(self):
+        if not os.path.isfile('./dataset/ptb/simple-examples/data/ptb.train.txt'):
+            self.download_ptb()
+        train_data, valid_data, test_data, _ = ptb_raw_data('./dataset/ptb/simple-examples/data')
+        return train_data, test_data
+
+
+    def download_ptb(self):
+        """
+        Penn tree bank のデータセットをDownloadする
+        """
+        import shutil
+        if not os.path.exists("./dataset/ptb"):
+            tf.gfile.MakeDirs("./dataset/ptb")
+        print('DownLoad Penn Tree bank dataset')
+        wget.download(url="http://www.fit.vutbr.cz/~imikolov/rnnlm/simple-examples.tgz",
+                      out="dataset/ptb/")
+        with tarfile.open("./dataset/ptb/simple-examples.tgz", mode='r:*') as tar:
+            tar.extractall("./dataset/ptb")
+        os.remove("./dataset/ptb/simple-examples.tgz")
+        for p in os.listdir("./dataset/ptb/simple-examples/"):
+            if os.path.isdir("./dataset/ptb/simple-examples/" + p) and p != 'data':
+                shutil.rmtree("./dataset/ptb/simple-examples/" + p)
+        return
+
+    def vectorize_sequences(self, sequences, dimension=10000):
+        """
+        imdb datasetのinputデータをone_hotに変換する
+        """
+        results = np.zeros((len(sequences), dimension))
+        for i, sequence in enumerate(sequences):
+            results[i, sequence] = 1.
+        return results
