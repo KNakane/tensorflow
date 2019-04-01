@@ -35,6 +35,8 @@ def main(argv):
         FLAGS.multi_step = 3
         FLAGS.category = True
         FLAGS.noise = True
+        FLAGS.opt = 'Adam'
+        FLAGS.lr = 0.00025 / 4
     agent = eval(FLAGS.agent)(model=set_model(outdim=env.action_space.n),
                               n_actions=env.action_space.n,
                               n_features=env.observation_space.shape[0],
@@ -61,7 +63,7 @@ def main(argv):
                       multi_step=FLAGS.multi_step,
                       render=FLAGS.render,
                       test_episode=2,
-                      test_interval=50,
+                      test_interval=500,
                       test_frame=FLAGS.rec,
                       test_render=FLAGS.test_render)
 

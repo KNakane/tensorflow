@@ -30,6 +30,8 @@ def main(argv):
         FLAGS.multi_step = 3
         FLAGS.category = True
         FLAGS.noise = True
+        FLAGS.opt = 'Adam'
+        FLAGS.lr = 0.00025 / 4
     elif FLAGS.agent == 'PolicyGradient':
         FLAGS.multi_step = 30
     agent = eval(FLAGS.agent)(model=set_model(outdim=env.action_space.n),

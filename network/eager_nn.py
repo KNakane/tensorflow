@@ -29,7 +29,7 @@ class BasedEagerNN(EagerModule):
         self.is_categorical = is_categorical
         self.N_atoms = 51 if is_categorical else None
         if self._trainable:
-            self.optimizer = eval(opt)(learning_rate=lr, decay_step=100000)
+            self.optimizer = eval(opt)(learning_rate=lr, decay_step=None)
         self._build()
 
     def _build(self):
