@@ -29,37 +29,20 @@ class LSTM(Module):
         self.out_dim = out_dim
         if self._trainable:
             self.optimizer = eval(opt)(learning_rate=lr)
-
-        self.weight1_var = tf.Variable(tf.truncated_normal(
-                [num_of_input_nodes, num_of_hidden_nodes], stddev=0.1), name="weight1")
-        self.weight2_var = tf.Variable(tf.truncated_normal(
-            [num_of_hidden_nodes, num_of_output_nodes], stddev=0.1), name="weight2")
-        self.bias1_var = tf.Variable(tf.truncated_normal([num_of_hidden_nodes], stddev=0.1), name="bias1")
-        self.bias2_var = tf.Variable(tf.truncated_normal([num_of_output_nodes], stddev=0.1), name="bias2")
-
     
     def inference(self, outputs, reuse=False):
         with tf.variable_scope(self.name):
             if reuse:
                 tf.get_variable_scope().reuse_variables()
-            in1 = tf.transpose(outputs, [1, 0, 2])
-            in2 = tf.reshape(in1, [-1, num_of_input_nodes])
-            in3 = tf.matmul(in2, self.weight1_var) + self.bias1_var
+            #in1 = tf.transpose(outputs, [1, 0, 2])
+            in2 = tf.reshape(outputs, [-1, num_of_input_nodes])
+            in3 = self.fc(in2, [80, None])
             in4 = tf.split(in3, length_of_sequences, 0)
 
             cell = tf.nn.rnn_cell.LSTMCell(num_of_hidden_nodes, forget_bias=forget_bias, state_is_tuple=True)
-            rnn_output, _ = tf.contrib.rnn.static_rnn(cell, in4, dtype=tf.float32)#, initial_state=tf.zeros(shape=(size_of_mini_batch, num_of_hidden_nodes * 2)))
-            outputs = tf.matmul(rnn_output[-1], self.weight2_var) + self.bias2_var
+            rnn_output, _ = tf.contrib.rnn.static_rnn(cell, in4, dtype=tf.float32)
+            outputs = self.fc(rnn_output[-1],[2, None])
         return outputs
-        """
-        with tf.variable_scope(self.name):
-            if reuse:
-                tf.get_variable_scope().reuse_variables()
-            for l in range(len(self.model)):
-                outputs = (eval('self.' + self.model[l][0])(outputs, self.model[l][1:]))
-            outputs  = tf.identity(outputs, name="output_logits")
-            return outputs
-        """
 
     def test_inference(self, outputs, reuse=False):
         return self.inference(outputs, reuse)
@@ -80,7 +63,7 @@ class LSTM(Module):
 
     def evaluate(self, logits, labels):
         with tf.variable_scope('Accuracy'):
-             tf.abs(logits - labels)
+            return tf.sqrt(tf.reduce_mean(tf.square(tf.subtract(labels, logits))))
             
             """
             correct_prediction = tf.equal(tf.argmax(logits,1), tf.argmax(labels, 1))
