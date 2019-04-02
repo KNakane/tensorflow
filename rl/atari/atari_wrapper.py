@@ -262,6 +262,8 @@ def main(argv):
         FLAGS.multi_step = 3
         FLAGS.category = True
         FLAGS.noise = True
+        FLAGS.opt = 'Adam'
+        FLAGS.lr = 0.00025 / 4
 
     agent = eval(FLAGS.agent)(model=set_model(outdim=env.action_space.n),
                 n_actions=env.action_space.n,
@@ -316,7 +318,7 @@ if __name__ == '__main__':
     flags.DEFINE_string('env', 'BreakoutNoFrameskip-v4', 'Choice the environment')
     flags.DEFINE_string('network', 'EagerNN', 'Choise Network -> [EagerNN, Dueling_Net]')
     flags.DEFINE_integer('n_episode', '100000', 'Input max episode')
-    flags.DEFINE_integer('step', '10000', 'Input max steps')
+    flags.DEFINE_integer('step', '1000000', 'Input max steps')
     flags.DEFINE_integer('batch_size', '32', 'Input batch size')
     flags.DEFINE_integer('multi_step', '1', 'how many multi_step')
     flags.DEFINE_integer('n_warmup', '5000', 'n_warmup value')
