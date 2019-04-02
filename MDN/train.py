@@ -3,7 +3,7 @@ sys.path.append('./utility')
 sys.path.append('./network')
 sys.path.append('./dataset')
 import tensorflow as tf
-from load import Load
+from mdn_load import MDN_Load
 from mdn import MDN
 from mdn_trainer import Train
 from collections import OrderedDict
@@ -14,24 +14,22 @@ def set_model(outdim):
 
 def main(argv):
     message = OrderedDict({
-        "Network": FLAGS.network,
         "data": FLAGS.data,
         "epoch":FLAGS.n_epoch,
         "batch_size": FLAGS.batch_size,
         "Optimizer":FLAGS.opt,
         "learning_rate":FLAGS.lr,
-        "l2_norm": FLAGS.l2_norm,
-        "Augmentation": FLAGS.aug})
+        "l2_norm": FLAGS.l2_norm})
 
     # prepare training
     ## load dataset
-    data = Load(FLAGS.data)
+    data = MDN_Load(FLAGS.data)
     ## setting models
     model_set = set_model(data.output_dim)
-    model = MDN(model=model_set, name=FLAGS.network, out_dim=data.output_dim, lr=FLAGS.lr, opt=FLAGS.opt, l2_reg=FLAGS.l2_norm, trainable=True)
+    model = MDN(model=model_set, name='MDN', out_dim=data.output_dim, lr=FLAGS.lr, opt=FLAGS.opt, l2_reg=FLAGS.l2_norm, trainable=True)
 
     #training
-    trainer = Train(FLAGS, message, data, model, FLAGS.network)
+    trainer = Train(FLAGS, message, data, model, 'MDN')
     trainer.train()
 
 

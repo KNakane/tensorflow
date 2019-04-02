@@ -175,3 +175,49 @@ class Utils():
         plt.close(fig)
 
         return 
+
+    def MDN_figure(self, x, y, y_test):
+        [pi, sigma, mu] = y_test
+        y_test = self.generate_ensemble(pi, mu, sigma)
+        probs = np.exp(-0.5 * (mu - y) ** 2 / np.square(sigma)) / np.sqrt(2 * np.pi * np.square(sigma))
+        probs = np.sum(pi * probs, axis=1)
+        levels_log = np.linspace(0, np.log(probs.max()), 21)
+        levels = np.exp(levels_log)
+        levels[0] = 0
+        #x_test, y_test = np.meshgrid(x, y)
+        plt.scatter(x, y, alpha=0.5, label="observation", color='b')
+        plt.scatter(x, y_test, alpha=0.5, label="output", color='r')
+        #plt.contourf(x_test, y_test, probs, levels, alpha=0.5)
+        plt.xlim(x.min(), x.max())
+        plt.ylim(y.min(), y.max())
+        plt.legend()
+        plt.savefig(self.log_dir + '/MDN_figure.png')
+
+        return
+
+    def get_pi_idx(self, x, pdf):
+        N = pdf.size
+        accumulate = 0
+        for i in range(0, N):
+            accumulate += pdf[i]
+            if (accumulate >= x):
+                return i
+        print ('error with sampling ensemble')
+        return -1
+
+    def generate_ensemble(self,out_pi, out_mu, out_sigma, M = 1):
+        NTEST = out_pi.shape[0]
+        result = np.random.rand(NTEST, M) # initially random [0, 1]
+        rn = np.random.randn(NTEST, M) # normal random matrix (0.0, 1.0)
+        mu = 0
+        std = 0
+        idx = 0
+
+        # transforms result into random ensembles
+        for j in range(0, M):
+            for i in range(0, NTEST):
+                idx = self.get_pi_idx(result[i, j], out_pi[i])
+                mu = out_mu[i, idx]
+                std = out_sigma[i, idx]
+                result[i, j] = mu + rn[i, j]*std
+        return result

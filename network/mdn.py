@@ -31,8 +31,11 @@ class MDN(Module):
             if reuse:
                 tf.get_variable_scope().reuse_variables()
             outputs = self.fc(outputs, [24, tf.nn.tanh])
-            outputs = self.fc([24 * 3, None])
-            return outputs
+            outputs = self.fc(outputs, [24 * 3, None])
+            out_pi, out_sigma, out_mu = tf.split(outputs, num_or_size_splits=3, axis=1)
+            out_pi = tf.nn.softmax(out_pi)
+            out_sigma = tf.exp(out_sigma)
+            return [out_pi, out_sigma, out_mu]
 
     def test_inference(self, outputs, reuse=False):
         return self.inference(outputs, reuse)
@@ -46,16 +49,16 @@ class MDN(Module):
 
     def tf_normal(self, y, mu, sigma):
         result = tf.subtract(y, mu)
-        result = tf.multiply(result,tf.matrix_inverse(sigma))
-        result = tf.negative(tf.square(result)/2)
-        return tf.matmul(tf.exp(result),tf.matrix_inverse(sigma)) * self.oneDivSqrtTwoPI
+        result = tf.multiply(result, tf.reciprocal(sigma))
+        result = -tf.square(result)/2
+        return tf.multiply(tf.exp(result), tf.reciprocal(sigma))*self.oneDivSqrtTwoPI
 
     def loss(self, logits, labels):
-        out_pi, out_sigma, out_mu = logits
+        [out_pi, out_sigma, out_mu] = logits
         loss = self.tf_normal(labels, out_mu, out_sigma)
         loss = tf.multiply(loss, out_pi)
         loss = tf.reduce_sum(loss, 1, keep_dims=True)
-        loss = -tf.log(loss)
+        loss = tf.reduce_mean(-tf.log(loss))
         if self._l2_reg:
             loss += tf.losses.get_regularization_loss()  
         return loss

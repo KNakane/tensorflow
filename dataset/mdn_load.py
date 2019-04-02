@@ -7,7 +7,8 @@ class MDN_Load():
     def __init__(self, name):
         self.name = name
         if self.name == 'sample':
-            (self.x_train, self.y_train), (self.x_test, self.y_test) = self.get_sample(5000)
+            (self.x_train, self.y_train), (self.x_test, self.y_test) = self.get_sample(10000)
+            self.output_dim = 3
         else:
             NotImplementedError
 
@@ -49,4 +50,4 @@ class MDN_Load():
         y_data = np.random.permutation(y_data)
         r_data = np.float32(np.random.normal(size=(NSAMPLE,1))) # random noise
         x_data = np.float32(np.sin(0.75*y_data)*7.0+y_data*0.5+r_data*1.0)
-        return (x_data[:4000], y_data[:4000]), (x_data[4000:], y_data[4000:])
+        return (x_data[:8000], y_data[:8000]), (x_data[8000:], y_data[8000:])
