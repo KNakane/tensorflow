@@ -22,6 +22,7 @@ python atari_wrapper.py --env (game名) \
                         --opt (optimizer)
 ```
 # Sample Result
-```bash
-
-```
+## cartpole_wrapper
+|Agent|50回学習|100回学習|
+|:--:|:--:|:--:|
+|Rainbow|![代替テキスト](../../sample_results/rl/atari/pong/rainbow_50.gif)|![代替テキスト](../../sample_results/rl/atari/pong/rainbow_100.gif)|
