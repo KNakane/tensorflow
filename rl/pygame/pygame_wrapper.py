@@ -44,7 +44,7 @@ def main(argv):
                               batch_size=FLAGS.batch_size, 
                               e_greedy=0.9,
                               reward_decay=0.99,
-                              replace_target_iter=100,
+                              replace_target_iter=1000,
                               e_greedy_increment=0.0005,
                               optimizer=FLAGS.opt,
                               network=FLAGS.network,
