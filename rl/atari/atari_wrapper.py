@@ -246,7 +246,7 @@ def set_model(outdim):
                  ['conv', 4, 64, 2, tf.nn.relu],
                  ['conv', 3, 64, 1, tf.nn.relu],
                  ['flat'],
-                 ['fc', 512, tf.nn.relu],
+                 ['fc', 256, tf.nn.relu],
                  ['fc', outdim, None]]
     return model_set
 
@@ -271,7 +271,7 @@ def main(argv):
                 learning_rate=FLAGS.lr,
                 e_greedy=0.9,
                 reward_decay=0.99,
-                replace_target_iter=100,
+                replace_target_iter=1000,
                 e_greedy_increment=0.0001,
                 optimizer=FLAGS.opt,
                 network=FLAGS.network,
@@ -289,8 +289,8 @@ def main(argv):
                       priority=FLAGS.priority,
                       multi_step=FLAGS.multi_step,
                       render=FLAGS.render,
-                      test_episode=5,
-                      test_interval=10000,
+                      test_episode=2,
+                      test_interval=5000,
                       test_frame=FLAGS.rec,
                       test_render=FLAGS.test_render,
                       init_model_dir=FLAGS.init_model)
