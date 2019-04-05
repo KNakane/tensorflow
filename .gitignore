@@ -20,3 +20,5 @@ rl/env/__pycache__
 AutoEncoder/__pycache__
 dataset/ptb
 MDN/__pycache__
+sample_results/.DS_Store
+sample_results/rl/.DS_Store
