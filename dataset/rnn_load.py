@@ -42,6 +42,7 @@ class RNN_Load():
             answer = answer.reshape(answer.shape[0])
 
             """
+            # augmentation
             if augmentation is not None and is_training:
                 augment = Augment(images, labels)
                 images, labels = eval('augment.'+ augmentation)()
