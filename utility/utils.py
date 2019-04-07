@@ -82,7 +82,8 @@ class Utils():
         else:
             self.saver.save(checkpoint_number=tf.train.get_or_create_global_step())
 
-    def restore_agent(self, log_dir=None):
+    def restore_agent(self, model, log_dir=None):
+        self.checkpoint = tf.train.Checkpoint(policy=model)
         self.checkpoint.restore(tf.train.latest_checkpoint(log_dir))
         return
 

@@ -124,7 +124,7 @@ class Trainer():
                             "steps/episode":step,
                             "total_reward": total_reward})
                         self.util.write_log(message=metrics)
-                        #self.util.save_model()
+                        self.util.save_model()
                         self.state_deque.clear()
                         self.action_deque.clear()
                         self.reward_deque.clear()
@@ -143,7 +143,7 @@ class Trainer():
         testを行う
         """
         if self.init_model_dir is not None:
-            self.util.restore_agent(self.init_model_dir)
+            self.util.restore_agent(self.agent ,self.init_model_dir)
         print('--------------------------- test --------------------------------------------')
         for test_episode in range(1, self.test_episode+1):
             with tf.contrib.summary.always_record_summaries():
