@@ -83,8 +83,8 @@ def main(argv):
     print("model_update : {}".format(FLAGS.model_update))
     print("-----------------------")
     
-    if FLAGS.model is not 'None':
-        trainer.test()
+    if FLAGS.init_model is not None:
+        trainer.test(episode=5)
     else:
         trainer.train()
 

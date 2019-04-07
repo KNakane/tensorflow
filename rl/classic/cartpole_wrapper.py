@@ -83,7 +83,11 @@ def main(argv):
     if FLAGS.init_model is not None:
         print("init_model : {}".format(FLAGS.init_model))
     print("-----------------------")
-    trainer.train()
+    
+    if FLAGS.init_model is not None:
+        trainer.test(episode=5)
+    else:
+        trainer.train()
 
 
 if __name__ == '__main__':

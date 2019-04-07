@@ -306,9 +306,17 @@ def main(argv):
     print("Optimizer : {}".format(FLAGS.opt))
     print("priority : {}".format(FLAGS.priority))
     print("multi_step : {}".format(FLAGS.multi_step))
+    print("categorical : {}".format(FLAGS.category))
+    print("n_warmup : {}".format(FLAGS.n_warmup))
+    print("model_update : {}".format(FLAGS.model_update))
+    if FLAGS.init_model is not None:
+        print("init_model : {}".format(FLAGS.init_model))
     print("-----------------------")
 
-    trainer.train()
+    if FLAGS.init_model is not None:
+        trainer.test(episode=5)
+    else:
+        trainer.train()
 
 
 if __name__ == '__main__':
