@@ -6,7 +6,7 @@ import numpy as np
 from tqdm import tqdm
 import tensorflow as tf
 from keras.datasets import *
-from ptb_reader import ptb_raw_data
+from ptb_reader import ptb_raw_data, ptb_producer
 
 class RNN_Load():
     def __init__(self, name):
@@ -83,7 +83,7 @@ class RNN_Load():
         if not os.path.isfile('./dataset/ptb/simple-examples/data/ptb.train.txt'):
             self.download_ptb()
         train_data, valid_data, test_data, _ = ptb_raw_data('./dataset/ptb/simple-examples/data')
-        return train_data, test_data
+        return ptb_producer(train_data), ptb_producer(test_data)
 
 
     def download_ptb(self):
