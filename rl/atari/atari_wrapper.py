@@ -309,11 +309,11 @@ def main(argv):
     print("categorical : {}".format(FLAGS.category))
     print("n_warmup : {}".format(FLAGS.n_warmup))
     print("model_update : {}".format(FLAGS.model_update))
-    if FLAGS.init_model is not None:
+    if FLAGS.init_model != 'None':
         print("init_model : {}".format(FLAGS.init_model))
     print("-----------------------")
 
-    if FLAGS.init_model is not None:
+    if FLAGS.init_model != 'None':
         trainer.test(episode=5)
     else:
         trainer.train()
