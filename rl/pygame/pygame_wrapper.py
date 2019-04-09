@@ -108,7 +108,7 @@ if __name__ == '__main__':
     flags.DEFINE_boolean('category', 'False', 'Categorical DQN')
     flags.DEFINE_boolean('noise', 'False', 'Noisy Net')
     flags.DEFINE_float('lr', '1e-4', 'Input learning rate')
-    flags.DEFINE_string('model','None','Choice the initial model directory')
+    flags.DEFINE_string('init_model','None','Choice the initial model directory')
     flags.DEFINE_boolean('rec', 'False', 'Create test frame -> True/False')
     flags.DEFINE_boolean('test_render', 'False', 'test render -> True/False')
     flags.DEFINE_string('opt','RMSProp','Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]')
