@@ -78,6 +78,10 @@ tensorflow
 ┣ CNN : CNNで学習するディレクトリ  
 ┃   
 ┣ GAN : GANを行うディレクトリ  
+┃  
+┣ MDN : Mixture Density Networkを行うディレクトリ  
+┃   
+┣ RNN :  RNNで学習するディレクトリ  
 ┃   
 ┣ dataset  : dataset取得用ディレクトリ  
 ┃   
