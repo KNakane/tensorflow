@@ -42,6 +42,7 @@ def main(argv):
                               n_actions=env.action_space.n,
                               n_features=env.observation_space.shape[0],
                               learning_rate=0.01,
+                              reward_decay=0.9,
                               batch_size=FLAGS.batch_size, 
                               e_greedy=0.9,
                               replace_target_iter=30,
