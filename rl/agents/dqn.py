@@ -12,7 +12,7 @@ class DQN(Agent):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if self.is_categorical:
-            self.Vmax, self.Vmin = 10.0, -10.0
+            self.Vmax, self.Vmin = 20.0, 0.0#10.0, -10.0
             self.delta_z = (self.Vmax - self.Vmin) / (self.q_eval.N_atoms - 1)
             self.z_list = tf.constant([self.Vmin + i * self.delta_z for i in range(self.q_eval.N_atoms)],dtype=tf.float32)
             self.z_list_broadcasted = tf.tile(tf.reshape(self.z_list,[1,self.q_eval.N_atoms]), tf.constant([self.n_actions,1]))
