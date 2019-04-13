@@ -12,6 +12,7 @@ import tensorflow as tf
 from optimizer import *
 from ddpg import DDPG, TD3
 from rl_trainer import Trainer
+from utils import set_output_dim
 from pendulum_env import WrappedPendulumEnv
 
 
@@ -33,7 +34,10 @@ def main(argv):
     if FLAGS.env == 'Pendulum-v0':
         env = WrappedPendulumEnv(env)
         FLAGS.step = 200
-    agent = eval(FLAGS.agent)(model=set_model(outdim=env.action_space.shape[0]),
+
+    out_dim = set_output_dim(FLAGS.agent, FLAGS.category, env.action_space.shape[0])
+    
+    agent = eval(FLAGS.agent)(model=set_model(outdim=out_dim),
                               n_actions=env.action_space.shape[0],
                               n_features=env.observation_space.shape[0],
                               learning_rate=FLAGS.lr,

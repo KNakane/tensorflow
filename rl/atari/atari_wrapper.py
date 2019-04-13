@@ -13,6 +13,7 @@ import gym
 from gym import spaces
 from rl_trainer import Trainer
 from dqn import DQN,DDQN,Rainbow
+from utils import set_output_dim
 import cv2
 cv2.ocl.setUseOpenCL(False)
 
@@ -265,7 +266,9 @@ def main(argv):
         FLAGS.opt = 'Adam'
         FLAGS.lr = 0.00025 / 4
 
-    agent = eval(FLAGS.agent)(model=set_model(outdim=env.action_space.n),
+    out_dim = set_output_dim(FLAGS.network, FLAGS.category, env.action_space.n)
+
+    agent = eval(FLAGS.agent)(model=set_model(outdim=out_dim),
                 n_actions=env.action_space.n,
                 n_features=env.observation_space.shape,
                 learning_rate=FLAGS.lr,

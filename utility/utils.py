@@ -222,3 +222,14 @@ class Utils():
                 std = out_sigma[i, idx]
                 result[i, j] = mu + rn[i, j]*std
         return result
+
+def set_output_dim(network, category, out_dim, N_atoms=51):
+    """
+    Networkの出力ユニット数を決める関数
+    """
+    if network == 'Dueling_Net':
+        return (out_dim + 1) * N_atoms if category else out_dim + 1
+    elif network == 'DDPG' or network == 'TD3':
+        return out_dim
+    else:
+        return out_dim * N_atoms if category else out_dim

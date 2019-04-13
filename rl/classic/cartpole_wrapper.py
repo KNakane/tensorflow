@@ -12,6 +12,7 @@ from optimizer import *
 from dqn import DQN,DDQN,Rainbow
 from policy_gradient import PolicyGradient
 from rl_trainer import Trainer
+from utils import set_output_dim
 
 
 def set_model(outdim):
@@ -34,7 +35,10 @@ def main(argv):
         FLAGS.lr = 0.00025 / 4
     elif FLAGS.agent == 'PolicyGradient':
         FLAGS.multi_step = 30
-    agent = eval(FLAGS.agent)(model=set_model(outdim=env.action_space.n),
+    
+    out_dim = set_output_dim(FLAGS.network, FLAGS.category, env.action_space.n)
+
+    agent = eval(FLAGS.agent)(model=set_model(outdim=out_dim),
                               n_actions=env.action_space.n,
                               n_features=env.observation_space.shape[0],
                               learning_rate=0.01,

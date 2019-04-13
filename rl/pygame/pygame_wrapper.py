@@ -13,6 +13,7 @@ import tensorflow as tf
 from optimizer import *
 from dqn import DQN,DDQN,Rainbow
 from rl_trainer import Trainer
+from utils import set_output_dim
 from pygame_env import PygameObserver
 
 
@@ -37,7 +38,10 @@ def main(argv):
         FLAGS.noise = True
         FLAGS.opt = 'Adam'
         FLAGS.lr = 0.00025 / 4
-    agent = eval(FLAGS.agent)(model=set_model(outdim=env.action_space.n),
+
+    out_dim = set_output_dim(FLAGS.network, FLAGS.category, env.action_space.n)
+
+    agent = eval(FLAGS.agent)(model=set_model(outdim=out_dim),
                               n_actions=env.action_space.n,
                               n_features=env.observation_space.shape[0],
                               learning_rate=FLAGS.lr,

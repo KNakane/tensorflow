@@ -54,9 +54,6 @@ class EagerNN(BasedEagerNN):
 
     def _build(self):
         for l in range(len(self.model)):
-            # categorical DQN
-            if l == len(self.model) - 1 and self.is_categorical:
-                self.model[l][1] = self.out_dim * self.N_atoms
             my_layer = eval('self.' + self.model[l][0])(self.model[l][1:])
             self._layers.append(my_layer)
 
@@ -84,9 +81,6 @@ class Dueling_Net(BasedEagerNN):
 
     def _build(self):
         for l in range(len(self.model)):
-            if l == len(self.model) - 1:
-                # 状態価値V用に1unit追加するが、categoricalの場合も考慮
-                self.model[l][1] = (self.out_dim + 1) * self.N_atoms if self.is_categorical else self.out_dim + 1
             my_layer = eval('self.' + self.model[l][0])(self.model[l][1:])
             self._layers.append(my_layer)
 
@@ -100,16 +94,15 @@ class Dueling_Net(BasedEagerNN):
                     
         if self.is_categorical:
             # Dueling part
-            x = tf.reshape(x, (x.shape[0], self.out_dim + 1, self.N_atoms))
-            V = tf.reshape(x[:,0], (x.shape[0], 1, self.N_atoms))
-            V = tf.tile(V, [1, self.out_dim, 1])
-            x = x[:, 1:] + V - tf.tile(tf.reshape(np.average(x[:,1:], axis=1), (x.shape[0], 1, self.N_atoms)), [1, self.out_dim, 1])
-            return tf.clip_by_value(tf.keras.activations.softmax(x, axis=2), 1e-8, 1.0-1e-8)
+            x = tf.reshape(x, (-1, self.out_dim + 1, self.N_atoms))
+            V, A = tf.reshape(x[:,0], (-1, 1, self.N_atoms)), tf.reshape(x[:, 1:], [-1, self.out_dim, self.N_atoms])
+            x = V + A - tf.expand_dims(tf.reduce_sum(A, axis=1) / self.out_dim, axis=1)
+            return tf.clip_by_value(tf.keras.activations.softmax(x, axis=-1), 1e-8, 1.0-1e-8)
         else:
             # Dueling part
-            V = tf.reshape(x[:,0], (x.shape[0], 1))
-            V = tf.tile(V, [1, self.out_dim])
-            return x[:, 1:] + V - tf.tile(tf.reshape(np.average(x[:,1:], axis=1), (x.shape[0], 1)), [1, self.out_dim])
+            V, A = tf.expand_dims(x[:,0], -1), x[:,1:]
+            return V + A - tf.expand_dims(tf.reduce_sum(A, axis=-1) / self.out_dim, axis=-1)
+            
 
 class ActorNet(BasedEagerNN):
     def __init__(self, *args, **kwargs):
