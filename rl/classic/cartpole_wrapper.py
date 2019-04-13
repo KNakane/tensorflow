@@ -47,7 +47,7 @@ def main(argv):
                               replace_target_iter=30,
                               e_greedy_increment=0.001,
                               optimizer=FLAGS.opt,
-                              network='Dueling_Net' if FLAGS.agent == 'Rainbow' else FLAGS.network,
+                              network=FLAGS.network,
                               is_categorical=FLAGS.category,
                               is_noise=FLAGS.noise
                               )
@@ -59,8 +59,8 @@ def main(argv):
                       replay_size=FLAGS.batch_size, 
                       data_size=10**6,
                       n_warmup=FLAGS.n_warmup,
-                      priority=True if FLAGS.agent == 'Rainbow' else FLAGS.priority,
-                      multi_step=3 if FLAGS.agent == 'Rainbow' else FLAGS.multi_step,
+                      priority=FLAGS.priority,
+                      multi_step=FLAGS.multi_step,
                       render=FLAGS.render,
                       test_episode=2,
                       test_interval=50,
