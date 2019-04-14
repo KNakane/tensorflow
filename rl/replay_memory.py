@@ -74,6 +74,19 @@ class PrioritizeReplayBuffer(ReplayBuffer):
         priority = self._getPriority(td_error)
         self.tree.update(idx, priority)
 
-class Rollout():   #A2C用
+class Rollout():   #On policy用
     def __init__(self):
+        self.memory = []
+        self.Transition = namedtuple('Transition',('states', 'actions', 'dones', 'next_states', 'rewards', 'p_index'))
+
+    def __len__(self):
+        return len(self.memory)
+
+    def push(self, state, action, done, next_state, reward, p_index):
+        self.memory.append(self.Transition(state, action, done, next_state, reward, p_index)) #data
+
+    def sample(self):
+        return self.memory
+
+    def update(self, idx, td_error):
         pass
