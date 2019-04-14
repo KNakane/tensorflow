@@ -11,7 +11,7 @@ import tensorflow as tf
 from optimizer import *
 from dqn import DQN,DDQN,Rainbow
 from policy_gradient import PolicyGradient
-from rl_trainer import Trainer
+from rl_trainer import Trainer, PolicyTrainer
 from utils import set_output_dim
 
 
@@ -33,8 +33,6 @@ def main(argv):
         FLAGS.noise = True
         FLAGS.opt = 'Adam'
         FLAGS.lr = 0.00025 / 4
-    elif FLAGS.agent == 'PolicyGradient':
-        FLAGS.multi_step = 30
     
     out_dim = set_output_dim(FLAGS.network, FLAGS.category, env.action_space.n)
 
@@ -53,21 +51,38 @@ def main(argv):
                               is_noise=FLAGS.noise
                               )
 
-    trainer = Trainer(agent=agent, 
-                      env=env, 
-                      n_episode=FLAGS.n_episode, 
-                      max_step=FLAGS.step, 
-                      replay_size=FLAGS.batch_size, 
-                      data_size=10**6,
-                      n_warmup=FLAGS.n_warmup,
-                      priority=FLAGS.priority,
-                      multi_step=FLAGS.multi_step,
-                      render=FLAGS.render,
-                      test_episode=2,
-                      test_interval=50,
-                      test_frame=FLAGS.rec,
-                      test_render=FLAGS.test_render,
-                      init_model_dir=FLAGS.init_model)
+    if FLAGS.agent == 'PolicyGradient':
+        trainer = PolicyTrainer(agent=agent, 
+                                env=env, 
+                                n_episode=FLAGS.n_episode, 
+                                max_step=FLAGS.step, 
+                                replay_size=FLAGS.batch_size, 
+                                data_size=1024,
+                                n_warmup=FLAGS.n_warmup,
+                                priority=FLAGS.priority,
+                                multi_step=FLAGS.multi_step,
+                                render=FLAGS.render,
+                                test_episode=2,
+                                test_interval=50,
+                                test_frame=FLAGS.rec,
+                                test_render=FLAGS.test_render,
+                                init_model_dir=FLAGS.init_model)
+    else:
+        trainer = Trainer(agent=agent, 
+                          env=env, 
+                          n_episode=FLAGS.n_episode, 
+                          max_step=FLAGS.step, 
+                          replay_size=FLAGS.batch_size, 
+                          data_size=10**6,
+                          n_warmup=FLAGS.n_warmup,
+                          priority=FLAGS.priority,
+                          multi_step=FLAGS.multi_step,
+                          render=FLAGS.render,
+                          test_episode=2,
+                          test_interval=50,
+                          test_frame=FLAGS.rec,
+                          test_render=FLAGS.test_render,
+                          init_model_dir=FLAGS.init_model)
 
     print()
     print("---Start Learning------")

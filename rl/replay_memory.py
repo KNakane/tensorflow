@@ -75,8 +75,9 @@ class PrioritizeReplayBuffer(ReplayBuffer):
         self.tree.update(idx, priority)
 
 class Rollout():   #On policy用
-    def __init__(self):
+    def __init__(self, capacity):
         self.memory = []
+        self.capacity = capacity
         self.Transition = namedtuple('Transition',('states', 'actions', 'dones', 'next_states', 'rewards', 'p_index'))
 
     def __len__(self):
@@ -85,8 +86,8 @@ class Rollout():   #On policy用
     def push(self, state, action, done, next_state, reward, p_index):
         self.memory.append(self.Transition(state, action, done, next_state, reward, p_index)) #data
 
-    def sample(self):
-        return self.memory
+    def sample(self, batch_size, _=None):
+        return (None, random.sample(self.memory, batch_size), 1)
 
     def update(self, idx, td_error):
         pass
