@@ -15,6 +15,7 @@ rl
 |DQN|atari,cartpole,pygame|-|
 |DDQN|atari,cartpole,pygame|-|
 |Rainbow|atari,cartpole,pygame|-|
+|Ape-X||未実装|
 |A3C||未実装|
 |A2C||未実装|
 |DDPG|continuous||

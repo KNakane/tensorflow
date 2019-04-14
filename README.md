@@ -30,7 +30,7 @@ GANによる画像生成ができる
 - WGAN-GP  
 - Conditional GAN(CGAN)
 
-## [強化学習](./rl/README.md)
+## [Reinforcement Learning](./rl/README.md)
 tensorflowのEager Modeを使用している  
 [Eagerモード参考URL](https://www.hellocybernetics.tech/entry/2018/12/04/231714)
  
