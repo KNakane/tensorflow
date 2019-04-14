@@ -11,7 +11,7 @@ from collections import deque
 from collections import OrderedDict
 from utils import Utils
 from display_as_gif import display_frames_as_gif
-from replay_memory import ReplayBuffer,PrioritizeReplayBuffer
+from replay_memory import ReplayBuffer,PrioritizeReplayBuffer,Rollout
 
 class BasedTrainer():
     def __init__(self, 
@@ -252,6 +252,7 @@ class PolicyTrainer(BasedTrainer):
 class DistributedTrainer(BasedTrainer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.agent_name = self.agent.__class__.__name__
         self.n_workers = kwargs.pop('n_workers')
         self.process_list, self.env_list = [], []
 
@@ -260,10 +261,9 @@ class DistributedTrainer(BasedTrainer):
         複数のAgentを作成して、Process_listに格納
         """
         for _ in range(self.n_workers):
-            if self.agent.__class__.__name__ == 'Ape_X':
+            if self.agent_name == 'Ape_X':
                 self.process_list.append(self.agent.learner)
             self.process_list.append(mp.Process(self._build_train))
-            self.env_list.append(self.env)
 
     def _build_train(self):
         board_writer = self.begin_train()
