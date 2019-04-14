@@ -37,7 +37,7 @@ if __name__ == '__main__':
     flags = tf.app.flags
     FLAGS = flags.FLAGS
     flags.DEFINE_string('network', 'LSTM', 'Choice the training data name -> [LSTM]')
-    flags.DEFINE_string('data', 'sample', 'Choice the training data name -> [sample, imdb]')
+    flags.DEFINE_string('data', 'sample', 'Choice the training data name -> [sample, ptb, imdb]')
     flags.DEFINE_integer('n_epoch', '1000', 'Input max epoch')
     flags.DEFINE_integer('batch_size', '32', 'Input batch size')
     flags.DEFINE_float('lr', '0.001', 'Input learning rate')
