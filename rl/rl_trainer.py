@@ -2,9 +2,11 @@
 #tensorboard --logdir ./logs
 import os,sys
 sys.path.append(os.path.join(os.path.dirname(__file__), '../../utility'))
+import time
 import random
 import numpy as np
 import tensorflow as tf
+import multiprocessing as mp
 from collections import deque
 from collections import OrderedDict
 from utils import Utils
@@ -215,4 +217,71 @@ class Trainer(BasedTrainer):
             if len(frames) > 0:
                 display_frames_as_gif(frames, "test_{}_{}".format(episode, test_episode), self.util.res_dir)
         print('-----------------------------------------------------------------------------')
+        return
+
+class PolicyTrainer(BasedTrainer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.state_deque = deque(maxlen=self.max_steps)
+        self.reward_deque = deque(maxlen=self.max_steps)
+        self.action_deque = deque(maxlen=self.max_steps)
+
+    def step(self):
+        with tf.contrib.summary.always_record_summaries():
+            state = self.env.reset()
+            total_reward = 0
+            for step in range(1, self.max_steps+1):
+                if self.render:
+                    self.env.render()
+
+                action = self.agent.choose_action(state)
+                state_, reward, done, _ = self.env.step(action)
+
+                self.state_deque.append(state)
+                self.reward_deque.append(reward)
+                self.action_deque.append(action)
+
+                if self.env.__class__.__name__ == 'CartPoleEnv':
+                    x, x_dot, theta, theta_dot = state_
+                    r1 = (self.env.x_threshold - abs(x))/self.env.x_threshold - 0.8
+                    r2 = (self.env.theta_threshold_radians - abs(theta))/self.env.theta_threshold_radians - 0.5
+                    reward = r1 + r2
+
+        return
+
+class DistributedTrainer(BasedTrainer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.n_workers = kwargs.pop('n_workers')
+        self.process_list, self.env_list = [], []
+
+    def build_process(self):
+        """
+        複数のAgentを作成して、Process_listに格納
+        """
+        for _ in range(self.n_workers):
+            if self.agent.__class__.__name__ == 'Ape_X':
+                self.process_list.append(self.agent.learner)
+            self.process_list.append(mp.Process(self._build_train))
+            self.env_list.append(self.env)
+
+    def _build_train(self):
+        board_writer = self.begin_train()
+        board_writer.set_as_default()
+        self.total_steps = 0
+        self.learning_flag = 0
+        for episode in range(1, self.n_episode+1):
+            self.global_step.assign_add(1)
+            self.step(episode)
+        self.episode_end()
+        return
+
+    def train(self):
+        for p in self.process_list:
+            p.start()
+            time.sleep(0.5)
+
+        for p in self.process_list:
+            p.join()
+
         return
