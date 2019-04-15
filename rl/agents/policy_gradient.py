@@ -18,11 +18,18 @@ class PolicyGradient(Agent):
     def inference(self, state):
         return tf.nn.softmax(self.q_eval.inference(state))
 
+    def choose_action(self, observation):
+        observation = observation[np.newaxis, :]
+        actions_value = self.inference(observation)
+        return np.random.choice(self.actions_list, size=1, p=np.array(actions_value)[0])[0]
+
+    def test_choose_action(self, observation):
+        observation = observation[np.newaxis, :]
+        actions_value = self.inference(observation)
+        return np.random.choice(self.actions_list, size=1, p=np.array(actions_value)[0])[0]
+        
     def update_q_net(self, replay_data, weights):
-        self.bs, ba, done, bs_, br, p_idx = replay_data
-        eval_act_index = ba
-        reward = br
-        done = done
+        self.bs, eval_act_index, done, bs_, reward, p_idx = replay_data
 
         global_step = tf.train.get_or_create_global_step()
 
