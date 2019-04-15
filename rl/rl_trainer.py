@@ -179,17 +179,17 @@ class Trainer(BasedTrainer):
                 action = self.agent.choose_action(state)
                 state_, reward, done, _ = self.env.step(action)
 
-                # Multi-step learning
-                self.state_deque.append(state)
-                self.reward_deque.append(reward)
-                self.action_deque.append(action)
-
                 # the smaller theta and closer to center the better
                 if self.env.__class__.__name__ == 'CartPoleEnv':
                     x, x_dot, theta, theta_dot = state_
                     r1 = (self.env.x_threshold - abs(x))/self.env.x_threshold - 0.8
                     r2 = (self.env.theta_threshold_radians - abs(theta))/self.env.theta_threshold_radians - 0.5
                     reward = r1 + r2
+
+                # Multi-step learning
+                self.state_deque.append(state)
+                self.reward_deque.append(reward)
+                self.action_deque.append(action)
 
                 # push replay buffer with Multi_step rewards
                 if len(self.state_deque) == self.multi_step or done:
@@ -202,11 +202,14 @@ class Trainer(BasedTrainer):
 
                 # Update Q network
                 if len(self.replay_buf) > self.replay_size and len(self.replay_buf) > self.n_warmup:
-                    _, transitions, weights = self.replay_buf.sample(self.agent.batch_size, episode/self.n_episode)
+                    indexes, transitions, weights = self.replay_buf.sample(self.agent.batch_size, episode/self.n_episode)
                     train_data = map(np.array, zip(*transitions))
                     self.agent.update_q_net(train_data, weights)
                     self.learning_flag = 1
                     self.summary()
+                    if (indexes != None):
+                        for i, td_error in enumerate(self.agent.td_error):
+                            self.replay_buf.update(indexes[i], td_error)
 
                 if done or step == self.max_steps:
                     self.step_end(episode, step, total_reward)
@@ -244,11 +247,6 @@ class PolicyTrainer(BasedTrainer):
                 action = self.agent.choose_action(state)
                 state_, reward, done, _ = self.env.step(action)
 
-                # Multi-step learning
-                self.state_deque.append(state)
-                self.reward_deque.append(reward)
-                self.action_deque.append(action)
-
                 # the smaller theta and closer to center the better
                 if self.env.__class__.__name__ == 'CartPoleEnv':
                     x, x_dot, theta, theta_dot = state_
@@ -256,21 +254,21 @@ class PolicyTrainer(BasedTrainer):
                     r2 = (self.env.theta_threshold_radians - abs(theta))/self.env.theta_threshold_radians - 0.5
                     reward = r1 + r2
 
-                if len(self.state_deque) == self.multi_step or done:
-                    t_reward, p_index = self.multi_step_reward(self.reward_deque, self.agent.discount)
-                    state = self.state_deque[0]
-                    action = self.action_deque[0]
-                    self.replay_buf.push(state, action, done, state_, t_reward, p_index)
+                # Discount rewards in each time step
+                self.reward_deque.append(reward)
+                t_reward, p_index = self.multi_step_reward(self.reward_deque, self.agent.discount)
 
+                self.replay_buf.push(state, action, done, state_, t_reward, p_index)
+                
                 total_reward += reward
-                if len(self.replay_buf) > self.replay_size and len(self.replay_buf) > self.n_warmup:
-                    _, transitions, weights = self.replay_buf.sample(self.agent.batch_size, episode/self.n_episode)
-                    train_data = map(np.array, zip(*transitions))
-                    self.agent.update_q_net(train_data, weights)
-                    self.learning_flag = 1
-                    self.summary()
 
                 if done or step == self.max_steps:
+                    if len(self.replay_buf) >= self.data_size:
+                        _, transitions, weights = self.replay_buf.sample(self.agent.batch_size, episode/self.n_episode)
+                        train_data = map(np.array, zip(*transitions))
+                        self.agent.update_q_net(train_data, weights)
+                        self.learning_flag = 1
+                        self.summary()
                     self.step_end(episode, step, total_reward)
                     break
 
