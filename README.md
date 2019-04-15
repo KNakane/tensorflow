@@ -63,10 +63,12 @@ $ python path/to/dir.py --args
 ```
 実行結果は```results```に格納される  
 
-以下のコマンドを用いて、```results```内にあるフォルダを指定することでグラフを作成することができる
+以下のコマンドを用いて、```results```内にあるフォルダを指定することでグラフを作成することができる  
+コマンドラインで```--prob```を入れることで確率分布のグラフも作成できる  
 ```bash
 $ cd tensorflow
 $ python utility/event_getter.py --dir hogehoge
+例) $ python utility/event_getter.py --dir results/190415_120510_ResNet results/190416_095125_ResNet
 ```
 
 # Directory
