@@ -12,9 +12,10 @@ from tensorboard.backend.event_processing.event_accumulator import EventAccumula
 
 class EventGetter():
     """ tensorboardに表示したデータを取得し、グラフを作成する """
-    def __init__(self, events_list):
+    def __init__(self, events_list, prob):
         dt_now = datetime.datetime.now()
         self.events_list = events_list
+        self._prob = prob               # 確率分布のグラフを作成するフラグ
         self.log_dir = "results/" + dt_now.strftime("%y%m%d_%H%M%S") + "_events"
         self.result_dic = {}
         self._init_log()
@@ -29,9 +30,13 @@ class EventGetter():
         # eventごとにデータを取得し、dictに格納する
         self.gather_result()
         # 格納したdictから各項目ごとにグラフを作成する
+        num = 0
         for key in self.result_dic:
             self.make_graph(key, self.result_dic[key])
             self.make_graph_moving_avg(key, self.result_dic[key])
+            if self._prob:
+                self.make_graph_prob(key, self.result_dic[key], num)
+                num += 1
         self.logger()
         return
     
@@ -146,15 +151,55 @@ class EventGetter():
         plt.savefig(self.log_dir + '/{}_moving_avg.png'.format(name))
         return
 
+    def make_graph_prob(self, name, values, num):
+        """
+        項目ごとに確率分布のグラフを作成する
+
+         parameters
+        ----------
+        name : result directory
+
+        values : dict
+
+        returns
+        ----------
+        """
+        fig = plt.figure(figsize=(10,5))
+        colorlist = ["r", "g", "b", "c", "m", "brown", "grey", "darkblue"]
+        ax = fig.add_subplot(1, 1, 1)
+        key_num = len(values.keys())
+        if not key_num:
+            return
+        key = list(values)
+        all_results = np.zeros((key_num, len(values[key[0]])))
+        for i in range(key_num):
+            all_results[i] = values[key[i]]
+        mean = np.mean(all_results, axis=0)
+        std = np.std(all_results, axis=0)
+        plt.plot(range(mean.shape[0]), mean, linestyle='solid', color=colorlist[num])
+        
+        if re.search('accuracy', name):
+            plt.fill_between(range(mean.shape[0]) ,np.clip(mean - std,0,1), np.clip(mean + std,0,1),facecolor=colorlist[num],alpha=0.3)
+            ax.yaxis.set_major_formatter(ticker.PercentFormatter(xmax=1.0))
+        else:
+            plt.fill_between(range(mean.shape[0]) ,mean - std, mean + std, facecolor=colorlist[num],alpha=0.3)
+        plt.grid(which='major',color='gray',linestyle='-')
+        plt.xlabel("epoch")
+        plt.ylabel(name)
+        plt.savefig(self.log_dir + '/{}_prob.png'.format(name))
+        return
+
+
 def main(args):
     assert args.dir is not None
     events_list = list(chain.from_iterable([glob.glob(res_dir+"tf_board/events.*", recursive=True) for res_dir in args.dir]))
-    evget = EventGetter(events_list)
+    evget = EventGetter(events_list, args.prob)
     evget()
     return
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--dir',nargs='*', help='tensorboard event directory')
+    parser.add_argument('--prob', action='store_true', help='Probability distribution graph')
     args = parser.parse_args()
     main(args)
