@@ -264,15 +264,11 @@ class PolicyTrainer(BasedTrainer):
 
                 total_reward += reward
                 if len(self.replay_buf) > self.replay_size and len(self.replay_buf) > self.n_warmup:
-                    indexes, transitions, weights = self.replay_buf.sample(self.agent.batch_size, episode/self.n_episode)
+                    _, transitions, weights = self.replay_buf.sample(self.agent.batch_size, episode/self.n_episode)
                     train_data = map(np.array, zip(*transitions))
                     self.agent.update_q_net(train_data, weights)
                     self.learning_flag = 1
                     self.summary()
-
-                    if (indexes != None):
-                        for i, td_error in enumerate(self.agent.td_error):
-                            self.replay_buf.update(indexes[i], td_error)
 
                 if done or step == self.max_steps:
                     self.step_end(episode, step, total_reward)

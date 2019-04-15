@@ -28,7 +28,7 @@ class PolicyGradient(Agent):
 
         with tf.GradientTape() as tape:
             one_hot_actions = tf.one_hot(eval_act_index, depth=self.n_actions)
-            q_eval = self.q_eval.inference(self.bs)
+            q_eval = self.inference(self.bs)
             selected_action_probs = tf.reduce_mean(one_hot_actions * q_eval, axis=1)
             clipped = tf.clip_by_value(selected_action_probs, 1e-10, 1.0)
             self.td_error = -tf.log(clipped) * reward

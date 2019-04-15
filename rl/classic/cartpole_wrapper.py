@@ -60,7 +60,7 @@ def main(argv):
                                 data_size=1024,
                                 n_warmup=FLAGS.n_warmup,
                                 priority=FLAGS.priority,
-                                multi_step=FLAGS.multi_step,
+                                multi_step=200,
                                 render=FLAGS.render,
                                 test_episode=2,
                                 test_interval=50,
