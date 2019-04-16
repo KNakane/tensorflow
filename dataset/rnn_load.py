@@ -112,3 +112,11 @@ class RNN_Load():
         for i, sequence in enumerate(sequences):
             results[i, sequence] = 1.
         return results
+
+
+if __name__ == '__main__':
+    data = RNN_Load('ptb')
+    dataset = data.load(data.x_train, data.y_train, batch_size=32, is_training=True)
+    iterator = dataset.make_initializable_iterator()
+    inputs, labels = iterator.get_next()
+    print(inputs)

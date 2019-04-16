@@ -48,9 +48,9 @@ def ptb_raw_data(data_path=None):
 
 def ptb_producer(raw_data, num_steps=35, name=None):
     raw_data = tf.convert_to_tensor(raw_data, name="raw_data", dtype=tf.int32)
-    data_len = tf.size(raw_data)
-    sys.exit()
-    return
+    # raw_dataから入力シーケンスと正解データに分けて、学習データを作成する
+    
+    return 
 
 
 
