@@ -117,6 +117,7 @@ class EventGetter():
         plt.ylabel(name)
         plt.legend()
         plt.savefig(self.log_dir + '/{}.png'.format(name))
+        plt.close()
         return
 
     def make_graph_moving_avg(self, name, values, rate=3):
@@ -149,6 +150,7 @@ class EventGetter():
         plt.ylabel(name)
         plt.legend()
         plt.savefig(self.log_dir + '/{}_moving_avg.png'.format(name))
+        plt.close()
         return
 
     def make_graph_prob(self, name, values, num):
@@ -187,6 +189,7 @@ class EventGetter():
         plt.xlabel("epoch")
         plt.ylabel(name)
         plt.savefig(self.log_dir + '/{}_prob.png'.format(name))
+        plt.close()
         return
 
 
