@@ -83,8 +83,9 @@ class RNN_Load():
         if not os.path.isfile('./dataset/ptb/simple-examples/data/ptb.train.txt'):
             self.download_ptb()
         train_data, valid_data, test_data, _ = ptb_raw_data('./dataset/ptb/simple-examples/data')
-        return ptb_producer(train_data), ptb_producer(test_data)
-
+        x_train, y_train = ptb_producer(train_data)
+        x_test, y_test = ptb_producer(test_data)
+        return (x_train, y_train), (x_test, y_test)
 
     def download_ptb(self):
         """

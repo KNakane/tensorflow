@@ -7,6 +7,7 @@ from __future__ import print_function
 import collections
 import os
 import sys
+import numpy as np
 import tensorflow as tf
 
 
@@ -47,10 +48,17 @@ def ptb_raw_data(data_path=None):
     return train_data, valid_data, test_data, vocabulary
 
 def ptb_producer(raw_data, num_steps=35, name=None):
+    data_len = len(raw_data)
     raw_data = tf.convert_to_tensor(raw_data, name="raw_data", dtype=tf.int32)
     # raw_dataから入力シーケンスと正解データに分けて、学習データを作成する
-    
-    return 
+    data_num = data_len - num_steps     # 作成できるデータ個数
+    raw_data = tf.reshape(raw_data, (-1, 1))
+    i = list(range(data_num)) # [0, 1, .., epoch_size-1] という整数を順ぐりに無限生成するイテレータ
+    x = tf.strided_slice(raw_data[:data_num], i * num_steps, list(map(lambda x: x+num_steps, i)), strides=1)
+    x.set_shape([data_num, num_steps])
+    y = tf.strided_slice(raw_data, i * num_steps + 1, list(map(lambda x: x+num_steps + 1, i)), strides=1)  # 正解 y は x の次に来る単語なので、1を足してスライスを右に一つずらす
+    y.set_shape([data_num, num_steps])
+    return x, y
 
 
 
