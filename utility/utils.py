@@ -181,12 +181,13 @@ class Utils():
         [pi, sigma, mu] = y_test
         y_test = self.generate_ensemble(pi, mu, sigma)
         probs = np.exp(-0.5 * (mu - y) ** 2 / np.square(sigma)) / np.sqrt(2 * np.pi * np.square(sigma))
-        probs = np.sum(pi * probs, axis=1)
-        levels_log = np.linspace(0, np.log(probs.max()), 21)
+        pos = np.sum(pi * probs, axis=1)
+        levels_log = np.linspace(0, np.log(pos.max()), 21)
         levels = np.exp(levels_log)
         levels[0] = 0
         #x_test, y_test = np.meshgrid(x, y)
         plt.scatter(x, y, alpha=0.5, label="observation", color='b')
+        #plt.fill_between(x[:,0], mu - probs, mu + probs,facecolor='r',alpha=0.3)
         plt.scatter(x, y_test, alpha=0.5, label="output", color='r')
         #plt.contourf(x_test, y_test, probs, levels, alpha=0.5)
         plt.xlim(x.min(), x.max())
