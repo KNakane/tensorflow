@@ -144,3 +144,26 @@ class BasedGAN(Module):
         label_image = tf.ones((labels.shape[0], self.size, self.size, self.class_num))
         label_image = tf.multiply(labels, label_image)
         return tf.concat([image, label_image], axis=3)
+
+    def combine_binary_image(self, image, labels=None):
+        """
+        Generatorで生成した画像とlabelを二進数に変換した画像をConcatする
+        
+        parameters
+        ----------
+        image : Generatorで生成した画像
+
+        label : labelデータ
+
+        returns
+        ----------
+        image : labelをconcatしたデータ
+
+        """
+        assert labels is not None
+        label_int = tf.argmax(labels, axis=0)
+        label_int = tf.mod(tf.bitwise.right_shift(tf.expand_dims(label_int,1), tf.range(n)), 2)
+        labels = tf.reshape(label_int, [-1, 1, 1, self.class_num])
+        label_image = tf.ones((labels.shape[0], self.size, self.size, self.class_num))
+        label_image = tf.multiply(labels, label_image)
+        return tf.concat([image, label_image], axis=3)

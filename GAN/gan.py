@@ -14,7 +14,7 @@ class GAN(BasedGAN):
                                 ['BN'],
                                 ['fc', 256, tf.nn.leaky_relu],
                                 ['BN'],
-                                ['fc', self.size*self.size*self.channel, tf.nn.tanh],
+                                ['fc', self.size*self.size*self.channel, tf.nn.sigmoid],
                                 ['reshape', [-1, self.size, self.size, self.channel]]]
 
         self.discriminator_model = [['fc', 1024, tf.nn.leaky_relu],
@@ -29,9 +29,9 @@ class GAN(BasedGAN):
         self.G = Generator(self.generator_model, self.l2_reg, self.l2_reg_scale)
         self.G_ = Generator(self.generator_model, trainable=False)
 
-    def predict(self, inputs):
+    def predict(self, inputs, batch_size):
         if self.conditional:
-            indices = np.array([x%self.class_num for x in range(32)],dtype=np.int32)
+            indices = np.array([x%self.class_num for x in range(batch_size)],dtype=np.int32)
             labels = tf.one_hot(indices, depth=self.class_num, dtype=tf.float32)
             inputs = self.combine_distribution(inputs, labels)
         return self.G_(inputs, reuse=True)
@@ -101,14 +101,14 @@ class DCGAN(GAN):
             ['reshape', [-1, 4, 4, 512]],
             ['BN'],
             ['Leaky_ReLU'],
-            ['deconv', 5, 256, 3, None],
+            ['deconv', 5, 256, 2, None], #['deconv', 5, 256, 3, None],
             ['BN'],
             ['Leaky_ReLU'],
             ['deconv', 5, 128, 2, None],
             ['BN'],
             ['Leaky_ReLU'],
-            ['deconv', 5, 1, 1, None, 'valid'],
-            ['tanh']]
+            ['deconv', 5, self.channel, 2, None], #['deconv', 5, self.channel, 1, None, 'valid'],
+            ['sigmoid']]
 
         dis_model = [
             ['conv', 5, 64, 2, None],
