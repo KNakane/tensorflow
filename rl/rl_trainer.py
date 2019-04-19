@@ -57,6 +57,8 @@ class BasedTrainer():
         board_writer.set_as_default()
         self.total_steps = 0
         self.learning_flag = 0
+        if self.init_model_dir is not None:
+            self.util.restore_agent(self.agent ,self.init_model_dir)
         for episode in range(1, self.n_episode+1):
             self.global_step.assign_add(1)
             self.step(episode)
@@ -120,7 +122,7 @@ class BasedTrainer():
             ret += reward * (discount ** idx)
         return ret, idx + 1
 
-    def test(self, episode):
+    def test(self, episode=0):
         """
         testを行う
         """

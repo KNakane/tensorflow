@@ -7,7 +7,6 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '../agents'))
 sys.path.append(os.path.join(os.path.dirname(__file__), '../../utility'))
 import gym
 import gym.spaces
-import numpy as np
 import tensorflow as tf
 from optimizer import *
 from ddpg import DDPG, TD3
@@ -84,10 +83,7 @@ def main(argv):
         print("init_model : {}".format(FLAGS.init_model))
     print("-----------------------")
 
-    if FLAGS.init_model != 'None':
-        trainer.test(episode=5)
-    else:
-        trainer.train()
+    trainer.train()
 
 
 if __name__ == '__main__':

@@ -104,10 +104,7 @@ def main(argv):
         print("init_model : {}".format(FLAGS.init_model))
     print("-----------------------")
     
-    if FLAGS.init_model != 'None':
-        trainer.test(episode=5)
-    else:
-        trainer.train()
+    trainer.train()
 
 
 if __name__ == '__main__':
