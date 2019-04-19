@@ -39,6 +39,43 @@ class SavedModelBuilderHook(tf.train.SessionRunHook):
         )
         builder.save()
 
+class EarlyStopping(tf.train.SessionRunHook):
+    """
+    Early stopping用のHook
+
+    parameters
+    -----------
+    tensors : dict 表示させたい内容
+
+    return
+    ----------
+    学習終了時に結果を表示する
+
+    """
+    def __init__(self,smoothing=.997,tolerance=.03):
+        self.lowestloss=float("inf")
+        self.currentsmoothedloss=-1
+        self.tolerance=tolerance
+        self.smoothing=smoothing
+
+    def before_run(self, run_context):
+        graph = ops.get_default_graph()
+        self.lossop=graph.get_operation_by_name("loss")
+        self.element = self.lossop.outputs[0]
+        return tf.train.SessionRunArgs([self.element])
+
+    def after_run(self, run_context, run_values):
+        loss=run_values.results[0]
+        if(self.currentsmoothedloss<0):
+            self.currentsmoothedloss=loss*1.5
+        self.currentsmoothedloss=self.currentsmoothedloss*self.smoothing+loss*(1-self.smoothing)
+        if(self.currentsmoothedloss<self.lowestloss):
+            self.lowestloss=self.currentsmoothedloss
+        if(self.currentsmoothedloss>self.lowestloss+self.tolerance):
+            run_context.request_stop()
+            print("REQUESTED_STOP")
+            raise ValueError('Model Stopping because loss is increasing from EarlyStopping hook')
+
 class OptunaHook(tf.train.SessionRunHook):
     """
     optuna用のHook
