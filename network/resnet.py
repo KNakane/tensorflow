@@ -216,3 +216,66 @@ class SENet(ResNet):
             logits = tf.reshape(logits, [-1, 1, 1, channel])
 
             return x * logits
+
+class sSENet(ResNet):
+    """
+    Channel Squeeze and Spatial Excitation Block
+    """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def resblock(self, x, channels, layer_num, downsample=False, name=None):
+        with tf.variable_scope(name):
+            if self.stochastic_depth(layer_num):
+                return self.conv(x, [1, channels, 2, None]) if downsample else x
+            else:
+                logits = self.ReLU(self.BN(x, [None]),[None])
+                if downsample:
+                    logits = self.conv(logits, [3, channels, 2, None])
+                    x = self.conv(x, [1, channels, 2, None])
+                else:
+                    logits = self.conv(logits, [3, channels, 1, None])
+                logits = self.ReLU(self.BN(logits, [None]),[None])
+                logits = self.conv(logits, [3, channels, 1, None])
+
+                # Squeeze-and-Excitation Block
+                logits = self.squeeze_excitation_layer(logits, 4, name='sselayer')
+                
+                return logits + x
+
+    def channel_squeeze_and_spatial_excitation(self, x, ratio, name):
+        with tf.variable_scope(name):
+            logits = self.conv(x, [1, 1, 1, tf.nn.sigmoid])
+            return x * logits
+
+
+class scSENet(ResNet):
+    """
+    Spatial and Channel Squeeze & Excitation 
+    """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def resblock(self, x, channels, layer_num, downsample=False, name=None):
+        with tf.variable_scope(name):
+            if self.stochastic_depth(layer_num):
+                return self.conv(x, [1, channels, 2, None]) if downsample else x
+            else:
+                logits = self.ReLU(self.BN(x, [None]),[None])
+                if downsample:
+                    logits = self.conv(logits, [3, channels, 2, None])
+                    x = self.conv(x, [1, channels, 2, None])
+                else:
+                    logits = self.conv(logits, [3, channels, 1, None])
+                logits = self.ReLU(self.BN(logits, [None]),[None])
+                logits = self.conv(logits, [3, channels, 1, None])
+
+                # Squeeze-and-Excitation Block
+                logits = self.squeeze_excitation_layer(logits, 4, name='sselayer')
+                
+                return logits + x
+
+    def channel_squeeze_and_spatial_excitation(self, x, ratio, name):
+        with tf.variable_scope(name):
+            logits = self.conv(x, [1, 1, 1, tf.nn.sigmoid])
+            return x * logits
