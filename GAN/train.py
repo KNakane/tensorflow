@@ -95,8 +95,6 @@ def main(args):
     hooks.append(GanHook(G, util.log_dir, every_n_iter=1000))
     hooks.append(tf.train.NanTensorHook(dis_loss))
     hooks.append(tf.train.NanTensorHook(gen_loss))
-    if max_steps:
-        hooks.append(tf.train.StopAtStepHook(last_step=max_steps))
 
     # training
     session = tf.train.MonitoredTrainingSession(
@@ -108,7 +106,7 @@ def main(args):
         summary_dir=util.tf_board)
 
     def _train(session, d_op, g_op, n_disc_update):
-        while not session.should_stop():
+        for _ in range(max_steps):
             for _ in range(n_disc_update):
                 c_op_vals = session.run(d_op)
 
