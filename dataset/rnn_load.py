@@ -17,6 +17,7 @@ class RNN_Load():
             self.output_dim = 2
         elif name == 'ptb':
             (self.x_train, self.y_train), (self.x_test, self.y_test) = self.get_ptb()
+            self.output_dim = 10000
         elif name == 'sample':
             self.sequence = 10000
             self.x_train, self.y_train = self.create_data(self.sequence, 10)
@@ -113,11 +114,3 @@ class RNN_Load():
         for i, sequence in enumerate(sequences):
             results[i, sequence] = 1.
         return results
-
-
-if __name__ == '__main__':
-    data = RNN_Load('ptb')
-    dataset = data.load(data.x_train, data.y_train, batch_size=32, is_training=True)
-    iterator = dataset.make_initializable_iterator()
-    inputs, labels = iterator.get_next()
-    print(inputs)

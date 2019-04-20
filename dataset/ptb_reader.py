@@ -49,15 +49,11 @@ def ptb_raw_data(data_path=None):
 
 def ptb_producer(raw_data, num_steps=35, name=None):
     data_len = len(raw_data)
-    raw_data = tf.convert_to_tensor(raw_data, name="raw_data", dtype=tf.int32)
-    # raw_dataから入力シーケンスと正解データに分けて、学習データを作成する
     data_num = data_len - num_steps     # 作成できるデータ個数
-    raw_data = tf.reshape(raw_data, (-1, 1))
-    for i in range()
-        x = tf.strided_slice(raw_data[:data_num], i, list(map(lambda x: x+num_steps, i)), strides=1)
-    x.set_shape([data_num, num_steps])
-    y = tf.strided_slice(raw_data, list(map(lambda x: x+1, i)), list(map(lambda x: x+num_steps + 1, i)), strides=1)  # 正解 y は x の次に来る単語なので、1を足してスライスを右に一つずらす
-    y.set_shape([data_num, num_steps])
+    x, y = np.zeros((data_num, num_steps)), np.zeros((data_num))
+    # raw_dataから入力シーケンスと正解データに分けて、学習データを作成する
+    for i in range(data_num):
+        x[i], y[i] = raw_data[i:i + num_steps], raw_data[num_steps + 1]
     return x, y
 
 
