@@ -41,8 +41,14 @@ class GAN(BasedGAN):
         fake_img = self.G(self.combine_distribution(self.z, labels) if self.conditional else self.z)
         
         if self.conditional and labels is not None:
+            """
+            fake_img = self.combine_image(fake_img, labels)
+            inputs = self.combine_image(inputs, labels)
+
+            """
             fake_img = self.combine_binary_image(fake_img, labels)#self.combine_image(fake_img, labels)
             inputs = self.combine_binary_image(inputs, labels)#self.combine_image(inputs, labels)
+            
 
         real_logit = tf.nn.sigmoid(self.D(inputs))
         fake_logit = tf.nn.sigmoid(self.D(fake_img, reuse=True))
@@ -264,3 +270,11 @@ class LSGAN(GAN):
             d_loss = tf.reduce_mean(0.5 * tf.square(real_logit - 1) + 0.5 * tf.square(fake_logit))
             g_loss = tf.reduce_mean(0.5 * tf.square(fake_logit - 1))
             return d_loss, g_loss
+
+class ACGAN(DCGAN):
+    """
+    Auxiliary Classifier Generative Adversarial Network
+    """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.conditional = conditional
