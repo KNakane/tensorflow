@@ -162,9 +162,11 @@ class BasedGAN(Module):
         """
         assert labels is not None
         batch_size = labels.shape[0]
+        binary_size = format(self.class_num, 'b')
+        binary_size = len([int(x) for x in list(str(binary_size))])
         label_int = tf.cast(tf.argmax(labels, axis=1), tf.int32)
-        label_int = tf.cast(tf.mod(tf.bitwise.right_shift(tf.expand_dims(label_int,1), tf.range(8)), 2), tf.float32)
+        label_int = tf.cast(tf.mod(tf.bitwise.right_shift(tf.expand_dims(label_int,1), tf.range(binary_size)), 2), tf.float32)
         labels = tf.reshape(label_int, [-1, 1, 1, label_int.shape[-1]])
-        label_image = tf.ones((batch_size, self.size, self.size, 8))
+        label_image = tf.ones((batch_size, self.size, self.size, binary_size))
         label_image = tf.multiply(labels, label_image)
         return tf.concat([image, label_image], axis=3)

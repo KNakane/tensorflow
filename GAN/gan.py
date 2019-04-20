@@ -41,8 +41,8 @@ class GAN(BasedGAN):
         fake_img = self.G(self.combine_distribution(self.z, labels) if self.conditional else self.z)
         
         if self.conditional and labels is not None:
-            fake_img = self.combine_image(fake_img, labels)
-            inputs = self.combine_image(inputs, labels)
+            fake_img = self.combine_binary_image(fake_img, labels)#self.combine_image(fake_img, labels)
+            inputs = self.combine_binary_image(inputs, labels)#self.combine_image(inputs, labels)
 
         real_logit = tf.nn.sigmoid(self.D(inputs))
         fake_logit = tf.nn.sigmoid(self.D(fake_img, reuse=True))
@@ -101,13 +101,13 @@ class DCGAN(GAN):
             ['reshape', [-1, 4, 4, 512]],
             ['BN'],
             ['Leaky_ReLU'],
-            ['deconv', 5, 256, 2, None], #['deconv', 5, 256, 3, None],
+            ['deconv', 5, 256, 3, None],#['deconv', 5, 256, 2, None], #['deconv', 5, 256, 3, None],
             ['BN'],
             ['Leaky_ReLU'],
             ['deconv', 5, 128, 2, None],
             ['BN'],
             ['Leaky_ReLU'],
-            ['deconv', 5, self.channel, 2, None], #['deconv', 5, self.channel, 1, None, 'valid'],
+            ['deconv', 5, self.channel, 1, None, 'valid'],#['deconv', 5, self.channel, 2, None], #['deconv', 5, self.channel, 1, None, 'valid'],
             ['sigmoid']]
 
         dis_model = [
