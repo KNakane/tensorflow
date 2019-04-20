@@ -20,7 +20,7 @@ def main(argv):
         env = WrappedPendulumEnv(env)
         FLAGS.step = 200
 
-    out_dim = set_output_dim(FLAGS.network, FLAGS.category, env.action_space.n)
+    out_dim = set_output_dim(FLAGS.agent, FLAGS.category, env.action_space.shape[0])
 
     agent = eval(FLAGS.agent)(model=set_model(outdim=out_dim),
                               n_actions=env.action_space.shape[0],
@@ -32,6 +32,7 @@ def main(argv):
                               e_greedy_increment=0,
                               optimizer=None,
                               is_categorical=FLAGS.category,
+                              trainable=False,
                               max_action=env.action_space.high[0])
 
     trainer = Trainer(agent=agent, 
@@ -48,17 +49,15 @@ def main(argv):
                       test_interval=0,
                       test_frame=FLAGS.rec,
                       test_render=FLAGS.test_render,
-                      init_model_dir=FLAGS.init_model)
+                      init_model_dir=FLAGS.model)
 
     print()
     print("---Start Learning------")
     print("data : {}".format(FLAGS.env))
     print("Agent : {}".format(FLAGS.agent))
-    print("Network : {}".format(FLAGS.network))
     print("epoch : {}".format(FLAGS.n_episode))
     print("categorical : {}".format(FLAGS.category))
-    if FLAGS.init_model != 'None':
-        print("init_model : {}".format(FLAGS.init_model))
+    print("init_model : {}".format(FLAGS.model))
     print("-----------------------")
 
     trainer.test()

@@ -33,6 +33,7 @@ def main(argv):
                 e_greedy_increment=0,
                 optimizer=None,
                 network=FLAGS.network,
+                trainable=False,
                 is_categorical=FLAGS.category,
                 is_noise=FLAGS.noise
                 )
@@ -51,11 +52,11 @@ def main(argv):
                       test_interval=0,
                       test_frame=FLAGS.rec,
                       test_render=FLAGS.test_render,
-                      init_model_dir=FLAGS.init_model)
+                      init_model_dir=FLAGS.model)
 
     print()
     print("---Start Learning------")
-    print("data : {}".format(FLAGS.env))
+    print("data : {}".format(env))
     print("Agent : {}".format(FLAGS.agent))
     print("Network : {}".format(FLAGS.network))
     print("epoch : {}".format(FLAGS.n_episode))
@@ -73,7 +74,6 @@ if __name__ == '__main__':
     flags = tf.app.flags
     FLAGS = flags.FLAGS
     flags.DEFINE_string('agent', 'DQN', 'Choise Agents -> [DQN, DDQN, Rainbow]')
-    flags.DEFINE_string('env', 'BreakoutNoFrameskip-v4', 'Choice the environment')
     flags.DEFINE_string('network', 'EagerNN', 'Choise Network -> [EagerNN, Dueling_Net]')
     flags.DEFINE_integer('n_episode', '100000', 'Input max episode')
     flags.DEFINE_integer('step', '1000000', 'Input max steps')

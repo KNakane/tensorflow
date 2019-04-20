@@ -17,10 +17,10 @@ class DDPG(Agent):
         self.tau = 0.01
 
     def _build_net(self):
-        self.actor = ActorNet(model=self.model[0], out_dim=self.n_actions, name='ActorNet', opt=self._optimizer, lr=self.lr, trainable=True, max_action=self.max_action)
+        self.actor = ActorNet(model=self.model[0], out_dim=self.n_actions, name='ActorNet', opt=self._optimizer, lr=self.lr, trainable=self.trainable, max_action=self.max_action)
         self.actor_target = ActorNet(model=self.model[0], out_dim=self.n_actions, name='ActorNet_target', trainable=False, max_action=self.max_action)
 
-        self.critic = CriticNet(model=self.model[1], out_dim=1, name='CriticNet', opt=self._optimizer, lr=self.lr, trainable=True)
+        self.critic = CriticNet(model=self.model[1], out_dim=1, name='CriticNet', opt=self._optimizer, lr=self.lr, trainable=self.trainable)
         self.critic_target = CriticNet(model=self.model[1], out_dim=1, name='CriticNet_target',trainable=False)
 
     def inference(self, state):

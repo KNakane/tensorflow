@@ -21,7 +21,7 @@ class DQN(Agent):
     def _build_net(self):
         # ------------------ build eval_net ------------------
         with tf.variable_scope('eval_net'):
-            self.q_eval = eval(self.network)(model=self.model, out_dim=self.n_actions, name='Q_net', opt=self._optimizer, lr=self.lr, trainable=True, is_categorical=self.is_categorical, is_noise=self.is_noise)
+            self.q_eval = eval(self.network)(model=self.model, out_dim=self.n_actions, name='Q_net', opt=self._optimizer, lr=self.lr, trainable=self.trainable, is_categorical=self.is_categorical, is_noise=self.is_noise)
 
         # ------------------ build target_net ------------------
         with tf.variable_scope('target_net'):

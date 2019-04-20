@@ -266,7 +266,7 @@ class PolicyTrainer(BasedTrainer):
 
                 if done or step == self.max_steps:
                     if len(self.replay_buf) >= self.data_size:
-                        _, transitions, weights = self.replay_buf.sample(self.agent.batch_size, episode/self.n_episode)
+                        _, transitions, weights = self.replay_buf.sample(step, episode/self.n_episode)
                         train_data = map(np.array, zip(*transitions))
                         self.agent.update_q_net(train_data, weights)
                         self.learning_flag = 1
@@ -288,6 +288,10 @@ class DistributedTrainer(BasedTrainer):
         self.agent_name = self.agent.__class__.__name__
         self.n_workers = kwargs.pop('n_workers')
         self.process_list, self.env_list = [], []
+        if self.agent_name == 'Ape_X':
+            self._trainer = Trainer(*args, **kwargs)
+        else:
+            self._trainer = PolicyTrainer(*args, **kwargs)
 
     def build_process(self):
         """
@@ -296,18 +300,7 @@ class DistributedTrainer(BasedTrainer):
         for _ in range(self.n_workers):
             if self.agent_name == 'Ape_X':
                 self.process_list.append(self.agent.learner)
-            self.process_list.append(mp.Process(self._build_train))
-
-    def _build_train(self):
-        board_writer = self.begin_train()
-        board_writer.set_as_default()
-        self.total_steps = 0
-        self.learning_flag = 0
-        for episode in range(1, self.n_episode+1):
-            self.global_step.assign_add(1)
-            self.step(episode)
-        self.episode_end()
-        return
+            self.process_list.append(mp.Process(self._trainer.train))
 
     def train(self):
         for p in self.process_list:

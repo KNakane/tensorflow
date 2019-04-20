@@ -157,6 +157,33 @@ class CriticNet(BasedEagerNN):
                 x = my_layer(x)
         return x
 
+class A3CNet(BasedEagerNN):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+    
+    def _build(self):
+        for l in range(len(self.model)):
+            if l == len(self.model) - 1:
+                # 状態価値V用に1unit追加
+                self.model[l][1] = self.out_dim + 1
+            my_layer = eval('self.' + self.model[l][0])(self.model[l][1:])
+            self._layers.append(my_layer)
+
+    def inference(self, x):
+        for i, my_layer in enumerate(self._layers):
+            x = tf.convert_to_tensor(x, dtype=tf.float32)
+            try:
+                x = my_layer(x, training=self._trainable)
+            except:
+                x = my_layer(x)
+                
+        action = x[:, 1:]
+        V = tf.reshape(x[:,0], (x.shape[0], 1))
+        V = tf.tile(V, [1, self.out_dim])
+        return action, V
+
+    
+
 class A2CNet(BasedEagerNN):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

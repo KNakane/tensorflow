@@ -16,6 +16,7 @@ class Agent(tf.contrib.checkpoint.Checkpointable):
             e_greedy_increment=None,
             optimizer=None,
             network=None,
+            trainable=True,
             policy=False,    # True : On-Policy   False : Off-policy
             is_categorical=False,
             is_noise=False
@@ -36,6 +37,7 @@ class Agent(tf.contrib.checkpoint.Checkpointable):
         self._optimizer = optimizer
         self.is_categorical = is_categorical
         self.is_noise = is_noise
+        self.trainable = trainable
         self.epsilon_increment = e_greedy_increment
         self.epsilon = 0 if e_greedy_increment is not None else self.epsilon_max
 
