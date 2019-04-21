@@ -264,7 +264,7 @@ def main(argv):
         FLAGS.category = True
         FLAGS.noise = True
         FLAGS.opt = 'Adam'
-        FLAGS.lr = 0.00025 / 4
+        FLAGS.lr = 0.00025 #/ 4
 
     out_dim = set_output_dim(FLAGS.network, FLAGS.category, env.action_space.n)
 
@@ -274,7 +274,7 @@ def main(argv):
                 learning_rate=FLAGS.lr,
                 e_greedy=0.9,
                 reward_decay=0.99,
-                replace_target_iter=1000,
+                replace_target_iter=FLAGS.model_update,
                 e_greedy_increment=0.0001,
                 optimizer=FLAGS.opt,
                 network=FLAGS.network,
@@ -329,7 +329,7 @@ if __name__ == '__main__':
     flags.DEFINE_integer('step', '1000000', 'Input max steps')
     flags.DEFINE_integer('batch_size', '32', 'Input batch size')
     flags.DEFINE_integer('multi_step', '1', 'how many multi_step')
-    flags.DEFINE_integer('n_warmup', '5000', 'n_warmup value')
+    flags.DEFINE_integer('n_warmup', '1000', 'n_warmup value')
     flags.DEFINE_integer('model_update', '1000', 'target_model_update_freq')
     flags.DEFINE_boolean('render', 'False', 'render')
     flags.DEFINE_boolean('priority', 'False', 'prioritized Experience Replay')
