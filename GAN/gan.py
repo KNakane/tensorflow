@@ -44,10 +44,10 @@ class GAN(BasedGAN):
             """
             fake_img = self.combine_image(fake_img, labels)
             inputs = self.combine_image(inputs, labels)
-
             """
-            fake_img = self.combine_binary_image(fake_img, labels)#self.combine_image(fake_img, labels)
-            inputs = self.combine_binary_image(inputs, labels)#self.combine_image(inputs, labels)
+
+            fake_img = self.combine_binary_image(fake_img, labels)
+            inputs = self.combine_binary_image(inputs, labels)
             
 
         real_logit = tf.nn.sigmoid(self.D(inputs))
@@ -171,8 +171,13 @@ class WGAN(GAN):
         fake_img = self.G(self.combine_distribution(self.z, labels) if self.conditional else self.z)
 
         if self.conditional and labels is not None:
+            """
             fake_img = self.combine_image(fake_img, labels)
             inputs = self.combine_image(inputs, labels)
+
+            """
+            fake_img = self.combine_binary_image(fake_img, labels)
+            inputs = self.combine_binary_image(inputs, labels)
 
         real_logit = self.D(inputs)
         fake_logit = self.D(fake_img, reuse=True)
@@ -236,8 +241,13 @@ class WGAN_GP(WGAN):
         fake_img = self.G(self.combine_distribution(self.z, labels) if self.conditional else self.z)
 
         if self.conditional and labels is not None:
+            """
             fake_img = self.combine_image(fake_img, labels)
             inputs = self.combine_image(inputs, labels)
+
+            """
+            fake_img = self.combine_binary_image(fake_img, labels)
+            inputs = self.combine_binary_image(inputs, labels)
 
         e = tf.random_uniform([batch_size, 1, 1, 1], 0, 1)
         x_hat = e * inputs + (1 - e) * fake_img
@@ -271,10 +281,78 @@ class LSGAN(GAN):
             g_loss = tf.reduce_mean(0.5 * tf.square(fake_logit - 1))
             return d_loss, g_loss
 
+
 class ACGAN(DCGAN):
     """
     Auxiliary Classifier Generative Adversarial Network
     """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.conditional = conditional
+        self.conditional = True
+
+    def build(self):
+        gen_model = [
+            ['fc', 4*4*512, None],
+            ['reshape', [-1, 4, 4, 512]],
+            ['BN'],
+            ['Leaky_ReLU'],
+            ['deconv', 5, 256, 3, None],#['deconv', 5, 256, 2, None], #['deconv', 5, 256, 3, None],
+            ['BN'],
+            ['Leaky_ReLU'],
+            ['deconv', 5, 128, 2, None],
+            ['BN'],
+            ['Leaky_ReLU'],
+            ['deconv', 5, self.channel, 1, None, 'valid'],#['deconv', 5, self.channel, 2, None], #['deconv', 5, self.channel, 1, None, 'valid'],
+            ['sigmoid']]
+
+        dis_model = [
+            ['conv', 5, 64, 2, None],
+            ['Leaky_ReLU'],
+            ['conv', 5, 128, 2, None],
+            ['BN'],
+            ['Leaky_ReLU'],
+            ['reshape', [-1, 4*4*256]],
+            ['fc', 1 + self.class_num, None]
+        ]
+
+        self.D = Discriminator(dis_model)
+        self.G = Generator(gen_model)
+        self.G_ = Generator(gen_model, trainable=False)
+
+    def inference(self, inputs, batch_size, labels=None):
+        self.z = tf.random_normal((batch_size, self._z_dim), dtype=tf.float32)
+        fake_img = self.G(self.combine_distribution(self.z, labels) if self.conditional else self.z)
+        
+        if self.conditional and labels is not None:
+            """
+            fake_img = self.combine_image(fake_img, labels)
+            inputs = self.combine_image(inputs, labels)
+
+            """
+            fake_img = self.combine_binary_image(fake_img, labels)
+            inputs = self.combine_binary_image(inputs, labels)
+            
+        real_logit, real_recognition = tf.split(self.D(inputs), [1, self.class_num], 1)
+        fake_logit, fake_recognition = tf.split(self.D(fake_img, reuse=True), [1, self.class_num], 1)
+
+        # Real or Fake
+        real_logit = tf.nn.sigmoid(real_logit)
+        fake_logit = tf.nn.sigmoid(fake_logit)
+
+        # Recognition
+        real_recognition = tf.nn.softmax(real_recognition)
+        fake_recognition = tf.nn.softmax(fake_recognition)
+
+        return real_logit, fake_logit
+
+    def loss(self, real_logit, fake_logit, labels):
+        with tf.variable_scope('loss'):
+            d_loss = -(tf.reduce_mean(real_logit + self.eps) - tf.reduce_mean(fake_logit + self.eps))
+            g_loss = -tf.reduce_mean(fake_logit + self.eps)
+
+            loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=logits, labels=labels))
+            return d_loss, g_loss
+
+    def evaluate(self, real_logit, fake_logit):
+        with tf.variable_scope('Accuracy'):
+            return  (tf.reduce_mean(tf.cast(fake_logit < 0.5, tf.float32)) + tf.reduce_mean(tf.cast(real_logit > 0.5, tf.float32))) / 2.

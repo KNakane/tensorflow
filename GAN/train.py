@@ -54,7 +54,11 @@ def main(args):
         n_disc_update = 5
     else:
         D_logits, D_logits_ = model.inference(inputs, batch_size, labels)
-    dis_loss, gen_loss = model.loss(D_logits, D_logits_)
+
+    if FLAGS.network == 'ACGAN':
+        dis_loss, gen_loss = model.loss(D_logits, D_logits_, labels)
+    else:
+        dis_loss, gen_loss = model.loss(D_logits, D_logits_)
     
     d_op, g_op = model.optimize(d_loss=dis_loss, g_loss=gen_loss, global_step=global_step)
     train_accuracy = model.evaluate(D_logits, D_logits_)
