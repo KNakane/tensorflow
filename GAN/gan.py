@@ -343,14 +343,16 @@ class ACGAN(DCGAN):
         real_recognition = tf.nn.softmax(real_recognition)
         fake_recognition = tf.nn.softmax(fake_recognition)
 
-        return real_logit, fake_logit
+        return [real_logit, real_recognition], [fake_logit, fake_recognition]
 
     def loss(self, real_logit, fake_logit, labels):
         with tf.variable_scope('loss'):
-            d_loss = -(tf.reduce_mean(real_logit + self.eps) - tf.reduce_mean(fake_logit + self.eps))
-            g_loss = -tf.reduce_mean(fake_logit + self.eps)
+            d_loss = -(tf.reduce_mean(real_logit[0] + self.eps) - tf.reduce_mean(fake_logit + self.eps))
+            g_loss = -tf.reduce_mean(fake_logit[0] + self.eps)
 
-            loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=logits, labels=labels))
+            real_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=real_logit[1], labels=labels))
+            fake_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=fake_logit[1], labels=labels))
+            d_loss = d_loss +  real_loss + fake_loss
             return d_loss, g_loss
 
     def evaluate(self, real_logit, fake_logit):
