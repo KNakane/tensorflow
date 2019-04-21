@@ -34,22 +34,18 @@ class LSTM(Module):
         with tf.variable_scope(self.name):
             if reuse:
                 tf.get_variable_scope().reuse_variables()
-            #in1 = tf.transpose(outputs, [1, 0, 2])
-            in2 = tf.reshape(outputs, [-1, num_of_input_nodes])
-            in3 = self.fc(in2, [80, None])
-            in4 = tf.split(in3, length_of_sequences, 0)
-
-            cell = tf.nn.rnn_cell.LSTMCell(num_of_hidden_nodes, forget_bias=forget_bias, state_is_tuple=True)
-            rnn_output, _ = tf.contrib.rnn.static_rnn(cell, in4, dtype=tf.float32)
-            outputs = self.fc(rnn_output[-1],[2, None])
+            print(outputs.shape)
+            outputs = tf.keras.layers.LSTM(100)(outputs)
+            outputs = tf.keras.layers.LSTM(100)(outputs)
+            outputs = tf.keras.layers.LSTM(self.out_dim)(outputs)
         return outputs
 
     def test_inference(self, outputs, reuse=False):
         return self.inference(outputs, reuse)
 
     def loss(self, logits, labels):
-        loss = tf.reduce_mean(tf.square(logits - labels))
-        #loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=logits, labels=labels))
+        #loss = tf.reduce_mean(tf.square(logits - labels))
+        loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=logits, labels=labels))
         if self._l2_reg:
             loss += tf.losses.get_regularization_loss()  
         return loss
