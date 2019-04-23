@@ -107,15 +107,15 @@ class DCGAN(GAN):
             ['reshape', [-1, 4, 4, 512]],
             ['BN'],
             ['Leaky_ReLU'],
-            ['deconv', 5, 256, 2, None], # cifar
-            #['deconv', 5, 256, 3, None], # mnist
+            #['deconv', 5, 256, 2, None], # cifar
+            ['deconv', 5, 256, 3, None], # mnist
             ['BN'],
             ['Leaky_ReLU'],
             ['deconv', 5, 128, 2, None],
             ['BN'],
             ['Leaky_ReLU'],
-            ['deconv', 5, self.channel, 2, None], # cifar
-            #['deconv', 5, self.channel, 1, None, 'valid'], # mnist
+            #['deconv', 5, self.channel, 2, None], # cifar
+            ['deconv', 5, self.channel, 1, None, 'valid'], # mnist
             ['sigmoid']]
 
         dis_model = [
@@ -124,7 +124,8 @@ class DCGAN(GAN):
             ['conv', 5, 128, 2, None],
             ['BN'],
             ['Leaky_ReLU'],
-            ['reshape', [-1, 4*4*256]],
+            ['reshape', [-1, 7*7*128]], # mnist
+            #['reshape', [-1, 7*7*128]], # cifar10
             ['fc', 1, None]
         ]
 
@@ -289,8 +290,8 @@ class ACGAN(DCGAN):
     Auxiliary Classifier Generative Adversarial Network
     """
     def __init__(self, *args, **kwargs):
+        kwargs['conditional'] = True
         super().__init__(*args, **kwargs)
-        self.conditional = True
 
     def build(self):
         gen_model = [
@@ -313,7 +314,8 @@ class ACGAN(DCGAN):
             ['conv', 5, 128, 2, None],
             ['BN'],
             ['Leaky_ReLU'],
-            ['reshape', [-1, 4*4*256]],
+            ['reshape', [-1, 7*7*128]], # mnist
+            #['reshape', [-1, 4*4*256]],
             ['fc', 1 + self.class_num, None]
         ]
 
@@ -323,16 +325,15 @@ class ACGAN(DCGAN):
 
     def inference(self, inputs, batch_size, labels=None):
         self.z = tf.random_normal((batch_size, self._z_dim), dtype=tf.float32)
-        fake_img = self.G(self.combine_distribution(self.z, labels) if self.conditional else self.z)
+        fake_img = self.G(self.combine_distribution(self.z, labels))
         
-        if self.conditional and labels is not None:
-            """
-            fake_img = self.combine_image(fake_img, labels)
-            inputs = self.combine_image(inputs, labels)
+        """
+        fake_img = self.combine_image(fake_img, labels)
+        inputs = self.combine_image(inputs, labels)
 
-            """
-            fake_img = self.combine_binary_image(fake_img, labels)
-            inputs = self.combine_binary_image(inputs, labels)
+        """
+        fake_img = self.combine_binary_image(fake_img, labels)
+        inputs = self.combine_binary_image(inputs, labels)
             
         real_logit, real_recognition = tf.split(self.D(inputs), [1, self.class_num], 1)
         fake_logit, fake_recognition = tf.split(self.D(fake_img, reuse=True), [1, self.class_num], 1)
@@ -341,22 +342,19 @@ class ACGAN(DCGAN):
         real_logit = tf.nn.sigmoid(real_logit)
         fake_logit = tf.nn.sigmoid(fake_logit)
 
-        # Recognition
-        real_recognition = tf.nn.softmax(real_recognition)
-        fake_recognition = tf.nn.softmax(fake_recognition)
-
-        return [real_logit, real_recognition], [fake_logit, fake_recognition]
+        return (real_logit, real_recognition), (fake_logit, fake_recognition)
 
     def loss(self, real_logit, fake_logit, labels):
         with tf.variable_scope('loss'):
-            d_loss = -(tf.reduce_mean(real_logit[0] + self.eps) - tf.reduce_mean(fake_logit + self.eps))
+            d_loss = -(tf.reduce_mean(real_logit[0] + self.eps) - tf.reduce_mean(fake_logit[0] + self.eps))
             g_loss = -tf.reduce_mean(fake_logit[0] + self.eps)
 
             real_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=real_logit[1], labels=labels))
             fake_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=fake_logit[1], labels=labels))
             d_loss = d_loss +  real_loss + fake_loss
+            g_loss = g_loss + fake_loss
             return d_loss, g_loss
 
     def evaluate(self, real_logit, fake_logit):
         with tf.variable_scope('Accuracy'):
-            return  (tf.reduce_mean(tf.cast(fake_logit < 0.5, tf.float32)) + tf.reduce_mean(tf.cast(real_logit > 0.5, tf.float32))) / 2.
+            return  (tf.reduce_mean(tf.cast(fake_logit[0] < 0.5, tf.float32)) + tf.reduce_mean(tf.cast(real_logit[0] > 0.5, tf.float32))) / 2.

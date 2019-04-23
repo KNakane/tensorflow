@@ -72,11 +72,11 @@ class BasedGAN(Module):
         self.channel = channel
         self.l2_reg = l2_reg
         self.l2_reg_scale = l2_reg_scale
-        self.build()
         if self._trainable:
             self.optimizer = eval(opt)(learning_rate=lr)
         if self.conditional:
             self.class_num = class_num
+        self.build()
 
     def conv_out_size_same(self, size, stride):
         return int(math.ceil(float(size) / float(stride)))

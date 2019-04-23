@@ -2,7 +2,7 @@ import os,sys
 sys.path.append('./CNN')
 sys.path.append('./dataset')
 import tensorflow as tf
-from gan import GAN, DCGAN, WGAN, WGAN_GP, LSGAN
+from gan import GAN, DCGAN, WGAN, WGAN_GP, LSGAN, ACGAN
 from utils import Utils
 from load import Load
 from collections import OrderedDict
@@ -47,14 +47,14 @@ def main(args):
                                 opt=FLAGS.opt,
                                 trainable=True)
 
-    if FLAGS.network == 'CGAN':
-        D_logits, D_logits_ = model.inference(inputs, batch_size, labels)
-    elif FLAGS.network == 'WGAN' or FLAGS.network == 'WGAN-GP':
+    if FLAGS.network == 'WGAN' or FLAGS.network == 'WGAN-GP':
         D_logits, D_logits_ = model.inference(inputs, batch_size, labels)
         n_disc_update = 5
     else:
         D_logits, D_logits_ = model.inference(inputs, batch_size, labels)
 
+    #print(inputs.shape, batch_size, D_logits.shape, labels.shape)
+    #sys.exit()
     if FLAGS.network == 'ACGAN':
         dis_loss, gen_loss = model.loss(D_logits, D_logits_, labels)
     else:
@@ -130,7 +130,7 @@ def main(args):
 if __name__ == '__main__':
     flags = tf.app.flags
     FLAGS = flags.FLAGS
-    flags.DEFINE_string('network', 'GAN', 'Choice the training data name -> [GAN, DCGAN, WGAN, WGAN_GP, CGAN]')
+    flags.DEFINE_string('network', 'GAN', 'Choice the training data name -> [GAN, DCGAN, WGAN, WGAN_GP, ACGAN]')
     flags.DEFINE_string('data', 'mnist', 'Choice the training data name -> ["mnist","cifar10","cifar100", "kuzushiji"]')
     flags.DEFINE_integer('n_epoch', '50000', 'Input max epoch')
     flags.DEFINE_integer('batch_size', '32', 'Input batch size')
