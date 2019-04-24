@@ -34,7 +34,8 @@ def main(argv):
                 optimizer=None,
                 network=FLAGS.network,
                 is_categorical=FLAGS.category,
-                is_noise=FLAGS.noise
+                is_noise=FLAGS.noise,
+                trainable=True
                 )
 
     trainer = Trainer(agent=agent, 
@@ -51,7 +52,7 @@ def main(argv):
                       test_interval=0,
                       test_frame=FLAGS.rec,
                       test_render=FLAGS.test_render,
-                      init_model_dir=FLAGS.init_model)
+                      init_model_dir=FLAGS.model)
 
     print()
     print("---Start Learning------")
