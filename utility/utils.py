@@ -202,6 +202,29 @@ class Utils():
         plt.legend()
         plt.savefig(self.log_dir + '/MDN_figure.png')
 
+        plt.close()
+
+        def sample_from_mixture(x, pred_weights, pred_means, pred_std, amount):
+            from scipy.stats import norm as normal
+            samples = np.zeros((amount, 2))
+            n_mix = len(pred_weights[0])
+            to_choose_from = np.arange(n_mix)
+            for j,(weights, means, std_devs) in enumerate(zip(pred_weights, pred_means, pred_std)):
+                index = np.random.choice(to_choose_from, p=weights)
+                samples[j,1]= normal.rvs(means[index], std_devs[index], size=1)
+                samples[j,0]= x[j]
+                if j == amount -1:
+                    break
+            return samples
+
+        a = sample_from_mixture(x, pi, mu, sigma, amount=len(x))
+
+        fig = plt.figure(figsize=(8, 8))
+        #H = plt.hist2d(a[:,0],a[:,1], bins=40)
+        plt.contourf(a[:,0], a[:,1], pos, levels, alpha=0.5)
+        plt.savefig(self.log_dir + '/MDN_confidence_figure.png')
+        plt.close()
+        
         return
 
     def get_pi_idx(self, x, pdf):
