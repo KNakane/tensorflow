@@ -29,6 +29,7 @@ class BasedTrainer():
                  test_episode=5,
                  test_interval=1000,
                  test_frame=False,
+                 metrics=None,
                  init_model_dir=None):
         self.agent = agent
         self.env = env
@@ -51,6 +52,7 @@ class BasedTrainer():
         self.test_render = test_render
         self.test_frame = test_frame
         self.init_model_dir = init_model_dir
+        self.metrics = metrics
 
     def train(self):
         board_writer = self.begin_train()
@@ -69,6 +71,7 @@ class BasedTrainer():
         pass
     
     def begin_train(self):
+        self.util.write_configuration(self.metrics, True)
         self.util.save_init(self.agent)
         return tf.contrib.summary.create_file_writer(self.util.tf_board)
     

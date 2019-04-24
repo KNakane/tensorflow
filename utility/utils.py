@@ -31,19 +31,26 @@ class Utils():
             tf.gfile.MakeDirs(self.log_dir)
         return
 
-    def write_configuration(self, message):
+    def write_configuration(self, message, _print=False):
         """
         設定をテキストに出力する
 
         parameters
         -------
         message : dict
+
+        _print : True / False : terminalに表示するか
         """
         with open(self.log_dir + '/log.txt', 'a') as f:
             f.write("------Learning Details------\n")
+            if _print:
+                print("------Learning Details------")
             for key, info in message.items():
                 f.write("%s : %s\n"%(key, info))
+                if _print:
+                    print("%s : %s"%(key, info))
             f.write("----------------------------\n")
+            print("----------------------------")
         return 
 
 
