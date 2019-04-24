@@ -271,9 +271,26 @@ class scSENet(ResNet):
                 logits = self.conv(logits, [3, channels, 1, None])
 
                 # Squeeze-and-Excitation Block
-                logits = self.channel_squeeze_and_spatial_excitation(logits, 4, name='scselayer')
+                logits = self.concurrent_spatial_and_channel_se(logits, 4, name='scselayer')
                 
                 return logits + x
+
+    def concurrent_spatial_and_channel_se(self, x, ratio, name):
+        with tf.variable_scope(name):
+            cse = self.squeeze_excitation_layer(x, ratio, name='selayer')
+            sse = self.channel_squeeze_and_spatial_excitation(x, 4, name='cselayer')
+            return cse + sse
+
+    def squeeze_excitation_layer(self, x, ratio, name):
+        with tf.variable_scope(name):
+            channel = x.get_shape().as_list()[-1]
+            logits = self.gap(x, [channel])
+            logits = self.fc(logits, [channel/ratio,tf.nn.relu])
+            logits = self.fc(logits, [channel, tf.nn.sigmoid])
+            logits = tf.reshape(logits, [-1, 1, 1, channel])
+
+            return x * logits
+
 
     def channel_squeeze_and_spatial_excitation(self, x, ratio, name):
         with tf.variable_scope(name):
