@@ -5,7 +5,7 @@ sys.path.append('./dataset')
 import tensorflow as tf
 from cnn import CNN
 from lenet import LeNet, VGG
-from resnet import ResNet, ResNeXt, SENet
+from resnet import ResNet, ResNeXt, SENet, sSENet, scSENet
 from dense_net import DenseNet
 from load import Load
 from trainer import Train
@@ -44,7 +44,7 @@ def main(argv):
 if __name__ == '__main__':
     flags = tf.app.flags
     FLAGS = flags.FLAGS
-    flags.DEFINE_string('network', 'CNN', 'Choice the training data name -> [CNN,LeNet,VGG,ResNet,ResNeXt,SENet,DenseNet]')
+    flags.DEFINE_string('network', 'CNN', 'Choice the training data name -> [CNN,LeNet,VGG,ResNet,ResNeXt,SENet,DenseNet, sSENet]')
     flags.DEFINE_string('data', 'mnist', 'Choice the training data name -> ["mnist","cifar10","cifar100","kuzushiji"]')
     flags.DEFINE_integer('n_epoch', '1000', 'Input max epoch')
     flags.DEFINE_integer('batch_size', '32', 'Input batch size')

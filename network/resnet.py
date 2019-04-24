@@ -239,7 +239,7 @@ class sSENet(ResNet):
                 logits = self.conv(logits, [3, channels, 1, None])
 
                 # Squeeze-and-Excitation Block
-                logits = self.squeeze_excitation_layer(logits, 4, name='sselayer')
+                logits = self.channel_squeeze_and_spatial_excitation(logits, 4, name='sselayer')
                 
                 return logits + x
 
@@ -271,7 +271,7 @@ class scSENet(ResNet):
                 logits = self.conv(logits, [3, channels, 1, None])
 
                 # Squeeze-and-Excitation Block
-                logits = self.squeeze_excitation_layer(logits, 4, name='sselayer')
+                logits = self.channel_squeeze_and_spatial_excitation(logits, 4, name='scselayer')
                 
                 return logits + x
 
