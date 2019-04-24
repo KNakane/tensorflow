@@ -55,30 +55,3 @@ def ptb_producer(raw_data, num_steps=35, name=None):
     for i in range(data_num):
         x[i], y[i] = raw_data[i:i + num_steps], raw_data[num_steps + 1]
     return x, y
-
-
-
-def sptb_producer(raw_data, batch_size, num_steps=35, name=None):
-    with tf.name_scope(name, "PTBProducer", [raw_data, batch_size, num_steps]):
-        raw_data = tf.convert_to_tensor(raw_data, name="raw_data", dtype=tf.int32)  # 扱いやすいようにビルトインの List から Tensor に変換
-
-        data_len = tf.size(raw_data)
-        batch_len = data_len // batch_size  # 行列の列数
-        data = tf.reshape(raw_data[0 : batch_size * batch_len],
-                        [batch_size, batch_len])  # 1次元リストだった raw_data を、batch_size x batch_len の行列に整形
-
-        epoch_size = (batch_len - 1) // num_steps  # 1エポック (データの一回り) の大きさ
-        assertion = tf.assert_positive(
-            epoch_size,
-            message="epoch_size == 0, decrease batch_size or num_steps")
-        with tf.control_dependencies([assertion]):
-            epoch_size = tf.identity(epoch_size, name="epoch_size")
-
-        i = tf.train.range_input_producer(epoch_size, shuffle=False).dequeue()  # [0, 1, .., epoch_size-1] という整数を順ぐりに無限生成するイテレータ
-        x = tf.strided_slice(data, [0, i * num_steps],
-                            [batch_size, (i + 1) * num_steps])  # この使われ方の strided_slice は、data[0:batch_size, i*num_steps:(i+1)*num_steps] だと思って良い
-        x.set_shape([batch_size, num_steps])
-        y = tf.strided_slice(data, [0, i * num_steps + 1],
-                            [batch_size, (i + 1) * num_steps + 1])  # 正解 y は x の次に来る単語なので、1を足してスライスを右に一つずらす
-        y.set_shape([batch_size, num_steps])
-        return x, y

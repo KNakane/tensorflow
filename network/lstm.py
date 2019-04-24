@@ -34,9 +34,7 @@ class LSTM(Module):
         with tf.variable_scope(self.name):
             if reuse:
                 tf.get_variable_scope().reuse_variables()
-            print(outputs.shape)
-            outputs = tf.keras.layers.LSTM(100)(outputs)
-            outputs = tf.keras.layers.LSTM(100)(outputs)
+            outputs = tf.keras.layers.Embedding(self.out_dim, 64,input_length=outputs.shape[1])(outputs)
             outputs = tf.keras.layers.LSTM(self.out_dim)(outputs)
         return outputs
 
