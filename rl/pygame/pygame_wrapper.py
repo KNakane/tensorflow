@@ -14,6 +14,7 @@ from optimizer import *
 from dqn import DQN,DDQN,Rainbow
 from rl_trainer import Trainer
 from utils import set_output_dim
+from collections import OrderedDict
 from pygame_env import PygameObserver
 
 
@@ -38,6 +39,22 @@ def main(argv):
         FLAGS.noise = True
         FLAGS.opt = 'Adam'
         FLAGS.lr = 0.00025 / 4
+
+    message = OrderedDict({
+        "Env": FLAGS.env,
+        "Agent": FLAGS.agent,
+        "Network": FLAGS.network,
+        "Episode": FLAGS.n_episode,
+        "Max_Step":FLAGS.step,
+        "batch_size": FLAGS.batch_size,
+        "Optimizer":FLAGS.opt,
+        "learning_rate":FLAGS.lr,
+        "Priority": FLAGS.priority,
+        "multi_step": FLAGS.multi_step,
+        "Categorical": FLAGS.category,
+        "n_warmup": FLAGS.n_warmup,
+        "model_update": FLAGS.model_update,
+        "init_model": FLAGS.init_model})
 
     out_dim = set_output_dim(FLAGS.network, FLAGS.category, env.action_space.n)
 
@@ -69,25 +86,9 @@ def main(argv):
                       test_episode=2,
                       test_interval=500,
                       test_frame=FLAGS.rec,
-                      test_render=FLAGS.test_render)
-
-    print()
-    print("---Start Learning------")
-    print("data : {}".format(FLAGS.env))
-    print("Agent : {}".format(FLAGS.agent))
-    print("Network : {}".format(FLAGS.network))
-    print("epoch : {}".format(FLAGS.n_episode))
-    print("step : {}".format(FLAGS.step))
-    print("batch_size : {}".format(FLAGS.batch_size))
-    print("learning rate : {}".format(FLAGS.lr))
-    print("Optimizer : {}".format(FLAGS.opt))
-    print("priority : {}".format(FLAGS.priority))
-    print("multi_step : {}".format(FLAGS.multi_step))
-    print("n_warmup : {}".format(FLAGS.n_warmup))
-    print("model_update : {}".format(FLAGS.model_update))
-    if FLAGS.init_model != 'None':
-        print("init_model : {}".format(FLAGS.init_model))
-    print("-----------------------")
+                      test_render=FLAGS.test_render,
+                      metrics=message,
+                      init_model_dir=FLAGS.init_model)
     
     trainer.train()
 
