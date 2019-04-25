@@ -107,15 +107,15 @@ class DCGAN(GAN):
             ['reshape', [-1, 4, 4, 512]],
             ['BN'],
             ['Leaky_ReLU'],
-            #['deconv', 5, 256, 2, None], # cifar
-            ['deconv', 5, 256, 3, None], # mnist
+            ['deconv', 5, 256, 2, None], # cifar
+            #['deconv', 5, 256, 3, None], # mnist
             ['BN'],
             ['Leaky_ReLU'],
             ['deconv', 5, 128, 2, None],
             ['BN'],
             ['Leaky_ReLU'],
-            #['deconv', 5, self.channel, 2, None], # cifar
-            ['deconv', 5, self.channel, 1, None, 'valid'], # mnist
+            ['deconv', 5, self.channel, 2, None], # cifar
+            #['deconv', 5, self.channel, 1, None, 'valid'], # mnist
             ['sigmoid']]
 
         dis_model = [
@@ -124,8 +124,8 @@ class DCGAN(GAN):
             ['conv', 5, 128, 2, None],
             ['BN'],
             ['Leaky_ReLU'],
-            ['reshape', [-1, 7*7*128]], # mnist
-            #['reshape', [-1, 7*7*128]], # cifar10
+            #['reshape', [-1, 7*7*128]], # mnist
+            ['reshape', [-1, 8*8*128]], # cifar10
             ['fc', 1, None]
         ]
 
