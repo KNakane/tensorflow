@@ -53,8 +53,6 @@ def main(args):
     else:
         D_logits, D_logits_ = model.inference(inputs, batch_size, labels)
 
-    #print(inputs.shape, batch_size, D_logits.shape, labels.shape)
-    #sys.exit()
     if FLAGS.network == 'ACGAN':
         dis_loss, gen_loss = model.loss(D_logits, D_logits_, labels)
     else:
