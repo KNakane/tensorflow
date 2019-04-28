@@ -269,9 +269,10 @@ class PolicyTrainer(BasedTrainer):
 
                 if done or step == self.max_steps:
                     if len(self.replay_buf) >= self.data_size:
-                        _, transitions, weights = self.replay_buf.sample(step, episode/self.n_episode)
+                        _, transitions, weights = self.replay_buf.sample(self.replay_size, episode/self.n_episode)
                         train_data = map(np.array, zip(*transitions))
                         self.agent.update_q_net(train_data, weights)
+                        self.replay_buf.clear()
                         self.learning_flag = 1
                         self.summary()
                     self.step_end(episode, step, total_reward)

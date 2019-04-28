@@ -8,7 +8,7 @@ import tensorflow as tf
 from rl_trainer import Trainer
 from dqn import DQN,DDQN,Rainbow
 from utils import set_output_dim
-from cartpole_wrapper import set_model
+from pygame_wrapper import set_model
 from pygame_env import PygameObserver
 
 
@@ -18,7 +18,6 @@ def main(argv):
 
     if FLAGS.agent == 'Rainbow':
         FLAGS.network = 'Dueling_Net'
-        FLAGS.multi_step = 3
         FLAGS.category = True
         FLAGS.noise = True
 
@@ -32,6 +31,7 @@ def main(argv):
                 reward_decay=0,
                 replace_target_iter=0,
                 e_greedy_increment=0,
+                trainable=False,
                 optimizer=None,
                 network=FLAGS.network,
                 is_categorical=FLAGS.category,
@@ -52,7 +52,7 @@ def main(argv):
                       test_interval=0,
                       test_frame=FLAGS.rec,
                       test_render=FLAGS.test_render,
-                      init_model_dir=FLAGS.init_model)
+                      init_model_dir=FLAGS.model)
 
     print()
     print("---Start Learning------")
@@ -74,7 +74,7 @@ if __name__ == '__main__':
     flags = tf.app.flags
     FLAGS = flags.FLAGS
     flags.DEFINE_string('agent', 'DQN', 'Choise Agents -> [DQN, DDQN, Rainbow]')
-    flags.DEFINE_string('env', 'BreakoutNoFrameskip-v4', 'Choice the environment')
+    flags.DEFINE_string('env', 'Catcher-v0', 'Choise Agents -> [Catcher-v0, FlappyBird-v0, Pong-v0, PixelCopter-v0, MonsterKong-v0, PuckWorld-v0, RaycastMaze-v0, Snake-v0, WaterWorld-v0]')
     flags.DEFINE_string('network', 'EagerNN', 'Choise Network -> [EagerNN, Dueling_Net]')
     flags.DEFINE_integer('n_episode', '100000', 'Input max episode')
     flags.DEFINE_integer('step', '1000000', 'Input max steps')
