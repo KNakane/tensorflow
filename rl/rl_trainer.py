@@ -237,9 +237,6 @@ class PolicyTrainer(BasedTrainer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.replay_buf = Rollout(self.data_size)
-        self.state_deque = deque(maxlen=self.max_steps)
-        self.reward_deque = deque(maxlen=self.max_steps)
-        self.action_deque = deque(maxlen=self.max_steps)
 
     def step(self, episode):
         with tf.contrib.summary.always_record_summaries():
@@ -259,22 +256,17 @@ class PolicyTrainer(BasedTrainer):
                     r2 = (self.env.theta_threshold_radians - abs(theta))/self.env.theta_threshold_radians - 0.5
                     reward = r1 + r2
 
-                # Discount rewards in each time step
-                self.reward_deque.append(reward)
-                t_reward, p_index = self.multi_step_reward(self.reward_deque, self.agent.discount)
-
-                self.replay_buf.push(state, action, done, state_, t_reward, p_index)
+                self.replay_buf.push(state, action, done, state_, reward, step-1)
                 
                 total_reward += reward
 
                 if done or step == self.max_steps:
-                    if len(self.replay_buf) >= self.data_size:
-                        _, transitions, weights = self.replay_buf.sample(self.replay_size, episode/self.n_episode)
-                        train_data = map(np.array, zip(*transitions))
-                        self.agent.update_q_net(train_data, weights)
-                        self.replay_buf.clear()
-                        self.learning_flag = 1
-                        self.summary()
+                    _, transitions, weights = self.replay_buf.sample()
+                    train_data = map(np.array, zip(*transitions))
+                    self.agent.update_q_net(train_data, weights)
+                    self.replay_buf.clear()
+                    self.learning_flag = 1
+                    self.summary()
                     self.step_end(episode, step, total_reward)
                     break
 

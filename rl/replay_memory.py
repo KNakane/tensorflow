@@ -90,8 +90,13 @@ class Rollout():   #On policy用
         self.memory[self.index] = self.Transition(state, action, done, next_state, reward, p_index) #data
         self.index = (self.index + 1) % self.capacity
 
-    def sample(self, batch_size, _=None):
-        return (None, random.sample(self.memory, batch_size), 1)
+    def sample(self, batch_size=None, _=None):
+        return (None, self.memory, 1)
 
     def update(self, idx, td_error):
         pass
+
+    def clear(self):
+        self.memory = []
+        self.index = 0
+        return
