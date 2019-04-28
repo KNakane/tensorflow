@@ -5,10 +5,12 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '../../utility'))
 import gym
 from gym import spaces
 import tensorflow as tf
-from rl_trainer import Trainer
+from rl_trainer import Trainer, PolicyTrainer
 from dqn import DQN,DDQN,Rainbow
+from policy_gradient import PolicyGradient
 from utils import set_output_dim
 from cartpole_wrapper import set_model
+from collections import OrderedDict
 
 
 def main(argv):
@@ -20,6 +22,15 @@ def main(argv):
         FLAGS.multi_step = 3
         FLAGS.category = True
         FLAGS.noise = True
+
+    message = OrderedDict({
+        "Env": env,
+        "Agent": FLAGS.agent,
+        "Network": FLAGS.network,
+        "Episode": FLAGS.n_episode,
+        "Max_Step":FLAGS.step,
+        "Categorical": FLAGS.category,
+        "init_model": FLAGS.model})
 
     out_dim = set_output_dim(FLAGS.network, FLAGS.category, env.action_space.n)
 
@@ -38,31 +49,41 @@ def main(argv):
                 is_noise=FLAGS.noise
                 )
 
-    trainer = Trainer(agent=agent, 
-                      env=env, 
-                      n_episode=FLAGS.n_episode, 
-                      max_step=FLAGS.step, 
-                      replay_size=0, 
-                      data_size=0,
-                      n_warmup=0,
-                      priority=None,
-                      multi_step=0,
-                      render=FLAGS.render,
-                      test_episode=5,
-                      test_interval=0,
-                      test_frame=FLAGS.rec,
-                      test_render=FLAGS.test_render,
-                      init_model_dir=FLAGS.model)
-
-    print()
-    print("---Start Learning------")
-    print("data : {}".format(env))
-    print("Agent : {}".format(FLAGS.agent))
-    print("Network : {}".format(FLAGS.network))
-    print("epoch : {}".format(FLAGS.n_episode))
-    print("categorical : {}".format(FLAGS.category))
-    print("model : {}".format(FLAGS.model))
-    print("-----------------------")
+    if FLAGS.agent == 'PolicyGradient':
+        trainer = PolicyTrainer(agent=agent, 
+                          env=env, 
+                          n_episode=FLAGS.n_episode, 
+                          max_step=FLAGS.step, 
+                          replay_size=0, 
+                          data_size=0,
+                          n_warmup=0,
+                          priority=None,
+                          multi_step=0,
+                          render=FLAGS.render,
+                          test_episode=5,
+                          test_interval=0,
+                          test_frame=FLAGS.rec,
+                          test_render=FLAGS.test_render,
+                          metrics=message,
+                          init_model_dir=FLAGS.model)
+    
+    else:
+        trainer = Trainer(agent=agent, 
+                          env=env, 
+                          n_episode=FLAGS.n_episode, 
+                          max_step=FLAGS.step, 
+                          replay_size=0, 
+                          data_size=0,
+                          n_warmup=0,
+                          priority=None,
+                          multi_step=0,
+                          render=FLAGS.render,
+                          test_episode=5,
+                          test_interval=0,
+                          test_frame=FLAGS.rec,
+                          test_render=FLAGS.test_render,
+                          metrics=message,
+                          init_model_dir=FLAGS.model)
 
     trainer.test()
 

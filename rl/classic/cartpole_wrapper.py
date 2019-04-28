@@ -36,7 +36,7 @@ def main(argv):
         FLAGS.lr = 0.00025 / 4
 
     message = OrderedDict({
-        "Env": FLAGS.env,
+        "Env": env,
         "Agent": FLAGS.agent,
         "Network": FLAGS.network,
         "Episode": FLAGS.n_episode,
@@ -74,10 +74,10 @@ def main(argv):
                                 n_episode=FLAGS.n_episode, 
                                 max_step=FLAGS.step, 
                                 replay_size=FLAGS.batch_size, 
-                                data_size=1024,
+                                data_size=256,
                                 n_warmup=FLAGS.n_warmup,
                                 priority=FLAGS.priority,
-                                multi_step=200,
+                                multi_step=0,
                                 render=FLAGS.render,
                                 test_episode=2,
                                 test_interval=50,

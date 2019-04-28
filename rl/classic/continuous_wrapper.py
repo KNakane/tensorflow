@@ -38,7 +38,6 @@ def main(argv):
     message = OrderedDict({
         "Env": FLAGS.env,
         "Agent": FLAGS.agent,
-        "Network": FLAGS.network,
         "Episode": FLAGS.n_episode,
         "Max_Step":FLAGS.step,
         "batch_size": FLAGS.batch_size,
