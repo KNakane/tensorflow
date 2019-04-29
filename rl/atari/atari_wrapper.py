@@ -247,7 +247,7 @@ def set_model(outdim):
                  ['conv', 4, 64, 2, tf.nn.relu],
                  ['conv', 3, 64, 1, tf.nn.relu],
                  ['flat'],
-                 ['fc', 256, tf.nn.relu],
+                 ['fc', 512, tf.nn.relu],
                  ['fc', outdim, None]]
     return model_set
 
