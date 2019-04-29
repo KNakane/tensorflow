@@ -89,9 +89,6 @@ class BasedTrainer():
             "total_reward": total_reward})
         self.util.write_log(message=metrics)
         self.util.save_model()
-        self.state_deque.clear()
-        self.action_deque.clear()
-        self.reward_deque.clear()
 
     def episode_end(self):
         self.env.close()
@@ -228,6 +225,12 @@ class Trainer(BasedTrainer):
 
         return
 
+    def step_end(self, episode, step, total_reward):
+        super.step_end(episode, step, total_reward)
+        self.state_deque.clear()
+        self.action_deque.clear()
+        self.reward_deque.clear()
+
     
 
 class PolicyTrainer(BasedTrainer):
@@ -276,4 +279,130 @@ class PolicyTrainer(BasedTrainer):
         if episode % self.test_interval == 0 and self.learning_flag:
             self.test(episode)
 
-        return  
+        return
+
+
+class A3CTrainer():
+    def __init__(self,
+                 agent, 
+                 global_network,
+                 env, 
+                 n_episode, 
+                 max_step, 
+                 replay_size=32, 
+                 data_size=10**6,
+                 n_warmup=5*10**4,
+                 priority=False,
+                 multi_step=1,
+                 render=False,
+                 test_render=False,
+                 test_episode=5,
+                 test_interval=1000,
+                 test_frame=False,
+                 metrics=None,
+                 init_model_dir=None):
+
+        self.agent = agent
+        self.global_network = global_network
+        self.env = env
+        self.n_episode = n_episode
+        self.max_steps = max_step
+        self.render = render
+        self.data_size = data_size
+        self.n_warmup = n_warmup
+        self.replay_size = replay_size  # batch_size
+        self.multi_step = multi_step
+        self.test_episode = test_episode
+        self.test_interval = test_interval if test_interval is not None else 10000
+        self.util = Utils(prefix=self.agent.__class__.__name__)
+        self.replay_buf = Rollout(self.max_steps)
+        self.global_step = tf.train.get_or_create_global_step()
+        self.test_render = test_render
+        self.test_frame = test_frame
+        self.init_model_dir = init_model_dir
+        self.metrics = metrics
+
+    def train(self):
+        self.total_steps = 0
+        self.learning_flag = 0
+        if self.init_model_dir is not None:
+            self.util.restore_agent(self.agent ,self.init_model_dir)
+        for episode in range(1, self.n_episode+1):
+            self.global_step.assign_add(1)
+            self.step(episode)
+        self.episode_end()
+        return
+
+    def step(self, episode):
+        with tf.contrib.summary.always_record_summaries():
+            state = self.env.reset()
+            total_reward = 0
+            for step in range(1, self.max_steps+1):
+                if self.render:
+                    self.env.render()
+
+                action = self.agent.choose_action(state)
+                state_, reward, done, _ = self.env.step(action)
+
+                # the smaller theta and closer to center the better
+                if self.env.__class__.__name__ == 'CartPoleEnv':
+                    x, x_dot, theta, theta_dot = state_
+                    r1 = (self.env.x_threshold - abs(x))/self.env.x_threshold - 0.8
+                    r2 = (self.env.theta_threshold_radians - abs(theta))/self.env.theta_threshold_radians - 0.5
+                    reward = r1 + r2
+
+                self.replay_buf.push(state, action, done, state_, reward, step-1)
+                
+                total_reward += reward
+
+                if done or step == self.max_steps:
+                    _, transitions, weights = self.replay_buf.sample()
+                    train_data = map(np.array, zip(*transitions))
+                    self.agent.update_q_net(train_data, weights)
+                    self.replay_buf.clear()
+                    self.learning_flag = 1
+                    self.summary()
+                    self.step_end(episode, step, total_reward)
+                    break
+
+                state = state_
+            
+        return
+
+    def episode_end(self):
+        self.env.close()
+        return
+
+    
+
+
+
+class DistributedTrainer(BasedTrainer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.agent_name = self.agent.__class__.__name__
+        self.n_workers = kwargs.pop('n_workers')
+        self.process_list, self.env_list = [], []
+        if self.agent_name == 'Ape_X':
+            self._trainer = Trainer(*args, **kwargs)
+        else:
+            self._trainer = PolicyTrainer(*args, **kwargs)
+
+    def build_process(self):
+        """
+        複数のAgentを作成して、Process_listに格納
+        """
+        for _ in range(self.n_workers):
+            if self.agent_name == 'Ape_X':
+                self.process_list.append(self.agent.learner)
+            self.process_list.append(mp.Process(self._trainer.train))
+
+    def train(self):
+        for p in self.process_list:
+            p.start()
+            time.sleep(0.5)
+
+        for p in self.process_list:
+            p.join()
+
+        return
