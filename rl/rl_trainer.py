@@ -46,9 +46,6 @@ class BasedTrainer():
         self.util.initial() 
         self.replay_buf = PrioritizeReplayBuffer(self.data_size) if priority else ReplayBuffer(self.data_size)
         self.global_step = tf.train.get_or_create_global_step()
-        self.state_deque = deque(maxlen=self.multi_step)
-        self.reward_deque = deque(maxlen=self.multi_step)
-        self.action_deque = deque(maxlen=self.multi_step)
         self.test_render = test_render
         self.test_frame = test_frame
         self.init_model_dir = init_model_dir
@@ -172,6 +169,9 @@ class BasedTrainer():
 class Trainer(BasedTrainer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.state_deque = deque(maxlen=self.multi_step)
+        self.reward_deque = deque(maxlen=self.multi_step)
+        self.action_deque = deque(maxlen=self.multi_step)
     
     def step(self, episode):
         with tf.contrib.summary.always_record_summaries():
@@ -236,7 +236,7 @@ class PolicyTrainer(BasedTrainer):
     """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.replay_buf = Rollout(self.data_size)
+        self.replay_buf = Rollout(self.max_steps)
 
     def step(self, episode):
         with tf.contrib.summary.always_record_summaries():
@@ -276,34 +276,4 @@ class PolicyTrainer(BasedTrainer):
         if episode % self.test_interval == 0 and self.learning_flag:
             self.test(episode)
 
-        return
-
-class DistributedTrainer(BasedTrainer):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.agent_name = self.agent.__class__.__name__
-        self.n_workers = kwargs.pop('n_workers')
-        self.process_list, self.env_list = [], []
-        if self.agent_name == 'Ape_X':
-            self._trainer = Trainer(*args, **kwargs)
-        else:
-            self._trainer = PolicyTrainer(*args, **kwargs)
-
-    def build_process(self):
-        """
-        複数のAgentを作成して、Process_listに格納
-        """
-        for _ in range(self.n_workers):
-            if self.agent_name == 'Ape_X':
-                self.process_list.append(self.agent.learner)
-            self.process_list.append(mp.Process(self._trainer.train))
-
-    def train(self):
-        for p in self.process_list:
-            p.start()
-            time.sleep(0.5)
-
-        for p in self.process_list:
-            p.join()
-
-        return
+        return  
