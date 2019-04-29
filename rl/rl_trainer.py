@@ -226,7 +226,7 @@ class Trainer(BasedTrainer):
         return
 
     def step_end(self, episode, step, total_reward):
-        super.step_end(episode, step, total_reward)
+        super().step_end(episode, step, total_reward)
         self.state_deque.clear()
         self.action_deque.clear()
         self.reward_deque.clear()
@@ -375,6 +375,75 @@ class A3CTrainer():
 
     
 
+class ApexTrainer(Trainer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def run_learner(self):
+        return
+    
+    def run_agent(self):
+        self.total_steps = 0
+        self.learning_flag = 0
+        if self.init_model_dir is not None:
+            self.util.restore_agent(self.agent ,self.init_model_dir)
+        for episode in range(1, self.n_episode+1):
+            self.global_step.assign_add(1)
+            self.agent_step(episode)
+        self.episode_end()
+        return
+
+    def agent_step(self, episode):
+        with tf.contrib.summary.always_record_summaries():
+            state = self.env.reset()
+            total_reward = 0
+            for step in range(1, self.max_steps+1):
+                if self.render:
+                    self.env.render()
+
+                action = self.agent.choose_action(state)
+                state_, reward, done, _ = self.env.step(action)
+
+                # the smaller theta and closer to center the better
+                if self.env.__class__.__name__ == 'CartPoleEnv':
+                    x, x_dot, theta, theta_dot = state_
+                    r1 = (self.env.x_threshold - abs(x))/self.env.x_threshold - 0.8
+                    r2 = (self.env.theta_threshold_radians - abs(theta))/self.env.theta_threshold_radians - 0.5
+                    reward = r1 + r2
+
+                # Multi-step learning
+                self.state_deque.append(state)
+                self.reward_deque.append(reward)
+                self.action_deque.append(action)
+
+                # push replay buffer with Multi_step rewards
+                if len(self.state_deque) == self.multi_step or done:
+                    t_reward, p_index = self.multi_step_reward(self.reward_deque, self.agent.discount)
+                    state = self.state_deque[0]
+                    action = self.action_deque[0]
+                    self.replay_buf.push(state, action, done, state_, t_reward, p_index)
+
+                total_reward += reward
+
+                # Update Q network
+                if len(self.replay_buf) > self.replay_size and len(self.replay_buf) > self.n_warmup:
+                    indexes, transitions, weights = self.replay_buf.sample(self.agent.batch_size, episode/self.n_episode)
+                    train_data = map(np.array, zip(*transitions))
+                    self.agent.update_q_net(train_data, weights)
+                    self.learning_flag = 1
+                    self.summary()
+                    if (indexes != None):
+                        for i, td_error in enumerate(self.agent.td_error):
+                            self.replay_buf.update(indexes[i], td_error)
+
+                if done or step == self.max_steps:
+                    self.step_end(episode, step, total_reward)
+                    break
+
+                state = state_
+
+    def train(self):
+        return
 
 
 class DistributedTrainer(BasedTrainer):
