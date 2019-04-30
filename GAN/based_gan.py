@@ -25,6 +25,9 @@ class Generator(Module):
     def var(self):
         return tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, self.name)
 
+    def loss(self):
+        return tf.losses.get_regularization_loss()
+
 
 class Discriminator(Module):
     def __init__(self, model, l2_reg=False, l2_reg_scale=0.0001, name='Discriminator', trainable=True):
@@ -48,6 +51,9 @@ class Discriminator(Module):
     def weight(self):
         return [v for v in tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, self.name) if re.search('kernel', v.name)]
 
+    def loss(self):
+        return tf.losses.get_regularization_loss()
+
 
 class BasedGAN(Module):
     def __init__(self,
@@ -70,7 +76,7 @@ class BasedGAN(Module):
         self.conditional = conditional
         self.size = size
         self.channel = channel
-        self.l2_reg = l2_reg
+        self._l2_reg = l2_reg
         self.l2_reg_scale = l2_reg_scale
         if self._trainable:
             self.optimizer = eval(opt)(learning_rate=lr)

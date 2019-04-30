@@ -19,6 +19,7 @@ def main(args):
         "batch_size": FLAGS.batch_size,
         "Optimizer":FLAGS.opt,
         "learning_rate":FLAGS.lr,
+        "l2_norm":FLAGS.l2_norm,
         "Augmentation": FLAGS.aug})
 
     # Setting
@@ -43,6 +44,7 @@ def main(args):
                                 channel=data.channel,
                                 lr=FLAGS.lr,
                                 class_num=data.output_dim,
+                                l2_reg=FLAGS.l2_norm,
                                 conditional=FLAGS.conditional,
                                 opt=FLAGS.opt,
                                 trainable=True)

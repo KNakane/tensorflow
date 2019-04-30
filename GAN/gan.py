@@ -25,8 +25,8 @@ class GAN(BasedGAN):
                                     ['BN'],
                                     ['fc', 1, None]]
 
-        self.D = Discriminator(self.discriminator_model, self.l2_reg, self.l2_reg_scale)
-        self.G = Generator(self.generator_model, self.l2_reg, self.l2_reg_scale)
+        self.D = Discriminator(self.discriminator_model, self._l2_reg, self.l2_reg_scale)
+        self.G = Generator(self.generator_model, self._l2_reg, self.l2_reg_scale)
         self.G_ = Generator(self.generator_model, trainable=False)
 
     def predict(self, inputs, batch_size):
@@ -58,6 +58,9 @@ class GAN(BasedGAN):
         with tf.variable_scope('loss'):
             d_loss = -tf.reduce_mean(tf.log(real_logit + self.eps) + tf.log(1. - fake_logit + self.eps))
             g_loss = -tf.reduce_mean(tf.log(fake_logit + self.eps))
+            if self._l2_reg:
+                d_loss += self.D.loss()
+                g_loss += self.G.loss()
             return d_loss, g_loss
 
 
@@ -195,6 +198,9 @@ class WGAN(GAN):
         with tf.variable_scope('loss'):
             d_loss = -(tf.reduce_mean(real_logit + self.eps) - tf.reduce_mean(fake_logit + self.eps))
             g_loss = -tf.reduce_mean(fake_logit + self.eps)
+            if self._l2_reg:
+                d_loss += self.D.loss()
+                g_loss += self.G.loss()
             return d_loss, g_loss
 
     def optimize(self, d_loss, g_loss, global_step=None):
@@ -262,9 +268,13 @@ class WGAN_GP(WGAN):
         return real_logit, fake_logit#, fake_img
 
     def loss(self, real_logit, fake_logit):
-        d_loss = tf.reduce_mean(fake_logit - real_logit) + 10 * tf.reduce_mean(tf.square(tf.sqrt(tf.reduce_sum(tf.square(self.grad), axis=[1, 2, 3])) - 1))
-        g_loss = -tf.reduce_mean(fake_logit)
-        return d_loss, g_loss
+        with tf.variable_scope('loss'):
+            d_loss = tf.reduce_mean(fake_logit - real_logit) + 10 * tf.reduce_mean(tf.square(tf.sqrt(tf.reduce_sum(tf.square(self.grad), axis=[1, 2, 3])) - 1))
+            g_loss = -tf.reduce_mean(fake_logit)
+            if self._l2_reg:
+                d_loss += self.D.loss()
+                g_loss += self.G.loss()
+            return d_loss, g_loss
 
     def optimize(self, d_loss, g_loss, global_step=None):
         opt_D = self.optimizer.optimize(loss=d_loss, global_step=global_step, var_list=self.D.var)
@@ -282,6 +292,9 @@ class LSGAN(GAN):
         with tf.variable_scope('loss'):
             d_loss = tf.reduce_mean(0.5 * tf.square(real_logit - 1) + 0.5 * tf.square(fake_logit))
             g_loss = tf.reduce_mean(0.5 * tf.square(fake_logit - 1))
+            if self._l2_reg:
+                d_loss += self.D.loss()
+                g_loss += self.G.loss()
             return d_loss, g_loss
 
 
@@ -346,13 +359,16 @@ class ACGAN(DCGAN):
 
     def loss(self, real_logit, fake_logit, labels):
         with tf.variable_scope('loss'):
-            d_loss = -(tf.reduce_mean(real_logit[0] + self.eps) - tf.reduce_mean(fake_logit[0] + self.eps))
-            g_loss = -tf.reduce_mean(fake_logit[0] + self.eps)
+            d_loss = -tf.reduce_mean(tf.log(real_logit[0] + self.eps) + tf.log(1. - fake_logit[0] + self.eps))
+            g_loss = -tf.reduce_mean(tf.log(fake_logit[0] + self.eps))
 
             real_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=real_logit[1], labels=labels))
             fake_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=fake_logit[1], labels=labels))
             d_loss = d_loss +  real_loss + fake_loss
             g_loss = g_loss + fake_loss
+            if self._l2_reg:
+                d_loss += self.D.loss()
+                g_loss += self.G.loss()
             return d_loss, g_loss
 
     def evaluate(self, real_logit, fake_logit):
