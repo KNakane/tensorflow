@@ -201,7 +201,7 @@ class WGAN(GAN):
     def loss(self, real_logit, fake_logit):
         with tf.variable_scope('loss'):
             with tf.variable_scope('Discriminator_loss'):
-                d_loss = -(tf.reduce_mean(real_logit + self.eps) - tf.reduce_mean(fake_logit + self.eps))
+                d_loss = - tf.reduce_mean(real_logit + self.eps) + tf.reduce_mean(fake_logit + self.eps)
             with tf.variable_scope('Generator_loss'):
                 g_loss = -tf.reduce_mean(fake_logit + self.eps)
             if self._l2_reg:
@@ -266,6 +266,7 @@ class WGAN_GP(WGAN):
             fake_img = self.combine_binary_image(fake_img, labels)
             inputs = self.combine_binary_image(inputs, labels)
 
+        # Gradient Penalty
         e = tf.random_uniform([batch_size, 1, 1, 1], 0, 1)
         x_hat = e * inputs + (1 - e) * fake_img
 
