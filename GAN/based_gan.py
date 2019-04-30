@@ -79,7 +79,8 @@ class BasedGAN(Module):
         self._l2_reg = l2_reg
         self.l2_reg_scale = l2_reg_scale
         if self._trainable:
-            self.optimizer = eval(opt)(learning_rate=lr)
+            self.g_optimizer = eval(opt)(learning_rate=lr*5)
+            self.d_optimizer = eval(opt)(learning_rate=lr)
         if self.conditional:
             self.class_num = class_num
         self.build()
@@ -106,12 +107,11 @@ class BasedGAN(Module):
             return  (tf.reduce_mean(tf.cast(fake_logit < 0.5, tf.float32)) + tf.reduce_mean(tf.cast(real_logit > 0.5, tf.float32))) / 2.
 
     def optimize(self, d_loss, g_loss, global_step=None):
-        with tf.variable_scope('Loss'):
-            with tf.variable_scope('Discriminator_loss'):
-                opt_D = self.optimizer.optimize(loss=d_loss, global_step=global_step, var_list=self.D.var)
-            with tf.variable_scope('Generator_loss'):
-                opt_G = self.optimizer.optimize(loss=g_loss, global_step=global_step, var_list=self.G.var)
-            return opt_D, opt_G
+        with tf.variable_scope('Optimizer'):
+            with tf.control_dependencies(tf.get_collection(tf.GraphKeys.UPDATE_OPS)):
+                opt_D = self.d_optimizer.optimize(loss=d_loss, global_step=global_step, var_list=self.D.var)
+                opt_G = self.g_optimizer.optimize(loss=g_loss, global_step=global_step, var_list=self.G.var)
+                return opt_D, opt_G
 
     def combine_distribution(self, z, labels=None):
         """

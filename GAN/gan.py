@@ -1,6 +1,8 @@
 import os,sys
 import numpy as np
 import tensorflow as tf
+sys.path.append('./utility')
+from optimizer import *
 from based_gan import BasedGAN, Discriminator, Generator
 
 class GAN(BasedGAN):
@@ -56,8 +58,10 @@ class GAN(BasedGAN):
 
     def loss(self, real_logit, fake_logit):
         with tf.variable_scope('loss'):
-            d_loss = -tf.reduce_mean(tf.log(real_logit + self.eps) + tf.log(1. - fake_logit + self.eps))
-            g_loss = -tf.reduce_mean(tf.log(fake_logit + self.eps))
+            with tf.variable_scope('Discriminator_loss'):
+                d_loss = -tf.reduce_mean(tf.log(real_logit + self.eps) + tf.log(1. - fake_logit + self.eps))
+            with tf.variable_scope('Generator_loss'):
+                g_loss = -tf.reduce_mean(tf.log(fake_logit + self.eps))
             if self._l2_reg:
                 d_loss += self.D.loss()
                 g_loss += self.G.loss()
@@ -196,18 +200,22 @@ class WGAN(GAN):
 
     def loss(self, real_logit, fake_logit):
         with tf.variable_scope('loss'):
-            d_loss = -(tf.reduce_mean(real_logit + self.eps) - tf.reduce_mean(fake_logit + self.eps))
-            g_loss = -tf.reduce_mean(fake_logit + self.eps)
+            with tf.variable_scope('Discriminator_loss'):
+                d_loss = -(tf.reduce_mean(real_logit + self.eps) - tf.reduce_mean(fake_logit + self.eps))
+            with tf.variable_scope('Generator_loss'):
+                g_loss = -tf.reduce_mean(fake_logit + self.eps)
             if self._l2_reg:
                 d_loss += self.D.loss()
                 g_loss += self.G.loss()
             return d_loss, g_loss
 
     def optimize(self, d_loss, g_loss, global_step=None):
-        clip_D = self.weight_clipping()
-        opt_D = self.optimizer.optimize(loss=d_loss, global_step=global_step, var_list=self.D.var)
-        opt_G = self.optimizer.optimize(loss=g_loss, global_step=global_step, var_list=self.G.var)
-        return tf.group([opt_D, clip_D]), opt_G
+        with tf.variable_scope('Optimizer'):
+            with tf.control_dependencies(tf.get_collection(tf.GraphKeys.UPDATE_OPS)):
+                clip_D = self.weight_clipping()
+                opt_D = self.d_optimizer.optimize(loss=d_loss, global_step=global_step, var_list=self.D.var)
+                opt_G = self.g_optimizer.optimize(loss=g_loss, global_step=global_step, var_list=self.G.var)
+                return tf.group([opt_D, clip_D]), opt_G
 
 class WGAN_GP(WGAN):
     """
@@ -277,9 +285,11 @@ class WGAN_GP(WGAN):
             return d_loss, g_loss
 
     def optimize(self, d_loss, g_loss, global_step=None):
-        opt_D = self.optimizer.optimize(loss=d_loss, global_step=global_step, var_list=self.D.var)
-        opt_G = self.optimizer.optimize(loss=g_loss, global_step=global_step, var_list=self.G.var)
-        return opt_D, opt_G
+        with tf.variable_scope('Optimizer'):
+            with tf.control_dependencies(tf.get_collection(tf.GraphKeys.UPDATE_OPS)):
+                opt_D = self.d_optimizer.optimize(loss=d_loss, global_step=global_step, var_list=self.D.var)
+                opt_G = self.g_optimizer.optimize(loss=g_loss, global_step=global_step, var_list=self.G.var)
+                return opt_D, opt_G
 
 class LSGAN(GAN):
     """
