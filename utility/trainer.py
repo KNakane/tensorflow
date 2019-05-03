@@ -52,7 +52,7 @@ class Train():
         self.train_accuracy = self.model.evaluate(self.train_logits, train_ans)
 
         # test
-        self.test_logits = self.model.test_inference(valid_data, reuse=True)
+        self.test_logits = self.model.inference(valid_data, valid_ans, True) if self.name == 'CVAE' else self.model.inference(valid_data, reuse=True)
         self.test_loss = self.model.loss(self.test_logits, valid_data) if self.name == 'AutoEncoder' or self.name == 'VAE' or self.name == 'CVAE' else self.model.loss(self.test_logits, valid_ans)
         self.test_accuracy = self.model.evaluate(self.test_logits, valid_ans)
 
@@ -152,7 +152,7 @@ class Train():
                     saver.restore(session, ckpt.model_checkpoint_path)
             while not session.should_stop():
                 _, loss, train_acc, test_acc, test_input, test_output = session.run([self.train_op, self.train_loss, self.train_accuracy, self.test_accuracy, valid_inputs, self.test_logits])
-        if self.name == 'AutoEncoder' or self.name == 'VAE':
+        if self.name == 'AutoEncoder' or self.name == 'VAE' or self.name == 'CVAE':
             self.util.construct_figure(test_input, test_output)
         return loss, train_acc, test_acc
 

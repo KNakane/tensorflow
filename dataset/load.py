@@ -76,7 +76,7 @@ class Load():
             dataset = dataset.apply(tf.data.experimental.map_and_batch(
                 preprocess_fn, batch_size,
                 num_parallel_batches=4,  # cpu cores
-                drop_remainder=True if is_training else False))
+                drop_remainder=True))
 
             dataset = dataset.shuffle(buffer_size).repeat()  # depends on sample size
             dataset = dataset.prefetch(tf.contrib.data.AUTOTUNE)
@@ -99,10 +99,6 @@ class Load():
                 num_parallel_batches=4,  # cpu cores
                 drop_remainder=False))
         
-        """
-        x = tf.reshape(tf.cast(images, tf.float32), (-1, self.size, self.size, self.channel)) / 255.0
-        y = tf.one_hot(tf.cast(labels, tf.uint8), self.output_dim)
-        """
         return dataset
 
     def down_load_kuzushiji(self):
