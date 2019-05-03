@@ -49,12 +49,12 @@ class Train():
         opt_op = self.model.optimize(self.train_loss, self.global_step)
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
         self.train_op = tf.group([opt_op] + update_ops)
-        self.train_accuracy = self.model.evaluate(self.train_logits, train_ans)
+        self.train_accuracy = self.model.evaluate(self.train_logits, train_data) if self.name == 'AutoEncoder' or self.name == 'VAE' or self.name == 'CVAE' else self.model.evaluate(self.train_logits, train_ans)
 
         # test
         self.test_logits = self.model.inference(valid_data, valid_ans, True) if self.name == 'CVAE' else self.model.inference(valid_data, reuse=True)
         self.test_loss = self.model.loss(self.test_logits, valid_data) if self.name == 'AutoEncoder' or self.name == 'VAE' or self.name == 'CVAE' else self.model.loss(self.test_logits, valid_ans)
-        self.test_accuracy = self.model.evaluate(self.test_logits, valid_ans)
+        self.test_accuracy = self.model.evaluate(self.test_logits, valid_data) if self.name == 'AutoEncoder' or self.name == 'VAE' or self.name == 'CVAE' else self.model.evaluate(self.test_logits, valid_ans)
 
         return 
 

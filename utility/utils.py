@@ -136,13 +136,19 @@ class Utils():
         for i in range(n):
             #  display original
             ax = plt.subplot(2, n, i + 1)
-            ax.imshow(x_test[i].reshape(28, 28))
+            try:
+                ax.imshow(x_test[i].reshape(28, 28))
+            except:
+                ax.imshow(x_test[i])
             plt.gray()
             ax.get_xaxis().set_visible(False)
             ax.get_yaxis().set_visible(False)
 
             ax = plt.subplot(2, n, i + 1 + n)
-            ax.imshow(decoded_imgs[i].reshape(28, 28))
+            try:
+                ax.imshow(decoded_imgs[i].reshape(28, 28))
+            except:
+                ax.imshow(decoded_imgs[i])
             plt.gray()
             ax.get_xaxis().set_visible(False)
             ax.get_yaxis().set_visible(False)

@@ -91,6 +91,13 @@ class AutoEncoder(CNN):
         loss = tf.reduce_mean(tf.square(logits - labels))
         return loss
 
+    def evaluate(self, logits, input_data):
+        with tf.variable_scope('Accuracy'):
+            marginal_likelihood = tf.reduce_sum(input_data * tf.log(logits) + (1 - input_data) * tf.log(1 - logits),
+                                            [1, 2])
+            neg_loglikelihood = -tf.reduce_mean(marginal_likelihood)
+            return neg_loglikelihood
+
 
 class VAE(AutoEncoder):
     # Based on https://github.com/shaohua0116/VAE-Tensorflow

@@ -385,7 +385,10 @@ class AEHook(GanHook):
             ax.set_xticklabels([])
             ax.set_yticklabels([])
             ax.set_aspect('equal')
-            plt.imshow(samples[i].reshape(28, 28), cmap='Greys_r')
+            try:
+                plt.imshow(samples[i].reshape(28, 28), cmap='Greys_r')
+            except:
+                plt.imshow(samples[i])
 
         
         name = self.log_dir + '/{}.png'.format(str(iteration).zfill(3))

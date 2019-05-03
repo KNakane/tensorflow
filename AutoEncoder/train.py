@@ -11,7 +11,7 @@ from collections import OrderedDict
 from hooks import SavedModelBuilderHook, MyLoggerHook, AEHook
 
 
-def set_model(outdim, channel=1):
+def set_model(outdim, size=28, channel=1):
     """
     encode = [['conv', 5, 16, 2, tf.nn.leaky_relu],
               ['conv', 5, 32, 2, tf.nn.leaky_relu],
@@ -28,8 +28,8 @@ def set_model(outdim, channel=1):
 
     decode = [['fc', 100, tf.nn.elu],
               ['fc', 500, tf.nn.elu],
-              ['fc', 784, tf.nn.sigmoid],
-              ['reshape', [-1, 28, 28, 1]]]
+              ['fc', size*size*channel, tf.nn.sigmoid],
+              ['reshape', [-1, size, size, channel]]]
     return encode, decode
 
 def main(argv):
@@ -48,7 +48,7 @@ def main(argv):
     data = Load(FLAGS.data)
     
     ## setting models
-    encode, decode = set_model(outdim=40,channel=data.channel)
+    encode, decode = set_model(outdim=40, size=data.size, channel=data.channel)
     model = eval(FLAGS.network)(encode=encode, decode=decode, denoise=FLAGS.denoise, size=data.size, channel=data.channel, name=FLAGS.network, out_dim=data.output_dim, lr=FLAGS.lr, opt=FLAGS.opt, trainable=True)
 
     #training
