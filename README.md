@@ -29,6 +29,7 @@ GANによる画像生成ができる
 - Wasserstein GAN(WGAN)
 - WGAN-GP  
 - Conditional GAN(CGAN)
+- ACGAN
 
 ## [Reinforcement Learning](./rl/README.md)
 tensorflowのEager Modeを使用している  
