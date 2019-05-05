@@ -260,13 +260,15 @@ class Utils():
                 result[i, j] = mu + rn[i, j]*std
         return result
 
-def set_output_dim(network, category, out_dim, N_atoms=51):
+def set_output_dim(FLAGS, out_dim, N_atoms=51):
     """
     Networkの出力ユニット数を決める関数
     """
-    if network == 'Dueling_Net':
-        return (out_dim + 1) * N_atoms if category else out_dim + 1
-    elif network == 'DDPG' or network == 'TD3':
+    if FLAGS.network == 'Dueling_Net':
+        return (out_dim + 1) * N_atoms if FLAGS.category else out_dim + 1
+    elif FLAGS.network == 'DDPG' or FLAGS.network == 'TD3':
         return out_dim
+    elif FLAGS.agent == 'A3C':
+        return out_dim + 1
     else:
-        return out_dim * N_atoms if category else out_dim
+        return out_dim * N_atoms if FLAGS.category else out_dim

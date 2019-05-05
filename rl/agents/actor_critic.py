@@ -14,14 +14,18 @@ class A3C(Agent):
         self.entropy_weight = 0.1
 
     def _build_net(self):
-        self.A3CNet = A3CNet(model=self.model, out_dim=self.n_actions, name='A3CNet', opt=self._optimizer, lr=self.lr, trainable=self.trainable)
+        self.q_eval = A3CNet(model=self.model, out_dim=self.n_actions, name='A3CNet', opt=self._optimizer, lr=self.lr, trainable=self.trainable)
  
+    @property
+    def var(self):
+        v = []
+        for l in self.q_eval._layers:
+            v += l.get_weights()
+        return v
+
     def inference(self, state):
-        action, _ = self.actor.inference(state)
-        if self.is_categorical:
-            return tf.argmax(tf.reduce_sum(action * self.z_list_broadcasted, axis=2), axis=1)
-        else:
-            return action
+        action, _ = self.q_eval.inference(state)
+        return action
 
     def choose_action(self, observation):
         observation = observation[np.newaxis, :]
@@ -41,41 +45,41 @@ class A3C(Agent):
         reward = br
         done = done
 
+        # normalize rewards
+        reward = self._discount_and_norm_rewards(reward)
+
         global_step = tf.train.get_or_create_global_step()
 
         with tf.GradientTape() as tape:
-            action_eval, values = self.inference(self.bs)
+            action_eval, values = self.q_eval.inference(self.bs)
             neg_logs = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=action_eval, labels=eval_act_index)
-            advantage = reward - values
+            advantage = tf.convert_to_tensor(reward, dtype=tf.float32) - values
 
             policy_loss = tf.reduce_mean(neg_logs * tf.stop_gradient(advantage))
             value_loss = tf.losses.mean_squared_error(reward, values)
             action_entropy = tf.reduce_mean(self.categorical_entropy(action_eval))
             self.loss = policy_loss +  self.value_loss_weight * value_loss - self.entropy_weight * action_entropy
-        self.q_eval.optimize(self.loss, global_step, tape)
+        gradients = self.q_eval.get_grads(self.loss, global_step, tape)
 
-        self.pull_global_net()
 
         # increasing epsilon
         self.epsilon = self.epsilon + self.epsilon_increment if self.epsilon < self.epsilon_max else self.epsilon_max
+        
+        return gradients
 
-
-        return
-
-    def update_global_net(self):
+    def update_global_net(self, grad):
         """
         Global Networkのparameter を更新する
         """
-        for param, target_param in zip(self.q_eval.weights, self.q_next.weights):
-            target_param.assign(param)
+        self.q_eval.optimize(grad)
         return
 
-    def pull_global_net(self):
+    def pull_global_net(self, global_para):
         """
         Global Network から parameterを引き出す
         """
-        for param, target_param in zip(self.q_eval.weights, self.q_next.weights):
-            target_param.assign(param)
+        for param, target_param in zip(self.q_eval.weights, global_para):
+            param.assign(target_param)
         return
 
     def categorical_entropy(self, logits):

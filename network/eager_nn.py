@@ -163,9 +163,6 @@ class A3CNet(BasedEagerNN):
     
     def _build(self):
         for l in range(len(self.model)):
-            if l == len(self.model) - 1:
-                # 状態価値V用に1unit追加
-                self.model[l][1] = self.out_dim + 1
             my_layer = eval('self.' + self.model[l][0])(self.model[l][1:])
             self._layers.append(my_layer)
 
@@ -176,12 +173,17 @@ class A3CNet(BasedEagerNN):
                 x = my_layer(x, training=self._trainable)
             except:
                 x = my_layer(x)
-                
         action = x[:, 1:]
-        V = tf.reshape(x[:,0], (x.shape[0], 1))
-        V = tf.tile(V, [1, self.out_dim])
+        V = x[:,0]
         return action, V
 
+    def optimize(self, grads):
+        self.optimizer.method.apply_gradients(zip(grads, self.trainable_variables))
+
+    def get_grads(self, loss, global_step, tape=None):
+        assert tape is not None, 'please set tape in opmize'
+        grads = tape.gradient(loss, self.trainable_variables)
+        return grads
     
 
 class A2CNet(BasedEagerNN):

@@ -11,7 +11,8 @@ import tensorflow as tf
 from optimizer import *
 from dqn import DQN,DDQN,Rainbow
 from policy_gradient import PolicyGradient
-from rl_trainer import Trainer, PolicyTrainer
+from actor_critic import A3C
+from rl_trainer import Trainer, PolicyTrainer, DistributedTrainer
 from utils import set_output_dim
 from collections import OrderedDict
 
@@ -51,7 +52,7 @@ def main(argv):
         "model_update": FLAGS.model_update,
         "init_model": FLAGS.init_model})
     
-    out_dim = set_output_dim(FLAGS.network, FLAGS.category, env.action_space.n)
+    out_dim = set_output_dim(FLAGS, env.action_space.n)
 
     agent = eval(FLAGS.agent)(model=set_model(outdim=out_dim),
                               n_actions=env.action_space.n,
@@ -85,6 +86,26 @@ def main(argv):
                                 test_render=FLAGS.test_render,
                                 metrics=message,
                                 init_model_dir=FLAGS.init_model)
+
+    elif FLAGS.agent == 'A3C' or FLAGS.agent == 'Ape_X':
+        trainer = DistributedTrainer(agent=agent,
+                                     n_workers=FLAGS.n_workers,
+                                     env=env, 
+                                     n_episode=FLAGS.n_episode, 
+                                     max_step=FLAGS.step, 
+                                     replay_size=FLAGS.batch_size, 
+                                     data_size=500,
+                                     n_warmup=FLAGS.n_warmup,
+                                     priority=FLAGS.priority,
+                                     multi_step=0,
+                                     render=FLAGS.render,
+                                     test_episode=2,
+                                     test_interval=50,
+                                     test_frame=FLAGS.rec,
+                                     test_render=FLAGS.test_render,
+                                     metrics=message,
+                                     init_model_dir=FLAGS.init_model)
+
     else:
         trainer = Trainer(agent=agent, 
                           env=env, 
@@ -109,7 +130,7 @@ def main(argv):
 if __name__ == '__main__':
     flags = tf.app.flags
     FLAGS = flags.FLAGS
-    flags.DEFINE_string('agent', 'DQN', 'Choise Agents -> [DQN, DDQN, Rainbow, PolicyGradient]')
+    flags.DEFINE_string('agent', 'DQN', 'Choise Agents -> [DQN, DDQN, Rainbow, PolicyGradient, A3C]')
     flags.DEFINE_integer('n_episode', '100000', 'Input max episode')
     flags.DEFINE_string('network', 'EagerNN', 'Choise Network -> [EagerNN, Dueling_Net]')
     flags.DEFINE_float('lr', '1e-4', 'Input learning rate')
@@ -123,6 +144,7 @@ if __name__ == '__main__':
     flags.DEFINE_boolean('priority', 'False', 'prioritized Experience Replay')
     flags.DEFINE_boolean('category', 'False', 'Categorical DQN')
     flags.DEFINE_boolean('noise', 'False', 'Noisy Net')
+    flags.DEFINE_integer('n_workers', '1', 'Distributed workers')
     flags.DEFINE_string('init_model','None','Choice the initial model directory')
     flags.DEFINE_boolean('rec', 'False', 'Create test frame -> True/False')
     flags.DEFINE_boolean('test_render', 'False', 'test render -> True/False')

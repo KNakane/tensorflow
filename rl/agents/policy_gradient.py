@@ -49,19 +49,3 @@ class PolicyGradient(Agent):
         #sys.exit()
         
         return
-
-    def _discount_and_norm_rewards(self, rewards):
-        """
-        割引報酬和の計算
-        based on https://github.com/MorvanZhou/Reinforcement-learning-with-tensorflow/blob/4f9376de9273192c25dda7be589d6c3e30cf5aec/contents/7_Policy_gradient_softmax/RL_brain.py
-        """
-        discounted_ep_rs = np.zeros_like(rewards)
-        running_add = 0
-        for t in reversed(range(0, len(rewards))):
-            running_add = running_add * self.discount + rewards[t]
-            discounted_ep_rs[t] = running_add
-
-        # normalize episode rewards
-        discounted_ep_rs -= np.mean(discounted_ep_rs)
-        discounted_ep_rs /= np.std(discounted_ep_rs)
-        return discounted_ep_rs
