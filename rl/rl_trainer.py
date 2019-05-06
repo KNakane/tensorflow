@@ -7,6 +7,7 @@ import random
 import numpy as np
 import tensorflow as tf
 import multiprocessing as mp
+from multiprocessing import Pool
 from collections import deque
 from collections import OrderedDict
 from utils import Utils
@@ -320,7 +321,7 @@ class A3CTrainer(PolicyTrainer):
         self.init_model_dir = init_model_dir
         self.metrics = metrics
         self.global_agent = share_parameter
-        self.worker_num = worker_num
+        self.worker_num = worker_num+1
         
 
     def step(self, episode):
@@ -372,13 +373,14 @@ class A3CTrainer(PolicyTrainer):
         tf.contrib.summary.scalar('train/total_reward_{}'.format(self.worker_num), total_reward)
         tf.contrib.summary.scalar('train/average_reward_{}'.format(self.worker_num), total_reward / step)
         print("worker: %d episode: %d total_steps: %d  steps/episode: %d  total_reward: %0.2f"%(self.worker_num, episode, self.total_steps, step, total_reward))
-        """
         metrics = OrderedDict({
+            "worker":self.worker_num,
             "episode": episode,
             "total_steps": self.total_steps,
             "steps/episode":step,
             "total_reward": total_reward})
-        """
+        self.util.write_log(message=metrics)
+        self.util.save_model()
 
     def summary(self):
         """
@@ -481,13 +483,16 @@ class DistributedTrainer(BasedTrainer):
                 self.process_list.append(mp.Process(target=self._trainer.train, args=()))
 
     def train(self):
-        print(self.process_list)
-        for p in self.process_list:
-            p.start()
-            print('implement')
-            time.sleep(0.5)
+        for w in self.process_list:
+            w.daemon = True
+            w.start()
+            #time.sleep(0.5)
 
-        for p in self.process_list:
-            p.join()
+        try:
+            for w in self.process_list:
+                w.join()
+        except KeyboardInterrupt:
+            for w in self.process_list:
+                w.terminate()
 
         return

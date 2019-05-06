@@ -97,5 +97,6 @@ class Agent(tf.contrib.checkpoint.Checkpointable):
 
         # normalize episode rewards
         discounted_ep_rs -= np.mean(discounted_ep_rs)
-        discounted_ep_rs /= np.std(discounted_ep_rs)
+        if np.std(discounted_ep_rs) > 0:
+            discounted_ep_rs /= np.std(discounted_ep_rs)
         return discounted_ep_rs
