@@ -5,9 +5,12 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '../../utility'))
 import gym
 from gym import spaces
 import tensorflow as tf
-from rl_trainer import Trainer
+from rl_trainer import Trainer, PolicyTrainer, DistributedTrainer
 from dqn import DQN,DDQN,Rainbow
+from actor_critic import A3C
+from policy_gradient import PolicyGradient
 from utils import set_output_dim
+from collections import OrderedDict
 from atari_wrapper import NoopResetEnv, MaxAndSkipEnv, wrap_deepmind, make_atari, set_model
 
 
@@ -21,6 +24,15 @@ def main(argv):
         FLAGS.category = True
         FLAGS.noise = True
 
+    message = OrderedDict({
+        "Env": env,
+        "Agent": FLAGS.agent,
+        "Network": FLAGS.network,
+        "Episode": FLAGS.n_episode,
+        "Max_Step":FLAGS.step,
+        "Categorical": FLAGS.category,
+        "init_model": FLAGS.model})
+
     out_dim = set_output_dim(FLAGS.network, FLAGS.category, env.action_space.n)
 
     agent = eval(FLAGS.agent)(model=set_model(outdim=out_dim),
@@ -33,36 +45,65 @@ def main(argv):
                 e_greedy_increment=0,
                 optimizer=None,
                 network=FLAGS.network,
+                trainable=False,
                 is_categorical=FLAGS.category,
-                is_noise=FLAGS.noise,
-                trainable=True
+                is_noise=FLAGS.noise
                 )
 
-    trainer = Trainer(agent=agent, 
-                      env=env, 
-                      n_episode=FLAGS.n_episode, 
-                      max_step=FLAGS.step, 
-                      replay_size=0, 
-                      data_size=0,
-                      n_warmup=0,
-                      priority=None,
-                      multi_step=0,
-                      render=FLAGS.render,
-                      test_episode=5,
-                      test_interval=0,
-                      test_frame=FLAGS.rec,
-                      test_render=FLAGS.test_render,
-                      init_model_dir=FLAGS.model)
-
-    print()
-    print("---Start Learning------")
-    print("data : {}".format(FLAGS.env))
-    print("Agent : {}".format(FLAGS.agent))
-    print("Network : {}".format(FLAGS.network))
-    print("epoch : {}".format(FLAGS.n_episode))
-    print("categorical : {}".format(FLAGS.category))
-    print("model : {}".format(FLAGS.model))
-    print("-----------------------")
+    if FLAGS.agent == 'PolicyGradient':
+        trainer = PolicyTrainer(agent=agent, 
+                          env=env, 
+                          n_episode=FLAGS.n_episode, 
+                          max_step=FLAGS.step, 
+                          replay_size=0, 
+                          data_size=0,
+                          n_warmup=0,
+                          priority=None,
+                          multi_step=0,
+                          render=FLAGS.render,
+                          test_episode=5,
+                          test_interval=0,
+                          test_frame=FLAGS.rec,
+                          test_render=FLAGS.test_render,
+                          metrics=message,
+                          init_model_dir=FLAGS.model)
+    
+    elif FLAGS.agent == 'A3C' or FLAGS.agent == 'Ape_X':
+        trainer = DistributedTrainer(agent=agent,
+                                     n_workers=0,
+                                     env=env, 
+                                     n_episode=FLAGS.n_episode, 
+                                     max_step=FLAGS.step, 
+                                     replay_size=0, 
+                                     data_size=0,
+                                     n_warmup=0,
+                                     priority=None,
+                                     multi_step=0,
+                                     render=False,
+                                     test_episode=5,
+                                     test_interval=0,
+                                     test_frame=FLAGS.rec,
+                                     test_render=FLAGS.test_render,
+                                     metrics=message,
+                                     init_model_dir=FLAGS.model)
+    
+    else:
+        trainer = Trainer(agent=agent, 
+                          env=env, 
+                          n_episode=FLAGS.n_episode, 
+                          max_step=FLAGS.step, 
+                          replay_size=0, 
+                          data_size=0,
+                          n_warmup=0,
+                          priority=None,
+                          multi_step=0,
+                          render=FLAGS.render,
+                          test_episode=5,
+                          test_interval=0,
+                          test_frame=FLAGS.rec,
+                          test_render=FLAGS.test_render,
+                          metrics=message,
+                          init_model_dir=FLAGS.model)
 
     trainer.test()
 

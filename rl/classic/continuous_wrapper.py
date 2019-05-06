@@ -50,7 +50,7 @@ def main(argv):
         "model_update": FLAGS.model_update,
         "init_model": FLAGS.init_model})
 
-    out_dim = set_output_dim(FLAGS.agent, FLAGS.category, env.action_space.shape[0])
+    out_dim = set_output_dim(FLAGS, env.action_space.shape[0])
     
     agent = eval(FLAGS.agent)(model=set_model(outdim=out_dim),
                               n_actions=env.action_space.shape[0],

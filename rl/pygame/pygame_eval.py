@@ -21,7 +21,7 @@ def main(argv):
         FLAGS.category = True
         FLAGS.noise = True
 
-    out_dim = set_output_dim(FLAGS.network, FLAGS.category, env.action_space.n)
+    out_dim = set_output_dim(FLAGS, env.action_space.n)
 
     agent = eval(FLAGS.agent)(model=set_model(outdim=out_dim),
                 n_actions=env.action_space.n,

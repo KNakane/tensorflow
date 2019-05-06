@@ -5,9 +5,10 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '../../utility'))
 import gym
 from gym import spaces
 import tensorflow as tf
-from rl_trainer import Trainer, PolicyTrainer
+from rl_trainer import Trainer, PolicyTrainer, DistributedTrainer
 from dqn import DQN,DDQN,Rainbow
 from policy_gradient import PolicyGradient
+from actor_critic import A3C
 from utils import set_output_dim
 from cartpole_wrapper import set_model
 from collections import OrderedDict
@@ -32,7 +33,7 @@ def main(argv):
         "Categorical": FLAGS.category,
         "init_model": FLAGS.model})
 
-    out_dim = set_output_dim(FLAGS.network, FLAGS.category, env.action_space.n)
+    out_dim = set_output_dim(FLAGS, env.action_space.n)
 
     agent = eval(FLAGS.agent)(model=set_model(outdim=out_dim),
                 n_actions=env.action_space.n,
@@ -67,6 +68,25 @@ def main(argv):
                           metrics=message,
                           init_model_dir=FLAGS.model)
     
+    elif FLAGS.agent == 'A3C' or FLAGS.agent == 'Ape_X':
+        trainer = DistributedTrainer(agent=agent,
+                                     n_workers=0,
+                                     env=env, 
+                                     n_episode=FLAGS.n_episode, 
+                                     max_step=FLAGS.step, 
+                                     replay_size=0, 
+                                     data_size=0,
+                                     n_warmup=0,
+                                     priority=None,
+                                     multi_step=0,
+                                     render=False,
+                                     test_episode=5,
+                                     test_interval=0,
+                                     test_frame=FLAGS.rec,
+                                     test_render=FLAGS.test_render,
+                                     metrics=message,
+                                     init_model_dir=FLAGS.model)
+    
     else:
         trainer = Trainer(agent=agent, 
                           env=env, 
@@ -94,7 +114,7 @@ def main(argv):
 if __name__ == '__main__':
     flags = tf.app.flags
     FLAGS = flags.FLAGS
-    flags.DEFINE_string('agent', 'DQN', 'Choise Agents -> [DQN, DDQN, Rainbow]')
+    flags.DEFINE_string('agent', 'DQN', 'Choise Agents -> [DQN, DDQN, Rainbow, A3C]')
     flags.DEFINE_string('network', 'EagerNN', 'Choise Network -> [EagerNN, Dueling_Net]')
     flags.DEFINE_integer('n_episode', '100000', 'Input max episode')
     flags.DEFINE_integer('step', '1000000', 'Input max steps')
