@@ -154,34 +154,9 @@ class VAE(AutoEncoder):
                 KL_divergence = tf.reduce_mean(-0.5 * tf.reduce_sum(1 + self.var - tf.square(self.mu - tf.exp(self.var)), axis=1))
             return reconstruct_loss + KL_divergence
 
-    def gaussian(self, batch_size, n_dim, mean=0, var=1, n_labels=10, use_label_info=False):
-        if use_label_info:
-            if n_dim != 2:
-                raise Exception("n_dim must be 2.")
-
-            def sample(n_labels):
-                x, y = np.random.normal(mean, var, (2,))
-                angle = np.angle((x-mean) + 1j*(y-mean), deg=True)
-
-                label = ((int)(n_labels*angle))//360
-
-                if label<0:
-                    label+=n_labels
-
-                return np.array([x, y]).reshape((2,)), label
-
-            z = np.empty((batch_size, n_dim), dtype=np.float32)
-            z_id = np.empty((batch_size, 1), dtype=np.int32)
-            for batch in range(batch_size):
-                for zi in range((int)(n_dim/2)):
-                        a_sample, a_label = sample(n_labels)
-                        z[batch, zi*2:zi*2+2] = a_sample
-                        z_id[batch] = a_label
-            return z, z_id
-        else:
-            #print(mean, var, batch_size, n_dim)
-            z = np.random.normal(mean, var, (batch_size, n_dim)).astype(np.float32)
-            return z
+    def gaussian(self, batch_size, n_dim, mean=0, var=1):
+        z = np.random.normal(mean, var, (batch_size, n_dim)).astype(np.float32)
+        return z
         
 
 class CVAE(VAE):
