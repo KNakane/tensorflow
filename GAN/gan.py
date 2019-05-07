@@ -149,27 +149,34 @@ class WGAN(GAN):
     
     def build(self):
         gen_model = [
-            ['fc', 4*4*512, None],
-            ['reshape', [-1, 4, 4, 512]],
+            ['fc', 2*2*512, None],
+            ['reshape', [-1, 2, 2, 512]],
             ['BN'],
             ['Leaky_ReLU'],
-            ['deconv', 5, 256, 3, None],
+            ['deconv', 5, 256, 2, None],
             ['BN'],
             ['Leaky_ReLU'],
             ['deconv', 5, 128, 2, None],
             ['BN'],
             ['Leaky_ReLU'],
-            ['deconv', 5, 1, 1, None, 'valid'],
-            ['tanh']]
+            ['deconv', 5, 64, 2, None],
+            ['BN'],
+            ['Leaky_ReLU'],
+            ['deconv', 5, self.channel, 2, tf.nn.tanh]]
 
         dis_model = [
-            ['conv', 5, 64, 2, None],
-            ['Leaky_ReLU'],
+            ['conv', 5, 64, 2, tf.nn.leaky_relu],
             ['conv', 5, 128, 2, None],
             ['BN'],
             ['Leaky_ReLU'],
-            ['reshape', [-1, 4*4*256]],
-            ['fc', 1, None]
+            ['conv', 5, 256, 2, None],
+            ['BN'],
+            ['Leaky_ReLU'],
+            ['conv', 5, 512, 2, None],
+            ['BN'],
+            ['Leaky_ReLU'],
+            ['reshape', [-1, 2*2*512]],
+            ['fc', 1, tf.nn.sigmoid]
         ]
 
         self.D = Discriminator(dis_model)
@@ -319,28 +326,34 @@ class ACGAN(DCGAN):
 
     def build(self):
         gen_model = [
-            ['fc', 4*4*512, None],
-            ['reshape', [-1, 4, 4, 512]],
+            ['fc', 2*2*512, None],
+            ['reshape', [-1, 2, 2, 512]],
             ['BN'],
             ['Leaky_ReLU'],
-            ['deconv', 5, 256, 3, None],#['deconv', 5, 256, 2, None], #['deconv', 5, 256, 3, None],
+            ['deconv', 5, 256, 2, None],
             ['BN'],
             ['Leaky_ReLU'],
             ['deconv', 5, 128, 2, None],
             ['BN'],
             ['Leaky_ReLU'],
-            ['deconv', 5, self.channel, 1, None, 'valid'],#['deconv', 5, self.channel, 2, None], #['deconv', 5, self.channel, 1, None, 'valid'],
-            ['tanh']]
+            ['deconv', 5, 64, 2, None],
+            ['BN'],
+            ['Leaky_ReLU'],
+            ['deconv', 5, self.channel, 2, tf.nn.tanh]]
 
         dis_model = [
-            ['conv', 5, 64, 2, None],
-            ['Leaky_ReLU'],
+            ['conv', 5, 64, 2, tf.nn.leaky_relu],
             ['conv', 5, 128, 2, None],
             ['BN'],
             ['Leaky_ReLU'],
-            ['reshape', [-1, 7*7*128]], # mnist
-            #['reshape', [-1, 4*4*256]],
-            ['fc', 1 + self.class_num, None]
+            ['conv', 5, 256, 2, None],
+            ['BN'],
+            ['Leaky_ReLU'],
+            ['conv', 5, 512, 2, None],
+            ['BN'],
+            ['Leaky_ReLU'],
+            ['reshape', [-1, 2*2*512]],
+            ['fc', 1 + self.class_num, tf.nn.sigmoid]
         ]
 
         self.D = Discriminator(dis_model)

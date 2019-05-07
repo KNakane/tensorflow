@@ -55,8 +55,8 @@ class Module(object):
         ----------
         padding = same
         """
-        assert len(args) >= 4, '[deconv] Not enough Argument -> [kernel, filter, strides, activation, padding]'
-        assert len(args) < 6, '[deconv] Not enough Argument -> [kernel, filter, strides, activation, padding]'
+        assert len(args) >= 4, '[conv] Not enough Argument -> [kernel, filter, strides, activation, padding]'
+        assert len(args) < 6, '[conv] Not enough Argument -> [kernel, filter, strides, activation, padding]'
         if len(args) == 4:
             args.append('same')
         regularizer = tf.contrib.layers.l2_regularizer(scale=self._l2_reg_scale) if self._l2_reg else None
