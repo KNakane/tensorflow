@@ -266,7 +266,7 @@ def main(argv):
         FLAGS.category = True
         FLAGS.noise = True
         FLAGS.opt = 'Adam'
-        FLAGS.lr = 0.00025 #/ 4
+        FLAGS.lr = 0.00025 / 4
 
     message = OrderedDict({
         "Env": FLAGS.env,
