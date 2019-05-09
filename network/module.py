@@ -34,6 +34,49 @@ class Module(object):
             
             return x + input
 
+    def conv1d(self, x, args, name=None):
+        """
+        convolutionを行う
+        parameters
+        ----------
+        x : tensor
+            input image 4D
+        args : list
+            [kernel, filter, strides, activation, dilation_rate, padding]
+                                or 
+            [kernel, filter, strides, activation, dilation_rate]
+        name : str
+            layer name
+        
+        returns
+        ----------
+        feature map : tensor
+            畳み込みした特徴マップ
+
+        Else
+        ----------
+        padding = same
+        """
+        assert len(args) >= 4, '[conv] Not enough Argument -> [kernel, filter, strides, activation]'
+        assert len(args) < 7, '[conv] Not enough Argument -> [kernel, filter, strides, dilation_rate, activation, padding]'
+        if len(args) == 4:
+            args.append(1)
+            args.append('same')
+        elif len(args) == 5:
+            args.append('same')
+        regularizer = tf.contrib.layers.l2_regularizer(scale=self._l2_reg_scale) if self._l2_reg else None
+        return tf.layers.conv1d(inputs=x,
+                                filters=args[1],
+                                kernel_size=args[0],
+                                strides=args[2],
+                                padding=args[5],
+                                activation=args[3],
+                                dilation_rate=args[4],
+                                kernel_regularizer=regularizer,
+                                trainable=self._trainable,
+                                name=name)
+
+
     def conv(self, x, args, name=None):
         """
         convolutionを行う
@@ -183,8 +226,12 @@ class Module(object):
         """
         assert len(args) == 1, '[gap] Not enough Argument -> [output_dim]'
         with tf.variable_scope('GAP'):
-            x = self.conv(x,[1, args[0], 1, None])
-            for _ in range(2):
+            if len(x.shape) == 4:
+                x = self.conv(x,[1, args[0], 1, None])
+                for _ in range(2):
+                    x = tf.reduce_mean(x, axis=1)
+            else:
+                x = self.conv1d(x,[1, args[0], 1, None])
                 x = tf.reduce_mean(x, axis=1)
             return x
 
