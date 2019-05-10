@@ -5,21 +5,13 @@ import sys
 sys.path.append('./utility')
 import numpy as np
 import tensorflow as tf
-from cnn import CNN
+from model import Model
 from optimizer import *
 
-class ResNet(CNN):
-    def __init__(self, 
-                 model=None,
-                 name='ResNet',
-                 out_dim=10,
-                 opt=Adam,   # Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]
-                 lr=0.001,
-                 l2_reg=False,
-                 l2_reg_scale=0.0001,
-                 is_stochastic_depth=False,
-                 trainable=False):
-        super().__init__(name=name, out_dim=out_dim, opt=opt, lr=lr, l2_reg=l2_reg, l2_reg_scale=l2_reg_scale, trainable=trainable)
+class ResNet(Model):
+    def __init__(self, *args, **kwargs):
+        is_stochastic_depth = kwargs.pop('is_stochastic_depth')
+        super().__init__(*args, **kwargs)
         #resnet type -> '18, 34, 50, 101, 152'
         self.n_res = 18
         self.filter = 64
@@ -111,18 +103,10 @@ class ResNet(CNN):
 
 
 
-class ResNeXt(CNN):
-    def __init__(self, 
-                 model=None,
-                 name='ResNeXt',
-                 out_dim=10,
-                 opt=Adam,   # Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]
-                 lr=0.001,
-                 l2_reg=False,
-                 l2_reg_scale=0.0001,
-                 trainable=False):
-        super().__init__(name=name, out_dim=out_dim, opt=opt, lr=lr, l2_reg=l2_reg, l2_reg_scale=l2_reg_scale, trainable=trainable)
-
+class ResNeXt(Model):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
         self.residual_list = [3, 4, 6, 3]
         self.cardinality = 32
 

@@ -3,20 +3,12 @@
 import sys
 sys.path.append('./utility')
 import tensorflow as tf
-from cnn import CNN
+from model import Model
 from optimizer import *
 
-class DenseNet(CNN):
-    def __init__(self, 
-                 model=None,
-                 name='DenseNet',
-                 out_dim=10,
-                 opt=Adam,   # Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]
-                 lr=0.001,
-                 l2_reg=False,
-                 l2_reg_scale=0.0001,
-                 trainable=False):
-        super().__init__(name=name, out_dim=out_dim, opt=opt, lr=lr, l2_reg=l2_reg, l2_reg_scale=l2_reg_scale, trainable=trainable)
+class DenseNet(Model):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.growth_k = 12
         self.nb_blocks = 2
 

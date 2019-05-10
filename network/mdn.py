@@ -3,29 +3,14 @@ import os,sys
 import math
 import tensorflow as tf
 sys.path.append('./utility')
-from module import Module
+from model import Model
 from optimizer import *
 
-class MDN(Module):
-    def __init__(self, 
-                 model=None,
-                 name='MDN',
-                 out_dim=10,
-                 opt=Adam,   # Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]
-                 lr=0.001,
-                 l2_reg=False,
-                 l2_reg_scale=0.0001,
-                 trainable=False
-                 ):
-        super().__init__(l2_reg=l2_reg,l2_reg_scale=l2_reg_scale, trainable=trainable)
-        self.model = model
-        self._layers = []
-        self.name = name
-        self.out_dim = out_dim
+class MDN(Model):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.oneDivSqrtTwoPI = 1 / math.sqrt(2*math.pi)
-        if self._trainable:
-            self.optimizer = eval(opt)(learning_rate=lr)
-
+        
     def inference(self, outputs, reuse=False):
         with tf.variable_scope(self.name):
             if reuse:

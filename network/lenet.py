@@ -2,21 +2,13 @@
 import sys
 sys.path.append('./utility')
 import tensorflow as tf
-from cnn import CNN
+from model import Model
 from optimizer import *
 
-class LeNet(CNN):
-    def __init__(self, 
-                 model=None,
-                 name='LeNet',
-                 out_dim=10,
-                 opt=Adam,   # Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]
-                 lr=0.001,
-                 l2_reg=False,
-                 l2_reg_scale=0.0001,
-                 trainable=False):
-        super().__init__(name=name,opt=opt,lr=lr,l2_reg=l2_reg,l2_reg_scale=l2_reg_scale,trainable=trainable, out_dim=out_dim)
-        
+class LeNet(Model):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
     def inference(self, images, reuse=False):
         with tf.variable_scope(self.name):
             if reuse:
@@ -34,18 +26,10 @@ class LeNet(CNN):
 
             return logits
 
-class VGG(CNN):
-    def __init__(self, 
-                 model=None,
-                 name='LeNet',
-                 out_dim=10,
-                 opt=Adam,   # Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]
-                 lr=0.001,
-                 l2_reg=False,
-                 l2_reg_scale=0.0001,
-                 trainable=False):
-        super().__init__(name=name,opt=opt,lr=lr,l2_reg=l2_reg,l2_reg_scale=l2_reg_scale,trainable=trainable, out_dim=out_dim)
-
+class VGG(Model):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
     def inference(self, images, reuse=False):
         with tf.variable_scope(self.name):
             if reuse:
