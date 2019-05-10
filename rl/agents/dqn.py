@@ -86,9 +86,9 @@ class DQN(Agent):
                 self.loss = tf.reduce_sum(tf.negative(error) * weights)
             else:
                 q_next, q_eval = self.q_next.inference(bs_), self.q_eval.inference(self.bs)
-                q_target = np.array(q_eval).copy()
-                q_target[batch_index, eval_act_index] = reward + self.discount ** p_idx * tf.stop_gradient(np.max(q_next, axis=1) * (1. - done))
-                self.td_error = abs(q_target[batch_index, eval_act_index] - np.array(q_eval)[batch_index, eval_act_index])
+                q_target = reward + self.discount ** p_idx * tf.stop_gradient(tf.reduce_max(q_next, axis = 1) * (1. - done))
+                q_eval = tf.gather_nd(q_eval, list(enumerate(eval_act_index)))
+                self.td_error = tf.abs(q_target - q_eval)
                 self.loss = tf.reduce_sum(tf.losses.huber_loss(labels=q_target, predictions=q_eval) * weights)
         self.q_eval.optimize(self.loss, global_step, tape)
         
@@ -156,12 +156,11 @@ class DDQN(DQN):
                 self.td_error = np.array(tf.abs(error))
                 self.loss = tf.reduce_sum(tf.negative(error) * weights)
             else:
-                q_next, q_eval4next, q_eval = np.array(self.q_next.inference(bs_)), self.q_eval.inference(bs_), self.q_eval.inference(self.bs)
-                q_target = np.array(q_eval).copy()
-                max_act4next = np.argmax(q_eval4next, axis=1)        # the action that brings the highest value is evaluated by q_eval
-                selected_q_next = q_next[batch_index, max_act4next]  # Double DQN, select q_next depending on above actions
-                q_target[batch_index, eval_act_index] = reward + self.discount ** p_idx * tf.stop_gradient(selected_q_next * (1. - done))
-                self.td_error = abs(q_target[batch_index, eval_act_index] - np.array(q_eval)[batch_index, eval_act_index])
+                q_next, q_eval = self.q_next.inference(bs_), self.q_eval.inference(self.bs)
+                selected_q_next = tf.gather_nd(q_next, list(enumerate(eval_act_index)))
+                q_target = reward + self.discount ** p_idx * tf.stop_gradient(selected_q_next * (1. - done))
+                q_eval = tf.gather_nd(q_eval, list(enumerate(eval_act_index)))
+                self.td_error = tf.abs(q_target - q_eval)
                 self.loss = tf.reduce_sum(tf.losses.huber_loss(labels=q_target, predictions=q_eval) * weights)
         self.q_eval.optimize(self.loss, global_step, tape)
 
