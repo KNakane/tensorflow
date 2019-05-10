@@ -6,8 +6,6 @@ import time, copy
 import random
 import numpy as np
 import tensorflow as tf
-import multiprocessing as mp
-from multiprocessing import Pool
 from collections import deque
 from collections import OrderedDict
 from utils import Utils
@@ -483,16 +481,15 @@ class DistributedTrainer(BasedTrainer):
                 self.process_list.append(mp.Process(target=self._trainer.train, args=()))
 
     def train(self):
-        for w in self.process_list:
-            w.daemon = True
-            w.start()
-            #time.sleep(0.5)
+        assert len(self.process_list) > 0
+        for i, worker in enumerate(self.process_list):
+            worker.daemon = True
+            print("Starting worker {}".format(i))
+            worker.start()
 
         try:
-            for w in self.process_list:
-                w.join()
+            [w.join() for w in self.process_list]
         except KeyboardInterrupt:
-            for w in self.process_list:
-                w.terminate()
+            [w.terminate() for w in self.process_list]
 
         return

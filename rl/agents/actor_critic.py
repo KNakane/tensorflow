@@ -60,10 +60,6 @@ class A3C(Agent):
             action_entropy = tf.reduce_mean(self.categorical_entropy(action_eval))
             self.loss = policy_loss +  self.value_loss_weight * value_loss - self.entropy_weight * action_entropy
         gradients = self.q_eval.get_grads(self.loss, global_step, tape)
-
-
-        # increasing epsilon
-        self.epsilon = self.epsilon + self.epsilon_increment if self.epsilon < self.epsilon_max else self.epsilon_max
         
         return gradients
 
@@ -116,15 +112,14 @@ class A2C(Agent):
             neg_logs = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=action_eval, labels=eval_act_index)
             advantage = reward - values
 
-            policy_loss = tf.reduce_mean(neg_logs * tf.nn.softplus(advantage))
+            policy_loss = tf.reduce_mean(neg_logs * advantage)
             value_loss = tf.losses.mean_squared_error(reward, values)
             action_entropy = tf.reduce_mean(self.categorical_entropy(action_eval))
-            self.loss = policy_loss +  self.value_loss_weight * value_loss - self.entropy_weight * action_entropy
+            self.loss = policy_loss + self.value_loss_weight * value_loss - self.entropy_weight * action_entropy
         self.q_eval.optimize(self.loss, global_step, tape)
 
         # increasing epsilon
-        self.epsilon = self.epsilon + self.epsilon_increment if self.epsilon < self.epsilon_max else self.epsilon_max
-
+        self.epsilon = max(self.epsilon + self.epsilon_increment, self.epsilon_max)
 
         return
 
@@ -133,4 +128,4 @@ class A2C(Agent):
         ea0 = tf.exp(a0)
         z0 = tf.reduce_mean(ea0, axis=-1, keepdims=True)
         p0 = ea0 / z0
-        return tf.reduce_mean(p0 * (tf.log(z0) - a0), axis=-1)
+        return tf.reduce_mean(p0 * (tf.log(z0) - a0), axis=-1)  
