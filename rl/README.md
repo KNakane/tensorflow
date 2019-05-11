@@ -6,6 +6,7 @@ rl
 使用できるEnvironmentは以下の通り
 - [Open AI gym](https://gym.openai.com/) : CartpoleやBreakout, Invaderなど
 - [pygame](https://pygame-learning-environment.readthedocs.io/en/latest/)  : python上でゲームの環境が作成できる  
+- [Roboschool](https://github.com/openai/roboschool) : mujocoと同様の環境を用意することができる
 
 # Description
 [All env](https://medium.com/@researchplex/openai-gym-environment-full-list-8b2e8ac4c1f7)にgymで使用できるenvironmentの一覧が記載されている  
@@ -18,8 +19,8 @@ rl
 |Ape-X||未実装|
 |A3C||未実装|
 |A2C||未実装|
-|DDPG|continuous||
-|TD3|continuous||
+|DDPG|continuous,roboschool|-|
+|TD3|continuous,roboschool|-|
 
 
 # Usage
