@@ -87,13 +87,15 @@ class BasedTrainer():
             "steps/episode":step,
             "total_reward": total_reward})
         self.util.write_log(message=metrics)
-        self.util.save_model()
+        if episode % 50:
+            self.util.save_model()
+        return
 
     def episode_end(self):
         self.env.close()
         return
 
-    def summary(self):
+    def summary(self, loss):
         """
         tensorboardに表示するための関数
         """
@@ -101,14 +103,14 @@ class BasedTrainer():
             image = tf.expand_dims(self.agent.bs[:3,:,:,0],3)
             tf.contrib.summary.image('train/input_img', tf.cast(image * 255.0, tf.uint8))
         if self.agent.__class__.__name__ == 'DDPG':
-            tf.contrib.summary.scalar('train/critic_loss', self.agent.critic_loss)
-            tf.contrib.summary.scalar('train/actor_loss', self.agent.actor_loss)
+            tf.contrib.summary.scalar('train/critic_loss', loss[0])
+            tf.contrib.summary.scalar('train/actor_loss', loss[1])
         elif self.agent.__class__.__name__ == 'TD3':
-            tf.contrib.summary.scalar('train/critic_loss1', self.agent.critic_loss1)
-            tf.contrib.summary.scalar('train/critic_loss2', self.agent.critic_loss2)
-            tf.contrib.summary.scalar('train/actor_loss', self.agent.actor_loss)
+            tf.contrib.summary.scalar('train/critic_loss1', loss[0])
+            tf.contrib.summary.scalar('train/critic_loss2', loss[1])
+            tf.contrib.summary.scalar('train/actor_loss', loss[2])
         else:
-            tf.contrib.summary.scalar('train/loss', self.agent.loss)
+            tf.contrib.summary.scalar('train/loss', loss)
         tf.contrib.summary.scalar('train/e_greedy', self.agent.epsilon)
         return
     
@@ -176,8 +178,7 @@ class Trainer(BasedTrainer):
             for step in range(1, self.max_steps+1):
                 if self.render:
                     self.env.render()
-
-                action = self.agent.choose_action(state)
+                action = self.agent.choose_action(np.array(state,dtype=np.float32))
                 state_, reward, done, _ = self.env.step(action)
 
                 # the smaller theta and closer to center the better
@@ -205,18 +206,18 @@ class Trainer(BasedTrainer):
                 if len(self.replay_buf) > self.replay_size and len(self.replay_buf) > self.n_warmup:
                     indexes, transitions, weights = self.replay_buf.sample(self.agent.batch_size, episode/self.n_episode)
                     train_data = map(np.array, zip(*transitions))
-                    self.agent.update_q_net(train_data, weights)
+                    loss = self.agent.update_q_net(train_data, weights)
                     self.learning_flag = 1
-                    self.summary()
+                    self.summary(loss)
                     if (indexes != None):
-                        for i, td_error in enumerate(self.agent.td_error):
+                        for i, td_error in enumerate(np.array(self.agent.td_error)):
                             self.replay_buf.update(indexes[i], td_error)
 
                 if done or step == self.max_steps:
                     self.step_end(episode, step, total_reward)
                     break
 
-                state = state_
+                state = np.array(state_, dtype=np.float32)
 
         # test
         if episode % self.test_interval == 0 and self.learning_flag:
@@ -248,7 +249,7 @@ class PolicyTrainer(BasedTrainer):
                 if self.render:
                     self.env.render()
 
-                action = self.agent.choose_action(state)
+                action = self.agent.choose_action(np.array(state, dtype=np.float32))
                 state_, reward, done, _ = self.env.step(action)
 
                 # the smaller theta and closer to center the better
@@ -265,14 +266,14 @@ class PolicyTrainer(BasedTrainer):
                 if done or step == self.max_steps:
                     _, transitions, weights = self.replay_buf.sample()
                     train_data = map(np.array, zip(*transitions))
-                    self.agent.update_q_net(train_data, weights)
+                    loss = self.agent.update_q_net(train_data, weights)
                     self.replay_buf.clear()
                     self.learning_flag = 1
-                    self.summary()
+                    self.summary(loss)
                     self.step_end(episode, step, total_reward)
                     break
 
-                state = state_
+                state = np.array(state_, dtype=np.float32)
 
         # test
         if episode % self.test_interval == 0 and self.learning_flag:
