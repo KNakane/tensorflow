@@ -264,9 +264,9 @@ def set_output_dim(FLAGS, out_dim, N_atoms=51):
     """
     Networkの出力ユニット数を決める関数
     """
-    if FLAGS.network == 'Dueling_Net':
+    if hasattr(FLAGS, 'network') and FLAGS.network == 'Dueling_Net':
         return (out_dim + 1) * N_atoms if FLAGS.category else out_dim + 1
-    elif FLAGS.network == 'DDPG' or FLAGS.network == 'TD3':
+    elif FLAGS.agent == 'DDPG' or FLAGS.agent == 'TD3':
         return out_dim
     elif FLAGS.agent == 'A3C':
         return out_dim + 1
