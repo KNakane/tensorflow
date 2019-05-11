@@ -58,8 +58,8 @@ class EagerNN(BasedEagerNN):
             self._layers.append(my_layer)
 
     def inference(self, x, softmax=True):
+        x = tf.convert_to_tensor(x, dtype=tf.float64)
         for my_layer in self._layers:
-            x = tf.convert_to_tensor(x, dtype=tf.float32)
             try:
                 x = my_layer(x, training=self._trainable)
             except:
@@ -85,8 +85,8 @@ class Dueling_Net(BasedEagerNN):
             self._layers.append(my_layer)
 
     def inference(self, x):
+        x = tf.convert_to_tensor(x, dtype=tf.float32)
         for i, my_layer in enumerate(self._layers):
-            x = tf.convert_to_tensor(x, dtype=tf.float32)
             try:
                 x = my_layer(x, training=self._trainable)
             except:
@@ -117,8 +117,8 @@ class ActorNet(BasedEagerNN):
             
 
     def inference(self, x):
-        for i, my_layer in enumerate(self._layers):
-            x = tf.convert_to_tensor(x, dtype=tf.float32)
+        x = tf.convert_to_tensor(x, dtype=tf.float32)
+        for _, my_layer in enumerate(self._layers):
             try:
                 x = my_layer(x, training=self._trainable)
             except:

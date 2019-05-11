@@ -43,9 +43,9 @@ class PolicyGradient(Agent):
             selected_action_probs = tf.reduce_sum(q_eval * one_hot_actions, axis=1)
             clipped = tf.clip_by_value(selected_action_probs, 1e-10, 1.0)
             self.td_error = -tf.log(clipped) * reward
-            self.loss = tf.reduce_mean(self.td_error * weights)
-        self.q_eval.optimize(self.loss, global_step, tape)
+            loss = tf.reduce_mean(self.td_error * weights)
+        self.q_eval.optimize(loss, global_step, tape)
 
         #sys.exit()
         
-        return
+        return loss

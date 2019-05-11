@@ -17,15 +17,14 @@ class Agent(tf.contrib.checkpoint.Checkpointable):
             optimizer=None,
             network=None,
             trainable=True,
-            policy=False,    # True : On-Policy   False : Off-policy
             is_categorical=False,
-            is_noise=False
+            is_noise=False,
+            gpu=0
     ):
         # Eager Mode
         tf.enable_eager_execution()
         self.model = model
         self.network = network
-        self.on_policy = policy
         self.n_actions = n_actions
         self.actions_list = list(range(n_actions))
         self.n_features = n_features
@@ -40,6 +39,7 @@ class Agent(tf.contrib.checkpoint.Checkpointable):
         self.trainable = trainable
         self.epsilon_increment = e_greedy_increment
         self.epsilon = 0 if e_greedy_increment is not None else self.epsilon_max
+        self.device = "/gpu:{}".format(gpu) if gpu >= 0 else "/cpu:0"
 
         # total learning step
         self._iteration = 0
@@ -63,15 +63,12 @@ class Agent(tf.contrib.checkpoint.Checkpointable):
         if np.random.uniform() < self.epsilon:
             # forward feed the observation and get q value for every actions
             actions_value = self.inference(observation)
-            if self.on_policy:
-                action = np.random.choice(self.actions_list, size=1, p=np.array(actions_value)[0])[0]
-            elif self.is_categorical:
-                action = np.max(actions_value)
+            if self.is_categorical:
+                return np.max(actions_value)
             else:
-                action = np.argmax(actions_value)
+                return np.argmax(actions_value)
         else:
-            action = np.random.randint(0, self.n_actions)
-        return action
+            return np.random.randint(0, self.n_actions)
 
     def test_choose_action(self, observation):
         observation = observation[np.newaxis, :]
