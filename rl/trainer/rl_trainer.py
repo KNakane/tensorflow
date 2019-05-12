@@ -6,6 +6,7 @@ import time, copy
 import random
 import numpy as np
 import tensorflow as tf
+import multiprocessing as mp
 from collections import deque
 from collections import OrderedDict
 from utils import Utils
@@ -72,15 +73,15 @@ class BasedTrainer():
         return tf.contrib.summary.create_file_writer(self.util.tf_board)
     
     def step(self, episode):
-        NotImplementedError()
+        raise Exception('please Write step function')
 
-    def step_end(self, episode, step, total_reward):
+    def step_end(self, episode, step, total_reward, time):
         self.total_steps += step
         tf.contrib.summary.scalar('train/total_steps', self.total_steps)
         tf.contrib.summary.scalar('train/steps_per_episode', step)
         tf.contrib.summary.scalar('train/total_reward', total_reward)
         tf.contrib.summary.scalar('train/average_reward', total_reward / step)
-        print("episode: %d total_steps: %d  steps/episode: %d  total_reward: %0.2f"%(episode, self.total_steps, step, total_reward))
+        print("episode: %d total_steps: %d  steps/episode: %d  total_reward: %0.2f time/step: %0.3fms"%(episode, self.total_steps, step, total_reward, time/step*1000))
         metrics = OrderedDict({
             "episode": episode,
             "total_steps": self.total_steps,
@@ -172,13 +173,14 @@ class Trainer(BasedTrainer):
         self.action_deque = deque(maxlen=self.multi_step)
     
     def step(self, episode):
+        start_time = time.time()
         with tf.contrib.summary.always_record_summaries():
             state = self.env.reset()
             total_reward = 0
             for step in range(1, self.max_steps+1):
                 if self.render:
                     self.env.render()
-                action = self.agent.choose_action(np.array(state,dtype=np.float32))
+                action = self.agent.choose_action(state)
                 state_, reward, done, _ = self.env.step(action)
 
                 # the smaller theta and closer to center the better
@@ -214,10 +216,11 @@ class Trainer(BasedTrainer):
                             self.replay_buf.update(indexes[i], td_error)
 
                 if done or step == self.max_steps:
-                    self.step_end(episode, step, total_reward)
+                    time_per_episode = time.time() - start_time
+                    self.step_end(episode, step, total_reward, time_per_episode)
                     break
 
-                state = np.array(state_, dtype=np.float32)
+                state = state_
 
         # test
         if episode % self.test_interval == 0 and self.learning_flag:
@@ -225,8 +228,8 @@ class Trainer(BasedTrainer):
 
         return
 
-    def step_end(self, episode, step, total_reward):
-        super().step_end(episode, step, total_reward)
+    def step_end(self, episode, step, total_reward, time):
+        super().step_end(episode, step, total_reward, time)
         self.state_deque.clear()
         self.action_deque.clear()
         self.reward_deque.clear()
@@ -242,6 +245,7 @@ class PolicyTrainer(BasedTrainer):
         self.replay_buf = Rollout(self.max_steps)
 
     def step(self, episode):
+        start_time = time.time()
         with tf.contrib.summary.always_record_summaries():
             state = self.env.reset()
             total_reward = 0
@@ -270,7 +274,8 @@ class PolicyTrainer(BasedTrainer):
                     self.replay_buf.clear()
                     self.learning_flag = 1
                     self.summary(loss)
-                    self.step_end(episode, step, total_reward)
+                    time_per_episode = time.time() - start_time
+                    self.step_end(episode, step, total_reward, time_per_episode)
                     break
 
                 state = np.array(state_, dtype=np.float32)
@@ -379,7 +384,7 @@ class A3CTrainer(PolicyTrainer):
             "steps/episode":step,
             "total_reward": total_reward})
         self.util.write_log(message=metrics)
-        self.util.save_model()
+        #self.util.save_model()
 
     def summary(self):
         """
@@ -487,6 +492,7 @@ class DistributedTrainer(BasedTrainer):
             worker.daemon = True
             print("Starting worker {}".format(i))
             worker.start()
+            time.sleep(0.1)
 
         try:
             [w.join() for w in self.process_list]
