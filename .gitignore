@@ -5,6 +5,7 @@ rl/atari/__pycache__
 rl/classic/__pycache__
 rl/pygame/__pycache__
 rl/agents/__pycache__
+rl/trainer/__pycache__
 segmentation/__pycache__
 segmentation/util/__pycache__
 segmentation/data_set
