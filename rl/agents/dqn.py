@@ -27,7 +27,6 @@ class DQN(Agent):
         with tf.variable_scope('target_net'):
             self.q_next = eval(self.network)(model=self.model, out_dim=self.n_actions, name='target_net', trainable=False, is_categorical=self.is_categorical, is_noise=self.is_noise)
 
-    @tf.contrib.eager.defun
     def inference(self, state):
         if self.is_categorical:
             return tf.argmax(tf.reduce_sum(self.q_eval.inference(state) * self.z_list_broadcasted, axis=2), axis=1)
@@ -81,7 +80,7 @@ class DQN(Agent):
                         + Q_distributional_chosen_by_action_target * b_minus_l * \
                             tf.log(tf.gather_nd(Q_distributional_chosen_by_action_online, u_id))
                     error = tf.reduce_sum(error, axis=1)
-                    self.td_error = np.array(tf.abs(error))
+                    self.td_error = tf.abs(error)
                     loss = tf.reduce_sum(tf.negative(error) * weights)
                 else:
                     q_next, q_eval = self.q_next.inference(bs_), self.q_eval.inference(self.bs)
@@ -124,7 +123,7 @@ class DDQN(DQN):
                 if self.is_categorical:
                     reward = tf.cast(reward, tf.float32)
                     done = tf.cast(done, tf.float32)
-                    q_next = np.array(self.q_next.inference(bs_)) #target network Q'(s', a)
+                    q_next = self.q_next.inference(bs_) #target network Q'(s', a)
                     q_eval4next = self.q_eval.inference(bs_)      #main network   Q(s', a)
                     q_eval = self.q_eval.inference(self.bs)       #main network   Q(s, a)
                     q_ = tf.reduce_sum(tf.multiply(q_eval4next, self.z_list), axis=2) # a = argmax(Q(s',a))
@@ -155,7 +154,7 @@ class DDQN(DQN):
                         + Q_distributional_chosen_by_action_target * b_minus_l * \
                             tf.log(tf.gather_nd(Q_distributional_chosen_by_action_online, u_id))
                     error = tf.reduce_sum(error, axis=1)
-                    self.td_error = np.array(tf.abs(error))
+                    self.td_error = tf.abs(error)
                     loss = tf.reduce_sum(tf.negative(error) * weights)
                 else:
                     q_next, q_eval = self.q_next.inference(bs_), self.q_eval.inference(self.bs)
