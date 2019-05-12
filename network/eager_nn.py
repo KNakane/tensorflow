@@ -35,6 +35,7 @@ class BasedEagerNN(EagerModule):
     def _build(self):
         raise Exception('please build network')
 
+    @tf.contrib.eager.defun
     def inference(self, x):
         raise Exception('please build network')
 
@@ -57,8 +58,10 @@ class EagerNN(BasedEagerNN):
             my_layer = eval('self.' + self.model[l][0])(self.model[l][1:])
             self._layers.append(my_layer)
 
+    #@tf.contrib.eager.defun
     def inference(self, x, softmax=True):
-        x = tf.convert_to_tensor(x, dtype=tf.float64)
+        x = tf.convert_to_tensor(x)
+        x = tf.cast(x, tf.float32)
         for my_layer in self._layers:
             try:
                 x = my_layer(x, training=self._trainable)
@@ -84,8 +87,10 @@ class Dueling_Net(BasedEagerNN):
             my_layer = eval('self.' + self.model[l][0])(self.model[l][1:])
             self._layers.append(my_layer)
 
+    @tf.contrib.eager.defun
     def inference(self, x):
-        x = tf.convert_to_tensor(x, dtype=tf.float32)
+        x = tf.convert_to_tensor(x)
+        x = tf.cast(x, tf.float32)
         for i, my_layer in enumerate(self._layers):
             try:
                 x = my_layer(x, training=self._trainable)
@@ -115,9 +120,10 @@ class ActorNet(BasedEagerNN):
                 my_layer = eval('self.' + self.model[l][0])(self.model[l][1:])
                 self._layers.append(my_layer)
             
-
+    @tf.contrib.eager.defun
     def inference(self, x):
-        x = tf.convert_to_tensor(x, dtype=tf.float32)
+        x = tf.convert_to_tensor(x)
+        x = tf.cast(x, tf.float32)
         for _, my_layer in enumerate(self._layers):
             try:
                 x = my_layer(x, training=self._trainable)
@@ -142,6 +148,7 @@ class CriticNet(BasedEagerNN):
             my_layer = eval('self.' + self.model[l][0])(self.model[l][1:])
             self._layers.append(my_layer)
 
+    @tf.contrib.eager.defun
     def inference(self, inputs):
         if len(inputs) == 2:
             x, u = inputs
@@ -166,9 +173,11 @@ class A3CNet(BasedEagerNN):
             my_layer = eval('self.' + self.model[l][0])(self.model[l][1:])
             self._layers.append(my_layer)
 
+    @tf.contrib.eager.defun
     def inference(self, x):
+        x = tf.convert_to_tensor(x)
+        x = tf.cast(x, tf.float32)
         for i, my_layer in enumerate(self._layers):
-            x = tf.convert_to_tensor(x, dtype=tf.float32)
             try:
                 x = my_layer(x, training=self._trainable)
             except:
@@ -198,9 +207,11 @@ class A2CNet(BasedEagerNN):
             my_layer = eval('self.' + self.model[l][0])(self.model[l][1:])
             self._layers.append(my_layer)
 
+    @tf.contrib.eager.defun
     def inference(self, x):
+        x = tf.convert_to_tensor(x)
+        x = tf.cast(x, tf.float32)
         for i, my_layer in enumerate(self._layers):
-            x = tf.convert_to_tensor(x, dtype=tf.float32)
             try:
                 x = my_layer(x, training=self._trainable)
             except:
