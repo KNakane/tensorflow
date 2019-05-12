@@ -4,6 +4,7 @@ import sys,os
 sys.path.append(os.path.join(os.path.dirname(__file__), '../'))
 sys.path.append(os.path.join(os.path.dirname(__file__), '../env'))
 sys.path.append(os.path.join(os.path.dirname(__file__), '../agents'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '../trainer'))
 sys.path.append(os.path.join(os.path.dirname(__file__), '../../utility'))
 import gym
 import gym.spaces
@@ -62,7 +63,8 @@ def main(argv):
                               e_greedy_increment=0.01,
                               optimizer=FLAGS.opt,
                               is_categorical=FLAGS.category,
-                              max_action=env.action_space.high[0]
+                              max_action=env.action_space.high[0],
+                              gpu=-1
                               )
 
     trainer = Trainer(agent=agent, 

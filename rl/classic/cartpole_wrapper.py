@@ -3,6 +3,7 @@
 import sys,os
 sys.path.append(os.path.join(os.path.dirname(__file__), '../'))
 sys.path.append(os.path.join(os.path.dirname(__file__), '../agents'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '../trainer'))
 sys.path.append(os.path.join(os.path.dirname(__file__), '../../utility'))
 import gym
 import gym.spaces
@@ -66,7 +67,8 @@ def main(argv):
                               optimizer=FLAGS.opt,
                               network=FLAGS.network,
                               is_categorical=FLAGS.category,
-                              is_noise=FLAGS.noise
+                              is_noise=FLAGS.noise,
+                              gpu=-1
                               )
 
     if FLAGS.agent == 'PolicyGradient':

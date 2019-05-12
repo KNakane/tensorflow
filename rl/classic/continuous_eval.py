@@ -2,6 +2,7 @@ import os, sys
 sys.path.append(os.path.join(os.path.dirname(__file__), '../'))
 sys.path.append(os.path.join(os.path.dirname(__file__), '../env'))
 sys.path.append(os.path.join(os.path.dirname(__file__), '../agents'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '../trainer'))
 sys.path.append(os.path.join(os.path.dirname(__file__), '../../utility'))
 import gym
 from gym import spaces
