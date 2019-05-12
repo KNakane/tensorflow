@@ -34,6 +34,7 @@ rl
 - atari/atari_wrapper.py : atariを使用して強化学習を行う
 - classic/cartpole_wrapper.py : cartpoleで強化学習を行う
 - classic/continuous_wrapper.py : 連続値を扱う強化学習を行う
+- classic/roboschool_wrapper.py : mujoco同様の環境を基に強化学習を行う  
 - pygame/pygame_wrapper.py : pygameで強化学習を行う
 
 ## Learning
