@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
-import os
+import os, re
 import numpy as np
 import datetime
 import tensorflow as tf
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
+from tensorflow.python.client import device_lib
 
 
 class Utils():
@@ -272,3 +273,10 @@ def set_output_dim(FLAGS, out_dim, N_atoms=51):
         return out_dim + 1
     else:
         return out_dim * N_atoms if FLAGS.category else out_dim
+
+def find_gpu():
+    device_list = device_lib.list_local_devices()
+    for device in device_list:
+        if re.match('/device:GPU', device.name):
+            return 0
+    return -1
