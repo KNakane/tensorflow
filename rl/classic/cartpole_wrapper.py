@@ -14,7 +14,7 @@ from dqn import DQN,DDQN,Rainbow
 from policy_gradient import PolicyGradient
 from actor_critic import A3C
 from rl_trainer import Trainer, PolicyTrainer, DistributedTrainer
-from utils import set_output_dim
+from utils import set_output_dim, find_gpu
 from collections import OrderedDict
 
 
@@ -68,7 +68,7 @@ def main(argv):
                               network=FLAGS.network,
                               is_categorical=FLAGS.category,
                               is_noise=FLAGS.noise,
-                              gpu=-1
+                              gpu=find_gpu()
                               )
 
     if FLAGS.agent == 'PolicyGradient':

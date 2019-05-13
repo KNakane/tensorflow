@@ -130,7 +130,7 @@ class TD3(Agent):
             global_step = tf.train.get_or_create_global_step()
 
             noise = tf.clip_by_value(tf.random.normal(shape=[self.batch_size,1],mean=0.0, stddev=0.2) , -noise_clip, noise_clip)
-            next_action = tf.clip_by_value(self.actor_target.inference(bs_) + tf.cast(noise, tf.float64), -self.max_action, self.max_action)
+            next_action = tf.clip_by_value(self.actor_target.inference(bs_) + noise, -self.max_action, self.max_action)
             critic_next1, critic_next2 = self.critic_target1.inference([bs_, next_action]), self.critic_target2.inference([bs_, next_action])
             critic_next = tf.minimum(critic_next1, critic_next2)
             target_Q = reward + self.discount ** p_idx * critic_next * (1. - done)
@@ -138,7 +138,7 @@ class TD3(Agent):
 
             # update critic_net1
             with tf.GradientTape() as tape:
-                critic_eval1 = tf.cast(self.critic1.inference([self.bs, eval_act_index]), tf.float64)
+                critic_eval1 = self.critic1.inference([self.bs, eval_act_index])
                 error = tf.losses.huber_loss(labels=target_Q, predictions=critic_eval1)
                 self.td_error = tf.abs(tf.reduce_mean(target_Q - critic_eval1, axis=1))
                 critic_loss1 = tf.reduce_mean(error * weights, keep_dims=True)

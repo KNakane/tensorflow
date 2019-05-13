@@ -10,7 +10,7 @@ from rl_trainer import Trainer, PolicyTrainer, DistributedTrainer
 from dqn import DQN,DDQN,Rainbow
 from actor_critic import A3C
 from policy_gradient import PolicyGradient
-from utils import set_output_dim
+from utils import set_output_dim,find_gpu
 from collections import OrderedDict
 from atari_wrapper import NoopResetEnv, MaxAndSkipEnv, wrap_deepmind, make_atari, set_model
 
@@ -48,7 +48,8 @@ def main(argv):
                 network=FLAGS.network,
                 trainable=False,
                 is_categorical=FLAGS.category,
-                is_noise=FLAGS.noise
+                is_noise=FLAGS.noise,
+                gpu=find_gpu()
                 )
 
     if FLAGS.agent == 'PolicyGradient':

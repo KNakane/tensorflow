@@ -12,7 +12,7 @@ import tensorflow as tf
 from optimizer import *
 from ddpg import DDPG, TD3
 from rl_trainer import Trainer
-from utils import set_output_dim
+from utils import set_output_dim,find_gpu
 from collections import OrderedDict
 from pendulum_env import WrappedPendulumEnv
 
@@ -64,7 +64,7 @@ def main(argv):
                               optimizer=FLAGS.opt,
                               is_categorical=FLAGS.category,
                               max_action=env.action_space.high[0],
-                              gpu=-1
+                              gpu=find_gpu()
                               )
 
     trainer = Trainer(agent=agent, 

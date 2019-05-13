@@ -10,7 +10,7 @@ import tensorflow as tf
 from rl_trainer import Trainer
 from ddpg import DDPG, TD3
 from utils import set_output_dim
-from continuous_wrapper import set_model
+from continuous_wrapper import set_model, find_gpu
 from pendulum_env import WrappedPendulumEnv
 
 
@@ -34,7 +34,8 @@ def main(argv):
                               optimizer=None,
                               is_categorical=FLAGS.category,
                               trainable=False,
-                              max_action=env.action_space.high[0])
+                              max_action=env.action_space.high[0],
+                              gpu=find_gpu())
 
     trainer = Trainer(agent=agent, 
                       env=env, 

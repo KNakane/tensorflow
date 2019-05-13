@@ -16,7 +16,7 @@ from rl_trainer import Trainer, PolicyTrainer, DistributedTrainer
 from dqn import DQN,DDQN,Rainbow
 from policy_gradient import PolicyGradient
 from actor_critic import A3C
-from utils import set_output_dim
+from utils import set_output_dim,find_gpu
 import cv2
 cv2.ocl.setUseOpenCL(False)
 
@@ -298,7 +298,8 @@ def main(argv):
                 optimizer=FLAGS.opt,
                 network=FLAGS.network,
                 is_categorical=FLAGS.category,
-                is_noise=FLAGS.noise
+                is_noise=FLAGS.noise,
+                gpu=find_gpu()
                 )
     
     if FLAGS.agent == 'PolicyGradient':
