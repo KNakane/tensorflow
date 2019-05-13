@@ -101,12 +101,12 @@ class Dueling_Net(BasedEagerNN):
             # Dueling part
             x = tf.reshape(x, (-1, self.out_dim + 1, self.N_atoms))
             V, A = tf.reshape(x[:,0], (-1, 1, self.N_atoms)), tf.reshape(x[:, 1:], [-1, self.out_dim, self.N_atoms])
-            x = V + A - tf.expand_dims(tf.reduce_sum(A, axis=1) / self.out_dim, axis=1)
+            x = V + A - tf.expand_dims(tf.reduce_mean(A, axis=1), axis=1)
             return tf.clip_by_value(tf.keras.activations.softmax(x, axis=-1), 1e-8, 1.0-1e-8)
         else:
             # Dueling part
             V, A = tf.expand_dims(x[:,0], -1), x[:,1:]
-            return V + A - tf.expand_dims(tf.reduce_sum(A, axis=-1) / self.out_dim, axis=-1)
+            return V + A - tf.expand_dims(tf.reduce_mean(A, axis=-1), axis=-1)
             
 
 class ActorNet(BasedEagerNN):
