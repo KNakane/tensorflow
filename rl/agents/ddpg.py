@@ -119,16 +119,24 @@ class TD3(Agent):
         action = self.inference(observation)
         return action[0]
 
-    #@tf.contrib.eager.defun
-    def update_q_net(self, replay_data, weights, noise_clip=0.5):
+
+    def update_q_net(self, replay_data, weights):
         bs, ba, done, bs_, br, p_idx = replay_data
         self.bs = np.array(bs, dtype=np.float32)
         bs_ = np.array(bs_, dtype=np.float32)
-        eval_act_index = np.reshape(ba,(self.batch_size,self.n_actions))
-        reward = np.reshape(br,(self.batch_size,1))
-        done = np.reshape(done,(self.batch_size,1))
+        eval_act_index = np.reshape(ba,(self.batch_size, self.n_actions))
+        reward = np.reshape(np.array(br, dtype=np.float32),(self.batch_size,1))
+        done = np.reshape(np.array(done, dtype=np.float32),(self.batch_size,1))
         p_idx = np.reshape(p_idx,(self.batch_size,1))
+        critic_loss1, critic_loss2 = self._train_critic(self.bs, eval_act_index, done, bs_, reward, p_idx, weights)
+        if self._iteration % self.policy_freq == 0:
+            self.actor_loss = self._train_actor(self.bs)
+        self._iteration += 1
+        return [critic_loss1, critic_loss2, self.actor_loss]
 
+
+    @tf.contrib.eager.defun
+    def _train_critic(self, bs, eval_act_index, done, bs_, reward, p_idx, weights, noise_clip=0.5):
         with tf.device(self.device):
             global_step = tf.train.get_or_create_global_step()
 
@@ -136,35 +144,38 @@ class TD3(Agent):
             next_action = tf.clip_by_value(self.actor_target.inference(bs_) + noise, -self.max_action, self.max_action)
             critic_next1, critic_next2 = self.critic_target1.inference([bs_, next_action]), self.critic_target2.inference([bs_, next_action])
             critic_next = tf.minimum(critic_next1, critic_next2)
-            target_Q = reward + self.discount ** p_idx * critic_next * (1. - done)
+            target_Q = reward + self.discount ** tf.cast(p_idx, tf.float32) * critic_next * (1. - done)
             target_Q = tf.stop_gradient(target_Q)
 
             # update critic_net1
             with tf.GradientTape() as tape:
-                critic_eval1 = self.critic1.inference([self.bs, eval_act_index])
+                critic_eval1 = self.critic1.inference([bs, eval_act_index])
                 error = tf.losses.huber_loss(labels=target_Q, predictions=critic_eval1)
                 self.td_error = tf.abs(tf.reduce_mean(target_Q - critic_eval1, axis=1))
-                critic_loss1 = tf.reduce_mean(error * weights, keep_dims=True)
+                critic_loss1 = tf.reduce_mean(error * weights, keepdims=True)
             self.critic1.optimize(critic_loss1, global_step, tape)
 
             with tf.GradientTape() as tape:
-                critic_eval2 = self.critic2.inference([self.bs, eval_act_index])
-                critic_loss2 = tf.reduce_mean(tf.losses.huber_loss(labels=target_Q, predictions=critic_eval2) * weights, keep_dims=True)
+                critic_eval2 = self.critic2.inference([bs, eval_act_index])
+                critic_loss2 = tf.reduce_mean(tf.losses.huber_loss(labels=target_Q, predictions=critic_eval2) * weights, keepdims=True)
             self.critic2.optimize(critic_loss2, global_step, tape)
 
-            if self._iteration % self.policy_freq == 0:
-                # update actor_net
-                with tf.GradientTape() as tape:
-                    actor_eval = tf.cast(self.actor.inference(self.bs), tf.float32)
-                    self.actor_loss = -tf.reduce_mean(self.critic1.inference([self.bs, actor_eval]))
-                self.actor.optimize(self.actor_loss, global_step, tape)
+            return critic_loss1, critic_loss2
+        
+    @tf.contrib.eager.defun
+    def _train_actor(self, bs):
+        with tf.device(self.device):
+            global_step = tf.train.get_or_create_global_step()
+            # update actor_net
+            with tf.GradientTape() as tape:
+                actor_eval = tf.cast(self.actor.inference(bs), tf.float32)
+                self.actor_loss = -tf.reduce_mean(self.critic1.inference([bs, actor_eval]))
+            self.actor.optimize(self.actor_loss, global_step, tape)
 
-                # check to replace target parameters
-                self.update_target_net()
+            # check to replace target parameters
+            self.update_target_net()
 
-        self._iteration += 1
-
-        return [critic_loss1, critic_loss2, self.actor_loss]
+        return self.actor_loss
 
     def update_target_net(self):
         # update critic_target_net1
