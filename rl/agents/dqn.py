@@ -33,13 +33,28 @@ class DQN(Agent):
         else:
             return self.q_eval.inference(state)
 
-    #@tf.contrib.eager.defun
+
     def update_q_net(self, replay_data, weights):
         self.bs, eval_act_index, done, bs_, reward, p_idx = replay_data
+        eval_act_index = np.reshape(np.array(eval_act_index, dtype=np.int32),(self.batch_size,1))
+        reward = np.array(reward, dtype=np.float32)
+        done = np.array(done, dtype=np.float32)
 
         # check to replace target parameters
         if self._iteration % self.replace_target_iter == 0:
             self.update_target_net()
+
+        loss, td_error = self._train_body(self.bs, eval_act_index, done, bs_, reward, p_idx, weights)
+
+        # increasing epsilon
+        self.epsilon = self.epsilon + self.epsilon_increment if self.epsilon < self.epsilon_max else self.epsilon_max
+
+        self._iteration += 1
+
+        return loss, td_error
+
+    @tf.contrib.eager.defun
+    def _train_body(self, bs, eval_act_index, done, bs_, reward, p_idx, weights):
 
         global_step = tf.train.get_or_create_global_step()
 
@@ -47,10 +62,8 @@ class DQN(Agent):
             with tf.GradientTape() as tape:
                 if self.is_categorical:
                     # based on https://github.com/cmusjtuliuyuan/RainBow/blob/master/agent.py
-                    reward = tf.cast(reward, tf.float32)
-                    done = tf.cast(done, tf.float32)
                     q_next = self.q_next.inference(bs_)           #target network Q'(s', a)
-                    q_eval = self.q_eval.inference(self.bs)       #main network   Q(s, a)
+                    q_eval = self.q_eval.inference(bs)       #main network   Q(s, a)
                     q_next_value = tf.reduce_sum(q_next * self.z_list_broadcasted, axis=2)
                     action_chosen_by_target_Q = tf.cast(tf.argmax(q_next_value, axis=1), tf.int32)
                     Q_distributional_chosen_by_action_target = tf.gather_nd(q_next,
@@ -58,7 +71,7 @@ class DQN(Agent):
                                                         tf.reshape(action_chosen_by_target_Q,[-1,1])], axis = 1))
 
                     target = tf.tile(tf.reshape(reward,[-1, 1]), tf.constant([1, self.q_eval.N_atoms])) \
-                        + tf.cast(tf.reshape((self.discount ** p_idx), [-1, 1]), tf.float32) * tf.multiply(tf.reshape(self.z_list,[1, self.q_eval.N_atoms]),
+                        + tf.cast(tf.reshape((self.discount ** tf.cast(p_idx, tf.float32)), [-1, 1]), tf.float32) * tf.multiply(tf.reshape(self.z_list,[1, self.q_eval.N_atoms]),
                         (1.0 - tf.tile(tf.reshape(done ,[-1, 1]), tf.constant([1, self.q_eval.N_atoms]))))
 
                     target = tf.clip_by_value(target, self.Vmin, self.Vmax)
@@ -67,8 +80,9 @@ class DQN(Agent):
                     u_id, l_id = tf.cast(u, tf.int32), tf.cast(l, tf.int32)
                     u_minus_b, b_minus_l = u - b, b - l
 
-                    Q_distributional_chosen_by_action_online = tf.gather_nd(q_eval,
-                                                                            list(enumerate(eval_act_index)))
+                    action_list = tf.concat([tf.expand_dims(tf.range(self.batch_size), axis=1), eval_act_index], axis=1)
+
+                    Q_distributional_chosen_by_action_online = tf.gather_nd(q_eval, action_list)
 
 
                     index_help = tf.tile(tf.reshape(tf.range(self.batch_size),[-1, 1]), tf.constant([1, self.q_eval.N_atoms]))
@@ -83,17 +97,14 @@ class DQN(Agent):
                     td_error = tf.abs(error)
                     loss = tf.reduce_sum(tf.negative(error) * weights)
                 else:
-                    q_next, q_eval = self.q_next.inference(bs_), self.q_eval.inference(self.bs)
-                    q_target = reward + self.discount ** p_idx * tf.stop_gradient(tf.reduce_max(q_next, axis = 1) * (1. - done))
-                    q_eval = tf.gather_nd(q_eval, list(enumerate(eval_act_index)))
+                    q_next, q_eval = self.q_next.inference(bs_), self.q_eval.inference(bs)
+                    q_target = reward + self.discount ** tf.cast(p_idx, tf.float32) * tf.reduce_max(q_next, axis = 1) * (1. - done)
+                    q_target = tf.stop_gradient(q_target)
+                    action_list = tf.concat([tf.expand_dims(tf.range(self.batch_size), axis=1), eval_act_index], axis=1)
+                    q_eval = tf.gather_nd(q_eval, action_list)
                     td_error = tf.abs(q_target - q_eval)
                     loss = tf.reduce_sum(tf.losses.huber_loss(labels=q_target, predictions=q_eval) * weights)
             self.q_eval.optimize(loss, global_step, tape)
-        
-        # increasing epsilon
-        self.epsilon = self.epsilon + self.epsilon_increment if self.epsilon < self.epsilon_max else self.epsilon_max
-
-        self._iteration += 1
 
         return loss, td_error
 
@@ -111,28 +122,41 @@ class DDQN(DQN):
     #@tf.contrib.eager.defun
     def update_q_net(self, replay_data, weights):
         self.bs, eval_act_index, done, bs_, reward, p_idx = replay_data
+        eval_act_index = np.reshape(np.array(eval_act_index, dtype=np.int32),(self.batch_size,1))
+        reward = np.array(reward, dtype=np.float32)
+        done = np.array(done, dtype=np.float32)
 
         # check to replace target parameters
         if self._iteration % self.replace_target_iter == 0:
             self.update_target_net()
 
-        global_step = tf.train.get_or_create_global_step()
+        loss, td_error = self._train_body(self.bs, eval_act_index, done, bs_, reward, p_idx, weights)
 
+        # increasing epsilon
+        self.epsilon = self.epsilon + self.epsilon_increment if self.epsilon < self.epsilon_max else self.epsilon_max
+
+        self._iteration += 1
+
+        return loss, td_error
+
+        
+
+    @tf.contrib.eager.defun
+    def _train_body(self, bs, eval_act_index, done, bs_, reward, p_idx, weights):
         with tf.device(self.device):
+            global_step = tf.train.get_or_create_global_step()
             with tf.GradientTape() as tape:
                 if self.is_categorical:
-                    reward = tf.cast(reward, tf.float32)
-                    done = tf.cast(done, tf.float32)
                     q_next = self.q_next.inference(bs_) #target network Q'(s', a)
                     q_eval4next = self.q_eval.inference(bs_)      #main network   Q(s', a)
-                    q_eval = self.q_eval.inference(self.bs)       #main network   Q(s, a)
+                    q_eval = self.q_eval.inference(bs)       #main network   Q(s, a)
                     q_ = tf.reduce_sum(tf.multiply(q_eval4next, self.z_list), axis=2) # a = argmax(Q(s',a))
                     next_action = tf.cast(tf.argmax(q_, axis=1), tf.int32)
-                    Q_distributional_chosen_by_action_target = tf.gather_nd(q_next,
-                                                                            list(enumerate(next_action)))
+                    indices = tf.concat(values=[tf.expand_dims(tf.range(self.batch_size), axis=1), tf.expand_dims(next_action, axis=1)], axis=1)
+                    Q_distributional_chosen_by_action_target = tf.gather_nd(q_next, indices)
 
                     target = tf.tile(tf.reshape(reward,[-1, 1]), tf.constant([1, self.q_eval.N_atoms])) \
-                        + tf.cast(tf.reshape((self.discount ** p_idx), [-1, 1]), tf.float32) * tf.multiply(tf.reshape(self.z_list,[1, self.q_eval.N_atoms]),
+                        + tf.cast(tf.reshape((self.discount ** tf.cast(p_idx, tf.float32)), [-1, 1]), tf.float32) * tf.multiply(tf.reshape(self.z_list,[1, self.q_eval.N_atoms]),
                         (1.0 - tf.tile(tf.reshape(done ,[-1, 1]), tf.constant([1, self.q_eval.N_atoms]))))
 
                     target = tf.clip_by_value(target, self.Vmin, self.Vmax)
@@ -141,8 +165,8 @@ class DDQN(DQN):
                     u_id, l_id = tf.cast(u, tf.int32), tf.cast(l, tf.int32)
                     u_minus_b, b_minus_l = u - b, b - l
 
-                    Q_distributional_chosen_by_action_online = tf.gather_nd(q_eval,
-                                                                            list(enumerate(eval_act_index)))
+                    action_list = tf.concat([tf.expand_dims(tf.range(self.batch_size), axis=1), eval_act_index], axis=1)
+                    Q_distributional_chosen_by_action_online = tf.gather_nd(q_eval,action_list)
 
 
                     index_help = tf.tile(tf.reshape(tf.range(self.batch_size),[-1, 1]), tf.constant([1, self.q_eval.N_atoms]))
@@ -157,19 +181,18 @@ class DDQN(DQN):
                     td_error = tf.abs(error)
                     loss = tf.reduce_sum(tf.negative(error) * weights)
                 else:
-                    q_next, q_eval = self.q_next.inference(bs_), self.q_eval.inference(self.bs)
-                    selected_q_next = tf.gather_nd(q_next, list(enumerate(eval_act_index)))
-                    q_target = reward + self.discount ** p_idx * tf.stop_gradient(selected_q_next * (1. - done))
-                    q_eval = tf.gather_nd(q_eval, list(enumerate(eval_act_index)))
+                    q_next, q_eval = self.q_next.inference(bs_), self.q_eval.inference(bs)
+                    q_eval4next = tf.argmax(self.q_eval.inference(bs_), axis=1, output_type=tf.int32)
+                    indices = tf.concat(values=[tf.expand_dims(tf.range(self.batch_size), axis=1), tf.expand_dims(q_eval4next, axis=1)], axis=1)
+                    selected_q_next = tf.gather_nd(q_next, indices)
+                    q_target = reward + self.discount ** tf.cast(p_idx, tf.float32) * selected_q_next * (1. - done)
+                    q_target = tf.stop_gradient(q_target)
+                    action_list = tf.concat([tf.expand_dims(tf.range(self.batch_size), axis=1), eval_act_index], axis=1)
+                    q_eval = tf.gather_nd(q_eval, action_list)
                     td_error = tf.abs(q_target - q_eval)
                     loss = tf.reduce_sum(tf.losses.huber_loss(labels=q_target, predictions=q_eval) * weights)
             self.q_eval.optimize(loss, global_step, tape)
-
-        # increasing epsilon
-        self.epsilon = self.epsilon + self.epsilon_increment if self.epsilon < self.epsilon_max else self.epsilon_max
-
-        self._iteration += 1
-
+            
         return loss, td_error
 
 class Rainbow(DDQN):
