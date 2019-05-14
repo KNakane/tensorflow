@@ -60,7 +60,7 @@ class DDPG(Agent):
                 target_Q = tf.stop_gradient(target_Q)
                 # ↓critic_loss
                 error = tf.losses.huber_loss(labels=target_Q, predictions=critic_eval)
-                self.td_error = tf.abs(tf.reduce_mean(target_Q - critic_eval, axis=1))
+                td_error = tf.abs(tf.reduce_mean(target_Q - critic_eval, axis=1))
                 critic_loss = tf.reduce_mean(error * weights, keepdims=True)
             self.critic.optimize(critic_loss, global_step, tape)
 
@@ -73,7 +73,7 @@ class DDPG(Agent):
             # check to replace target parameters
             self.update_target_net()
 
-        return [critic_loss, actor_loss]
+        return [critic_loss, actor_loss], td_error
 
     
     def update_target_net(self):
@@ -128,11 +128,11 @@ class TD3(Agent):
         reward = np.reshape(np.array(br, dtype=np.float32),(self.batch_size,1))
         done = np.reshape(np.array(done, dtype=np.float32),(self.batch_size,1))
         p_idx = np.reshape(p_idx,(self.batch_size,1))
-        critic_loss1, critic_loss2 = self._train_critic(self.bs, eval_act_index, done, bs_, reward, p_idx, weights)
+        critic_loss1, critic_loss2, td_error = self._train_critic(self.bs, eval_act_index, done, bs_, reward, p_idx, weights)
         if self._iteration % self.policy_freq == 0:
             self.actor_loss = self._train_actor(self.bs)
         self._iteration += 1
-        return [critic_loss1, critic_loss2, self.actor_loss]
+        return [critic_loss1, critic_loss2, self.actor_loss], td_error
 
 
     @tf.contrib.eager.defun
@@ -151,7 +151,7 @@ class TD3(Agent):
             with tf.GradientTape() as tape:
                 critic_eval1 = self.critic1.inference([bs, eval_act_index])
                 error = tf.losses.huber_loss(labels=target_Q, predictions=critic_eval1)
-                self.td_error = tf.abs(tf.reduce_mean(target_Q - critic_eval1, axis=1))
+                td_error = tf.abs(tf.reduce_mean(target_Q - critic_eval1, axis=1))
                 critic_loss1 = tf.reduce_mean(error * weights, keepdims=True)
             self.critic1.optimize(critic_loss1, global_step, tape)
 
@@ -160,7 +160,7 @@ class TD3(Agent):
                 critic_loss2 = tf.reduce_mean(tf.losses.huber_loss(labels=target_Q, predictions=critic_eval2) * weights, keepdims=True)
             self.critic2.optimize(critic_loss2, global_step, tape)
 
-            return critic_loss1, critic_loss2
+            return critic_loss1, critic_loss2, td_error
         
     @tf.contrib.eager.defun
     def _train_actor(self, bs):

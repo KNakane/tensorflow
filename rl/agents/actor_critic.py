@@ -23,6 +23,7 @@ class A3C(Agent):
             v += l.get_weights()
         return v
 
+    @tf.contrib.eager.defun
     def inference(self, state):
         action, _ = self.q_eval.inference(state)
         return action
@@ -115,13 +116,13 @@ class A2C(Agent):
             policy_loss = tf.reduce_mean(neg_logs * advantage)
             value_loss = tf.losses.mean_squared_error(reward, values)
             action_entropy = tf.reduce_mean(self.categorical_entropy(action_eval))
-            self.loss = policy_loss + self.value_loss_weight * value_loss - self.entropy_weight * action_entropy
-        self.q_eval.optimize(self.loss, global_step, tape)
+            loss = policy_loss + self.value_loss_weight * value_loss - self.entropy_weight * action_entropy
+        self.q_eval.optimize(loss, global_step, tape)
 
         # increasing epsilon
         self.epsilon = max(self.epsilon + self.epsilon_increment, self.epsilon_max)
 
-        return
+        return loss
 
     def categorical_entropy(self, logits):
         a0 = logits - tf.reduce_mean(logits, axis=1, keepdims=True)

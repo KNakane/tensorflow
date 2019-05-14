@@ -80,13 +80,13 @@ class DQN(Agent):
                         + Q_distributional_chosen_by_action_target * b_minus_l * \
                             tf.log(tf.gather_nd(Q_distributional_chosen_by_action_online, u_id))
                     error = tf.reduce_sum(error, axis=1)
-                    self.td_error = tf.abs(error)
+                    td_error = tf.abs(error)
                     loss = tf.reduce_sum(tf.negative(error) * weights)
                 else:
                     q_next, q_eval = self.q_next.inference(bs_), self.q_eval.inference(self.bs)
                     q_target = reward + self.discount ** p_idx * tf.stop_gradient(tf.reduce_max(q_next, axis = 1) * (1. - done))
                     q_eval = tf.gather_nd(q_eval, list(enumerate(eval_act_index)))
-                    self.td_error = tf.abs(q_target - q_eval)
+                    td_error = tf.abs(q_target - q_eval)
                     loss = tf.reduce_sum(tf.losses.huber_loss(labels=q_target, predictions=q_eval) * weights)
             self.q_eval.optimize(loss, global_step, tape)
         
@@ -95,7 +95,7 @@ class DQN(Agent):
 
         self._iteration += 1
 
-        return loss
+        return loss, td_error
 
     def update_target_net(self):
         for param, target_param in zip(self.q_eval.weights, self.q_next.weights):
@@ -154,14 +154,14 @@ class DDQN(DQN):
                         + Q_distributional_chosen_by_action_target * b_minus_l * \
                             tf.log(tf.gather_nd(Q_distributional_chosen_by_action_online, u_id))
                     error = tf.reduce_sum(error, axis=1)
-                    self.td_error = tf.abs(error)
+                    td_error = tf.abs(error)
                     loss = tf.reduce_sum(tf.negative(error) * weights)
                 else:
                     q_next, q_eval = self.q_next.inference(bs_), self.q_eval.inference(self.bs)
                     selected_q_next = tf.gather_nd(q_next, list(enumerate(eval_act_index)))
                     q_target = reward + self.discount ** p_idx * tf.stop_gradient(selected_q_next * (1. - done))
                     q_eval = tf.gather_nd(q_eval, list(enumerate(eval_act_index)))
-                    self.td_error = tf.abs(q_target - q_eval)
+                    td_error = tf.abs(q_target - q_eval)
                     loss = tf.reduce_sum(tf.losses.huber_loss(labels=q_target, predictions=q_eval) * weights)
             self.q_eval.optimize(loss, global_step, tape)
 
@@ -170,7 +170,7 @@ class DDQN(DQN):
 
         self._iteration += 1
 
-        return loss
+        return loss, td_error
 
 class Rainbow(DDQN):
     def __init__(self, *args, **kwargs):
