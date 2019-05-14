@@ -37,34 +37,37 @@ class DDPG(Agent):
         action = self.inference(observation)
         return np.array(action[0])
 
-    #@tf.contrib.eager.defun
+
     def update_q_net(self, replay_data, weights):
         bs, ba, done, bs_, br, p_idx = replay_data
         self.bs = np.array(bs, dtype=np.float32)
         bs_ = np.array(bs_, dtype=np.float32)
         eval_act_index = np.reshape(ba,(self.batch_size, self.n_actions))
-        reward = np.reshape(br,(self.batch_size,1))
-        done = np.reshape(done,(self.batch_size,1))
+        reward = np.reshape(np.array(br, dtype=np.float32),(self.batch_size,1))
+        done = np.reshape(np.array(done, dtype=np.float32),(self.batch_size,1))
         p_idx = np.reshape(p_idx,(self.batch_size,1))
+        return self._train_body(self.bs, eval_act_index, done, bs_, reward, p_idx, weights)
 
+    @tf.contrib.eager.defun
+    def _train_body(self, bs, eval_act_index, done, bs_, reward, p_idx, weights):
         global_step = tf.train.get_or_create_global_step()
 
         # update critic_net
         with tf.device(self.device):
             with tf.GradientTape() as tape:
-                critic_next, critic_eval = self.critic_target.inference([bs_, self.actor_target.inference(bs_)]), self.critic.inference([self.bs, eval_act_index])
-                target_Q = tf.cast(reward + self.discount ** p_idx * critic_next * (1. - done), tf.float32)
+                critic_next, critic_eval = self.critic_target.inference([bs_, self.actor_target.inference(bs_)]), self.critic.inference([bs, eval_act_index])
+                target_Q = reward + self.discount ** tf.cast(p_idx, tf.float32) * critic_next * (1. - done)
                 target_Q = tf.stop_gradient(target_Q)
                 # ↓critic_loss
                 error = tf.losses.huber_loss(labels=target_Q, predictions=critic_eval)
                 self.td_error = tf.abs(tf.reduce_mean(target_Q - critic_eval, axis=1))
-                critic_loss = tf.reduce_mean(error * weights, keep_dims=True)
+                critic_loss = tf.reduce_mean(error * weights, keepdims=True)
             self.critic.optimize(critic_loss, global_step, tape)
 
             # update actor_net
             with tf.GradientTape() as tape:
-                actor_eval = tf.cast(self.actor.inference(self.bs), tf.float32)
-                actor_loss = -tf.reduce_mean(self.critic.inference([self.bs, actor_eval]))
+                actor_eval = tf.cast(self.actor.inference(bs), tf.float32)
+                actor_loss = -tf.reduce_mean(self.critic.inference([bs, actor_eval]))
             self.actor.optimize(actor_loss, global_step, tape)
 
             # check to replace target parameters
