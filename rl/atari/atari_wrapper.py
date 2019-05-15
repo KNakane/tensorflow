@@ -256,8 +256,8 @@ def set_model(outdim):
 
 
 def main(argv):
-    env = make_atari(FLAGS.env)
-    env = wrap_deepmind(env, frame_stack=True)
+    #env = make_atari(FLAGS.env)
+    env = wrap_deepmind(gym.make(FLAGS.env), frame_stack=True)
     #env = EnvWrap(env)
     
     if FLAGS.agent == 'Rainbow':
@@ -267,7 +267,7 @@ def main(argv):
         FLAGS.category = True
         FLAGS.noise = True
         FLAGS.opt = 'Adam'
-        FLAGS.lr = 0.00025 / 4
+        FLAGS.lr = 0.0000625
 
     message = OrderedDict({
         "Env": FLAGS.env,
@@ -291,7 +291,7 @@ def main(argv):
                 n_actions=env.action_space.n,
                 n_features=env.observation_space.shape,
                 learning_rate=FLAGS.lr,
-                e_greedy=0.9,
+                e_greedy=1.0 if FLAGS.agent == 'Rainbow' else 0.9,
                 reward_decay=0.99,
                 replace_target_iter=FLAGS.model_update,
                 e_greedy_increment=0.0001,
@@ -364,14 +364,14 @@ if __name__ == '__main__':
     flags = tf.app.flags
     FLAGS = flags.FLAGS
     flags.DEFINE_string('agent', 'DQN', 'Choise Agents -> [DQN, DDQN, Rainbow]')
-    flags.DEFINE_string('env', 'BreakoutNoFrameskip-v4', 'Choice the environment')
+    flags.DEFINE_string('env', 'Breakout-v0', 'Choice the environment')
     flags.DEFINE_string('network', 'EagerNN', 'Choise Network -> [EagerNN, Dueling_Net]')
-    flags.DEFINE_integer('n_episode', '100000', 'Input max episode')
+    flags.DEFINE_integer('n_episode', '1000000', 'Input max episode')
     flags.DEFINE_integer('step', '1000000', 'Input max steps')
     flags.DEFINE_integer('batch_size', '32', 'Input batch size')
     flags.DEFINE_integer('multi_step', '1', 'how many multi_step')
-    flags.DEFINE_integer('n_warmup', '1000', 'n_warmup value')
-    flags.DEFINE_integer('model_update', '1000', 'target_model_update_freq')
+    flags.DEFINE_integer('n_warmup', '80000', 'n_warmup value')
+    flags.DEFINE_integer('model_update', '32000', 'target_model_update_freq')
     flags.DEFINE_boolean('render', 'False', 'render')
     flags.DEFINE_boolean('priority', 'False', 'prioritized Experience Replay')
     flags.DEFINE_boolean('category', 'False', 'Categorical DQN')

@@ -180,7 +180,10 @@ class Trainer(BasedTrainer):
             for step in range(1, self.max_steps+1):
                 if self.render:
                     self.env.render()
-                action = self.agent.choose_action(state)
+                if self.total_steps < self.n_warmup:
+                    action = self.env.action_space.sample()
+                else:
+                    action = self.agent.choose_action(state)
                 state_, reward, done, _ = self.env.step(action)
 
                 # the smaller theta and closer to center the better
