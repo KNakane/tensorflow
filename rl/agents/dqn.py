@@ -198,3 +198,64 @@ class DDQN(DQN):
 class Rainbow(DDQN):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.epsilon = self.epsilon_max
+
+    def update_q_net(self, replay_data, weights):
+        self.bs, eval_act_index, done, bs_, reward, p_idx = replay_data
+        eval_act_index = np.reshape(np.array(eval_act_index, dtype=np.int32),(self.batch_size,1))
+        reward = np.array(reward, dtype=np.float32)
+        done = np.array(done, dtype=np.float32)
+
+        # check to replace target parameters
+        if self._iteration % self.replace_target_iter == 0:
+            self.update_target_net()
+
+        loss, td_error = self._train_body(self.bs, eval_act_index, done, bs_, reward, p_idx, weights)
+
+        self._iteration += 1
+
+        return loss, td_error
+
+    
+    @tf.contrib.eager.defun
+    def _train_body(self, bs, eval_act_index, done, bs_, reward, p_idx, weights):
+        with tf.device(self.device):
+            global_step = tf.train.get_or_create_global_step()
+            with tf.GradientTape() as tape:
+                q_next = self.q_next.inference(bs_) #target network Q'(s', a)
+                q_eval4next = self.q_eval.inference(bs_)      #main network   Q(s', a)
+                q_eval = self.q_eval.inference(bs)       #main network   Q(s, a)
+                q_ = tf.reduce_sum(tf.multiply(q_eval4next, self.z_list), axis=2) # a = argmax(Q(s',a))
+                next_action = tf.cast(tf.argmax(q_, axis=1), tf.int32)
+                indices = tf.concat(values=[tf.expand_dims(tf.range(self.batch_size), axis=1), tf.expand_dims(next_action, axis=1)], axis=1)
+                Q_distributional_chosen_by_action_target = tf.gather_nd(q_next, indices)
+
+                target = tf.tile(tf.reshape(reward,[-1, 1]), tf.constant([1, self.q_eval.N_atoms])) \
+                    + tf.cast(tf.reshape((self.discount ** tf.cast(p_idx, tf.float32)), [-1, 1]), tf.float32) * tf.multiply(tf.reshape(self.z_list,[1, self.q_eval.N_atoms]),
+                    (1.0 - tf.tile(tf.reshape(done ,[-1, 1]), tf.constant([1, self.q_eval.N_atoms]))))
+
+                target = tf.clip_by_value(target, self.Vmin, self.Vmax)
+                b = (target - self.Vmin) / self.delta_z
+                u, l = tf.ceil(b), tf.floor(b)
+                u_id, l_id = tf.cast(u, tf.int32), tf.cast(l, tf.int32)
+                u_minus_b, b_minus_l = u - b, b - l
+
+                action_list = tf.concat([tf.expand_dims(tf.range(self.batch_size), axis=1), eval_act_index], axis=1)
+                Q_distributional_chosen_by_action_online = tf.gather_nd(q_eval,action_list)
+
+
+                index_help = tf.tile(tf.reshape(tf.range(self.batch_size),[-1, 1]), tf.constant([1, self.q_eval.N_atoms]))
+                index_help = tf.expand_dims(index_help, -1)
+                u_id = tf.concat([index_help, tf.expand_dims(u_id, -1)], axis=2)
+                l_id = tf.concat([index_help, tf.expand_dims(l_id, -1)], axis=2)
+                error = Q_distributional_chosen_by_action_target * u_minus_b * \
+                        tf.log(tf.gather_nd(Q_distributional_chosen_by_action_online, l_id)) \
+                    + Q_distributional_chosen_by_action_target * b_minus_l * \
+                        tf.log(tf.gather_nd(Q_distributional_chosen_by_action_online, u_id))
+                error = tf.reduce_sum(error, axis=1)
+                td_error = tf.abs(error)
+                loss = tf.reduce_sum(tf.negative(error) * weights)
+
+            self.q_eval.optimize(loss, global_step, tape)
+            
+        return loss, td_error
