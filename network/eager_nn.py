@@ -16,7 +16,6 @@ class BasedEagerNN(EagerModule):
                  l2_reg=False,
                  l2_reg_scale=0.0001,
                  trainable=False,
-                 is_noisy=False,
                  is_categorical=False,
                  is_noise=False
                  ):
@@ -25,7 +24,6 @@ class BasedEagerNN(EagerModule):
         self.out_dim = out_dim
         self.model = model
         self._layers = []
-        self.is_noisy = is_noisy
         self.is_categorical = is_categorical
         self.N_atoms = 51 if is_categorical else None
         if self._trainable:

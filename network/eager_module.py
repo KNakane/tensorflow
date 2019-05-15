@@ -45,11 +45,10 @@ class EagerModule(tf.keras.Model):
     def fc(self, args): # args = [units, activation=tf.nn.relu]
         assert len(args) == 2, '[FC] Not enough Argument -> [units, activation]'
         regularizer = tf.keras.regularizers.l2(self._l2_reg_scale) if self._l2_reg else None
-        if self.is_noise:  # noisy net
-            x = tf.keras.layers.Dense(units=args[0], activation=args[1], kernel_initializer=self.noisy_weight, bias_initializer=self.noisy_bias, kernel_regularizer=regularizer, use_bias=True)
+        if self.is_noise and self.trainable:  # noisy net
+            return NoisyDense(units=args[0], activation=args[1], kernel_regularizer=regularizer, use_bias=True)
         else:
-            x = tf.keras.layers.Dense(units=args[0], activation=args[1], kernel_regularizer=regularizer, use_bias=True)
-        return x
+            return tf.keras.layers.Dense(units=args[0], activation=args[1], kernel_regularizer=regularizer, use_bias=True)
 
     def dropout(self, args):
         assert len(args) == 1, '[Dropout] Not enough Argument -> [rate]'
@@ -86,3 +85,96 @@ class EagerModule(tf.keras.Model):
         b = mu_init + tf.multiply(sigma_init, b_epsilon)
 
         return b
+
+class NoisyDense(tf.keras.layers.Layer):
+    # Based on https://github.com/OctThe16th/Noisy-A3C-Keras/blob/master/NoisyDense.py
+    def __init__(self, 
+                 units,
+                 sigma_init=0.02,
+                 activation=None,
+                 use_bias=True,
+                 kernel_initializer='glorot_uniform',
+                 bias_initializer='zeros',
+                 kernel_regularizer=None,
+                 bias_regularizer=None,
+                 activity_regularizer=None,
+                 kernel_constraint=None,
+                 bias_constraint=None,
+                 **kwargs):
+        if 'input_shape' not in kwargs and 'input_dim' in kwargs:
+            kwargs['input_shape'] = (kwargs.pop('input_dim'),)
+        super().__init__(**kwargs)
+        self.units = units
+        self.sigma_init = sigma_init
+        self.activation = tf.keras.activations.get(activation)
+        self.use_bias = use_bias
+        self.kernel_initializer = tf.keras.initializers.get(kernel_initializer)
+        self.bias_initializer = tf.keras.initializers.get(bias_initializer)
+        self.kernel_regularizer = tf.keras.regularizers.get(kernel_regularizer)
+        self.bias_regularizer = tf.keras.regularizers.get(bias_regularizer)
+        self.activity_regularizer = tf.keras.regularizers.get(activity_regularizer)
+        self.kernel_constraint = tf.keras.constraints.get(kernel_constraint)
+        self.bias_constraint = tf.keras.constraints.get(bias_constraint)
+
+    def build(self, input_shape):
+        assert len(input_shape) >= 2
+        self.input_dim = input_shape[-1]
+
+        self.kernel = self.add_weight(shape=(self.input_dim, self.units),
+                                      initializer=self.kernel_initializer,
+                                      name='kernel',
+                                      regularizer=self.kernel_regularizer,
+                                      constraint=self.kernel_constraint)
+
+        self.sigma_kernel = self.add_weight(shape=(self.input_dim, self.units),
+                                      initializer=tf.keras.initializers.Constant(value=self.sigma_init),
+                                      name='sigma_kernel'
+                                      )
+
+
+        if self.use_bias:
+            self.bias = self.add_weight(shape=(self.units,),
+                                        initializer=self.bias_initializer,
+                                        name='bias',
+                                        regularizer=self.bias_regularizer,
+                                        constraint=self.bias_constraint)
+            self.sigma_bias = self.add_weight(shape=(self.units,),
+                                        initializer=tf.keras.initializers.Constant(value=self.sigma_init),
+                                        name='sigma_bias')
+        else:
+            self.bias = None
+            self.epsilon_bias = None
+
+        self.epsilon_kernel = tf.keras.backend.zeros(shape=(self.input_dim, self.units))
+        self.epsilon_bias = tf.keras.backend.zeros(shape=(self.units,))
+
+        self.sample_noise()
+        super().build(input_shape)
+
+
+    def call(self, X):
+        perturbation = self.sigma_kernel * self.epsilon_kernel
+        perturbed_kernel = self.kernel + perturbation
+        output = tf.keras.backend.dot(X, perturbed_kernel)
+        if self.use_bias:
+            bias_perturbation = self.sigma_bias * self.epsilon_bias
+            perturbed_bias = self.bias + bias_perturbation
+            output = tf.keras.backend.bias_add(output, perturbed_bias)
+        if self.activation is not None:
+            output = self.activation(output)
+        return output
+
+    def compute_output_shape(self, input_shape):
+        assert input_shape and len(input_shape) >= 2
+        assert input_shape[-1]
+        output_shape = list(input_shape)
+        output_shape[-1] = self.units
+        return tuple(output_shape)
+
+    def sample_noise(self):
+        tf.keras.backend.set_value(self.epsilon_kernel, np.random.normal(0, 1, (self.input_dim, self.units)))
+        tf.keras.backend.set_value(self.epsilon_bias, np.random.normal(0, 1, (self.units,)))
+
+    def remove_noise(self):
+        tf.keras.backend.set_value(self.epsilon_kernel, np.zeros(shape=(self.input_dim, self.units)))
+        tf.keras.backend.set_value(self.epsilon_bias, np.zeros(shape=self.units,))
