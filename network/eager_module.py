@@ -104,7 +104,7 @@ class NoisyDense(tf.keras.layers.Layer):
         if 'input_shape' not in kwargs and 'input_dim' in kwargs:
             kwargs['input_shape'] = (kwargs.pop('input_dim'),)
         super().__init__(**kwargs)
-        self.units = units
+        self.units = int(units)
         self.sigma_init = sigma_init
         self.activation = tf.keras.activations.get(activation)
         self.use_bias = use_bias
@@ -119,45 +119,46 @@ class NoisyDense(tf.keras.layers.Layer):
     def build(self, input_shape):
         assert len(input_shape) >= 2
         self.input_dim = input_shape[-1]
-
-        self.kernel = self.add_weight(shape=(self.input_dim, self.units),
-                                      initializer=self.kernel_initializer,
+        self.kernel = self.add_weight(shape=[self.input_dim, self.units],
+                                      initializer=tf.initializers.orthogonal(dtype=tf.float32),
                                       name='kernel',
+                                      dtype=tf.float32,
                                       regularizer=self.kernel_regularizer,
-                                      constraint=self.kernel_constraint)
-
+                                      constraint=self.kernel_constraint,
+                                      trainable=True)
+        
         self.sigma_kernel = self.add_weight(shape=(self.input_dim, self.units),
                                       initializer=tf.keras.initializers.Constant(value=self.sigma_init),
                                       name='sigma_kernel'
                                       )
-
-
         if self.use_bias:
             self.bias = self.add_weight(shape=(self.units,),
                                         initializer=self.bias_initializer,
                                         name='bias',
                                         regularizer=self.bias_regularizer,
-                                        constraint=self.bias_constraint)
+                                        constraint=self.bias_constraint,
+                                        trainable=True)
+            
             self.sigma_bias = self.add_weight(shape=(self.units,),
                                         initializer=tf.keras.initializers.Constant(value=self.sigma_init),
                                         name='sigma_bias')
+
         else:
             self.bias = None
             self.epsilon_bias = None
 
-        self.epsilon_kernel = tf.keras.backend.zeros(shape=(self.input_dim, self.units))
-        self.epsilon_bias = tf.keras.backend.zeros(shape=(self.units,))
-
-        self.sample_noise()
+        #self.epsilon_kernel = tf.keras.backend.zeros(shape=(self.input_dim, self.units), name='epsilon_kernel')
+        #self.epsilon_bias = tf.keras.backend.zeros(shape=(self.units,), name='epsilon_bias')
+        
+        #self.sample_noise()
         super().build(input_shape)
 
-
-    def call(self, X):
-        perturbation = self.sigma_kernel * self.epsilon_kernel
+    def call(self, input):
+        perturbation = self.sigma_kernel #* self.epsilon_kernel
         perturbed_kernel = self.kernel + perturbation
-        output = tf.keras.backend.dot(X, perturbed_kernel)
+        output = tf.keras.backend.dot(input, perturbed_kernel)
         if self.use_bias:
-            bias_perturbation = self.sigma_bias * self.epsilon_bias
+            bias_perturbation = self.sigma_bias #* self.epsilon_bias
             perturbed_bias = self.bias + bias_perturbation
             output = tf.keras.backend.bias_add(output, perturbed_bias)
         if self.activation is not None:
@@ -165,12 +166,9 @@ class NoisyDense(tf.keras.layers.Layer):
         return output
 
     def compute_output_shape(self, input_shape):
-        assert input_shape and len(input_shape) >= 2
-        assert input_shape[-1]
-        output_shape = list(input_shape)
-        output_shape[-1] = self.units
-        return tuple(output_shape)
+        return (input_shape[0], self.units)
 
+    """
     def sample_noise(self):
         tf.keras.backend.set_value(self.epsilon_kernel, np.random.normal(0, 1, (self.input_dim, self.units)))
         tf.keras.backend.set_value(self.epsilon_bias, np.random.normal(0, 1, (self.units,)))
@@ -178,3 +176,4 @@ class NoisyDense(tf.keras.layers.Layer):
     def remove_noise(self):
         tf.keras.backend.set_value(self.epsilon_kernel, np.zeros(shape=(self.input_dim, self.units)))
         tf.keras.backend.set_value(self.epsilon_bias, np.zeros(shape=self.units,))
+    """
