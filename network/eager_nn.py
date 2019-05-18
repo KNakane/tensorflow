@@ -56,7 +56,7 @@ class EagerNN(BasedEagerNN):
             my_layer = eval('self.' + self.model[l][0])(self.model[l][1:])
             self._layers.append(my_layer)
 
-    #@tf.contrib.eager.defun
+    @tf.contrib.eager.defun
     def inference(self, x, softmax=True):
         x = tf.convert_to_tensor(x)
         x = tf.cast(x, tf.float32)
