@@ -203,7 +203,7 @@ class Trainer(BasedTrainer):
                     t_reward, p_index = self.multi_step_reward(self.reward_deque, self.agent.discount)
                     state = self.state_deque[0]
                     action = self.action_deque[0]
-                    self.replay_buf.push(state, action, done, state_, t_reward, p_index)
+                    self.replay_buf.push(np.array(state), action, done, np.array(state_), t_reward, p_index)
 
                 total_reward += reward
 
