@@ -15,6 +15,14 @@ class DDPG(Agent):
         super().__init__(*args, **kwargs)
         self.noise = OrnsteinUhlenbeckProcess(num_actions=self.n_actions)
         self.tau = 0.01
+        if self.is_categorical:
+            self.Vmax, self.Vmin = 10.0, -10.0
+            self.delta_z = tf.lin_space(self.Vmin, self.Vmax, self.critic.N_atoms)
+            """
+            self.delta_z = (self.Vmax - self.Vmin) / (self.q_eval.N_atoms - 1)
+            self.z_list = tf.constant([self.Vmin + i * self.delta_z for i in range(self.critic.N_atoms)],dtype=tf.float32)
+            self.z_list_broadcasted = tf.tile(tf.reshape(self.z_list,[1,self.q_eval.N_atoms]), tf.constant([self.n_actions,1]))
+            """
 
     def _build_net(self):
         self.actor = ActorNet(model=self.model[0], out_dim=self.n_actions, name='ActorNet', opt=self._optimizer, lr=self.lr, trainable=self.trainable, max_action=self.max_action)
@@ -55,13 +63,16 @@ class DDPG(Agent):
         # update critic_net
         with tf.device(self.device):
             with tf.GradientTape() as tape:
-                critic_next, critic_eval = self.critic_target.inference([bs_, self.actor_target.inference(bs_)]), self.critic.inference([bs, eval_act_index])
-                target_Q = reward + self.discount ** tf.cast(p_idx, tf.float32) * critic_next * (1. - done)
-                target_Q = tf.stop_gradient(target_Q)
-                # ↓critic_loss
-                error = tf.losses.huber_loss(labels=target_Q, predictions=critic_eval)
-                td_error = tf.abs(tf.reduce_mean(target_Q - critic_eval, axis=1))
-                critic_loss = tf.reduce_mean(error * weights, keepdims=True)
+                if self.is_categorical:
+                    pass
+                else:
+                    critic_next, critic_eval = self.critic_target.inference([bs_, self.actor_target.inference(bs_)]), self.critic.inference([bs, eval_act_index])
+                    target_Q = reward + self.discount ** tf.cast(p_idx, tf.float32) * critic_next * (1. - done)
+                    target_Q = tf.stop_gradient(target_Q)
+                    # ↓critic_loss
+                    error = tf.losses.huber_loss(labels=target_Q, predictions=critic_eval)
+                    td_error = tf.abs(tf.reduce_mean(target_Q - critic_eval, axis=1))
+                    critic_loss = tf.reduce_mean(error * weights, keepdims=True)
             self.critic.optimize(critic_loss, global_step, tape)
 
             # update actor_net
