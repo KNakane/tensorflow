@@ -54,6 +54,31 @@ class Discriminator(Module):
     def loss(self):
         return tf.losses.get_regularization_loss()
 
+class Classifier(Module):
+    def __init__(self, model, l2_reg=False, l2_reg_scale=0.0001, name='Classifier', trainable=True):
+        super().__init__(l2_reg=l2_reg,l2_reg_scale=l2_reg_scale, trainable=trainable)
+        self.model = model
+        self.name = name
+
+    def __call__(self, logits, reuse=False):
+        with tf.variable_scope(self.name):
+            if reuse:
+                tf.get_variable_scope().reuse_variables()
+            for l in range(len(self.model)):
+                logits = (eval('self.' + self.model[l][0])(logits, self.model[l][1:]))
+            return logits
+
+    @property
+    def var(self):
+        return tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, self.name)
+
+    @property
+    def weight(self):
+        return [v for v in tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, self.name) if re.search('kernel', v.name)]
+
+    def loss(self):
+        return tf.losses.get_regularization_loss()
+
 
 class BasedGAN(Module):
     def __init__(self,

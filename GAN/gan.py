@@ -3,7 +3,7 @@ import numpy as np
 import tensorflow as tf
 sys.path.append('./utility')
 from optimizer import *
-from based_gan import BasedGAN, Discriminator, Generator
+from based_gan import BasedGAN, Discriminator, Generator, Classifier
 
 class GAN(BasedGAN):
     def __init__(self, *args, **kwargs):
@@ -398,3 +398,89 @@ class ACGAN(DCGAN):
     def evaluate(self, real_logit, fake_logit):
         with tf.variable_scope('Accuracy'):
             return  (tf.reduce_mean(tf.cast(fake_logit[0] < 0.5, tf.float32)) + tf.reduce_mean(tf.cast(real_logit[0] > 0.5, tf.float32))) / 2.
+
+
+class infoGAN(DCGAN):
+    """
+    Information Maximizing Generative Adversarial Networks
+    """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def build(self):
+        gen_model = [
+            ['fc', 4*4*512, None],
+            ['reshape', [-1, 4, 4, 512]],
+            ['BN'],
+            ['Leaky_ReLU'],
+            #['deconv', 5, 256, 2, None], # cifar
+            ['deconv', 5, 256, 3, None], # mnist
+            ['BN'],
+            ['Leaky_ReLU'],
+            ['deconv', 5, 128, 2, None],
+            ['BN'],
+            ['Leaky_ReLU'],
+            #['deconv', 5, self.channel, 2, None], # cifar
+            ['deconv', 5, self.channel, 1, None, 'valid'], # mnist
+            ['tanh']]
+
+        dis_model = [
+            ['conv', 5, 64, 2, None],
+            ['Leaky_ReLU'],
+            ['conv', 5, 128, 2, None],
+            ['BN'],
+            ['Leaky_ReLU'],
+            ['reshape', [-1, 7*7*128]], # mnist
+            #['reshape', [-1, 8*8*128]], # cifar10
+            ['fc', 1, None]
+        ]
+
+        cls_model = [
+            ['conv', 5, 64, 2, None],
+            ['Leaky_ReLU'],
+            ['conv', 5, 128, 2, None],
+            ['BN'],
+            ['Leaky_ReLU'],
+            ['reshape', [-1, 7*7*128]], # mnist
+            #['reshape', [-1, 8*8*128]], # cifar10
+            ['fc', 2 + self.class_num, None]
+        ]
+
+        self.D = Discriminator(dis_model)
+        self.G = Generator(gen_model)
+        self.G_ = Generator(gen_model, trainable=False)
+        self.C = Classifier(cls_model)
+
+    def predict(self, inputs, batch_size):
+        if self.conditional:
+            indices = np.array([x%self.class_num for x in range(batch_size)],dtype=np.int32)
+            labels = tf.one_hot(indices, depth=self.class_num, dtype=tf.float32)
+            inputs = self.combine_distribution(inputs, labels)
+        return self.G_(inputs, reuse=True)
+
+    def inference(self, inputs, batch_size, labels=None):
+        self.z = tf.random_normal((batch_size, self._z_dim), dtype=tf.float32)
+        if labels is None:
+            batch_labels = np.random.multinomial(1,
+                                                self.class_num * [float(1.0 / self.class_num)],
+                                                size=[batch_size])
+        else:
+            batch_labels = labels
+        batch_codes = np.concatenate((batch_labels, np.random.uniform(-1, 1, size=(batch_size, 2))),axis=1)
+
+        fake_img = self.G(self.combine_distribution(self.z, batch_codes))        
+
+        real_logit = tf.nn.sigmoid(self.D(inputs))
+        fake_logit = tf.nn.sigmoid(self.D(fake_img, reuse=True))
+        return real_logit, fake_logit
+
+    def loss(self, real_logit, fake_logit):
+        with tf.variable_scope('loss'):
+            with tf.variable_scope('Discriminator_loss'):
+                d_loss = -tf.reduce_mean(tf.log(real_logit + self.eps) + tf.log(1. - fake_logit + self.eps))
+            with tf.variable_scope('Generator_loss'):
+                g_loss = -tf.reduce_mean(tf.log(fake_logit + self.eps))
+            if self._l2_reg:
+                d_loss += self.D.loss()
+                g_loss += self.G.loss()
+            return d_loss, g_loss
