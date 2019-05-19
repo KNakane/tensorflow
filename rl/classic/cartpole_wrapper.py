@@ -49,6 +49,7 @@ def main(argv):
         "Priority": FLAGS.priority,
         "multi_step": FLAGS.multi_step,
         "Categorical": FLAGS.category,
+        "Noise": FLAGS.noise,
         "n_warmup": FLAGS.n_warmup,
         "model_update": FLAGS.model_update,
         "init_model": FLAGS.init_model})

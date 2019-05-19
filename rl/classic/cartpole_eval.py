@@ -21,7 +21,6 @@ def main(argv):
 
     if FLAGS.agent == 'Rainbow':
         FLAGS.network = 'Dueling_Net'
-        FLAGS.multi_step = 3
         FLAGS.category = True
         FLAGS.noise = True
 
