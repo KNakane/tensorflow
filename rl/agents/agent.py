@@ -58,6 +58,8 @@ class Agent(tf.contrib.checkpoint.Checkpointable):
 
     def choose_action(self, observation):
         # to have batch dimension when feed into tf placeholder
+        if not isinstance(observation, np.ndarray):
+            observation = np.array(observation)
         observation = observation[np.newaxis, :]
 
         if np.random.uniform() < self.epsilon:

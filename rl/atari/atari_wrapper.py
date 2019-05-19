@@ -332,7 +332,7 @@ def main(argv):
                 n_actions=env.action_space.n,
                 n_features=env.observation_space.shape,
                 learning_rate=FLAGS.lr,
-                e_greedy=1.0 if FLAGS.noise else 0.9,
+                e_greedy=1.0 if FLAGS.agent == 'Rainbow' else 0.9,
                 reward_decay=0.99,
                 replace_target_iter=FLAGS.model_update,
                 e_greedy_increment=0.0001,

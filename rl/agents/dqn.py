@@ -119,7 +119,6 @@ class DDQN(DQN):
     def __init__(self,*args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    #@tf.contrib.eager.defun
     def update_q_net(self, replay_data, weights):
         self.bs, eval_act_index, done, bs_, reward, p_idx = replay_data
         eval_act_index = np.reshape(np.array(eval_act_index, dtype=np.int32),(self.batch_size,1))
