@@ -1,10 +1,16 @@
 import os,sys
+sys.path.append('./utility')
 sys.path.append('./dataset')
 sys.path.append('./network')
 import tensorflow as tf
 import numpy as np
+import time
 from eager_load import Load
-from eager_cnn import EagerCNN
+from eager_nn import EagerNN
+from eager_model import LeNet
+from eager_trainer import EagerTrain
+from collections import OrderedDict
+
 # Eager Mode
 tf.enable_eager_execution()
 
@@ -13,34 +19,35 @@ def set_model(outdim):
                  ['conv', 3, 32, 1, tf.nn.relu],
                  ['flat'],
                  ['fc', 50, tf.nn.relu],
-                 ['fc', outdim, tf.nn.softmax]]
+                 ['fc', outdim, None]]
     return model_set
 
 def main(argv):
-    ## load dataset
-    global_steps=tf.train.get_or_create_global_step()
+    message = OrderedDict({
+        "Network": FLAGS.network,
+        "data": FLAGS.data,
+        "epoch":FLAGS.n_epoch,
+        "batch_size": FLAGS.batch_size,
+        "Optimizer":FLAGS.opt,
+        "learning_rate":FLAGS.lr,
+        "l2_norm": FLAGS.l2_norm,
+        "Augmentation": FLAGS.aug})
+    
     data = Load(FLAGS.data)
-    dataset = data.load(data.x_train, data.y_train, batch_size=FLAGS.batch_size, is_training=True, augmentation=FLAGS.aug)
+    model_set = set_model(data.output_dim)
 
-    model_set = set_model(10)
-    model = EagerCNN(model=model_set, name=FLAGS.network, out_dim=10, lr=FLAGS.lr, opt=FLAGS.opt, l2_reg=FLAGS.l2_norm, trainable=True)
-    print("---start training-----")
-    for j in range(FLAGS.n_epoch):
-        running_loss = 0
-        for (batch, (images, labels)) in enumerate(dataset.take(1000)):
-            with tf.GradientTape() as tape:
-                y_pre = model.inference(images)
-                loss = model.loss(labels, y_pre)
-            model.optimize(loss, global_steps, tape)
-            running_loss += loss
-        print("-----epoch {} -----".format(j + 1))
-        print("loss: ", running_loss.numpy()/(batch + 1))
+    model = eval(FLAGS.network)(model=model_set, name=FLAGS.network, out_dim=data.output_dim, lr=FLAGS.lr, opt=FLAGS.opt, l2_reg=FLAGS.l2_norm, trainable=True)
+
+    #training
+    trainer = EagerTrain(FLAGS, message, data, model, FLAGS.network)
+    trainer.train()
+
     return
 
 if __name__ == '__main__':
     flags = tf.app.flags
     FLAGS = flags.FLAGS
-    flags.DEFINE_string('network', 'CNN', 'Choice the training data name -> [CNN,LeNet]')
+    flags.DEFINE_string('network', 'EagerNN', 'Choice the training data name -> [EagerNN,LeNet]')
     flags.DEFINE_string('data', 'mnist', 'Choice the training data name -> ["mnist","cifar10","cifar100","kuzushiji"]')
     flags.DEFINE_integer('n_epoch', '1000', 'Input max epoch')
     flags.DEFINE_integer('batch_size', '32', 'Input batch size')
@@ -48,8 +55,6 @@ if __name__ == '__main__':
     flags.DEFINE_string('opt', 'SGD', 'Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]')
     flags.DEFINE_string('aug','None','Choice the Augmentation -> ["shift","mirror","rotate","shift_rotate","cutout","random_erace"]')
     flags.DEFINE_bool('l2_norm', 'False', 'Input learning rate')
-    flags.DEFINE_integer('checkpoints_to_keep', 5,'checkpoint keep count')
-    flags.DEFINE_integer('keep_checkpoint_every_n_hours', 1, 'checkpoint create ')
-    flags.DEFINE_integer('save_checkpoint_steps', 100,'save checkpoint step')
+    flags.DEFINE_string('init_model', 'None', 'Choice the checkpoint directpry(ex. ./results/181225_193106/model)')
     tf.app.run()
     

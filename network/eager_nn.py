@@ -45,6 +45,9 @@ class BasedEagerNN(EagerModule):
         assert tape is not None, 'please set tape in opmize'
         grads = tape.gradient(loss, self.trainable_variables)
         self.optimizer.method.apply_gradients(zip(grads, self.trainable_variables),global_step)
+
+    def accuracy(self, logits, labels):
+        return tf.keras.metrics.categorical_accuracy(labels, logits)
     
 
 class EagerNN(BasedEagerNN):
