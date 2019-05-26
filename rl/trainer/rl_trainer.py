@@ -77,10 +77,11 @@ class BasedTrainer():
 
     def step_end(self, episode, step, total_reward, time):
         self.total_steps += step
-        tf.contrib.summary.scalar('train/total_steps', self.total_steps)
-        tf.contrib.summary.scalar('train/steps_per_episode', step)
-        tf.contrib.summary.scalar('train/total_reward', total_reward)
-        tf.contrib.summary.scalar('train/average_reward', total_reward / step)
+        if self.learning_flag:
+            tf.contrib.summary.scalar('train/total_steps', self.total_steps)
+            tf.contrib.summary.scalar('train/steps_per_episode', step)
+            tf.contrib.summary.scalar('train/total_reward', total_reward)
+            tf.contrib.summary.scalar('train/average_reward', total_reward / step)
         print("episode: %d total_steps: %d  steps/episode: %d  total_reward: %0.2f time/step: %0.3fms"%(episode, self.total_steps, step, total_reward, time/step*1000))
         metrics = OrderedDict({
             "episode": episode,
