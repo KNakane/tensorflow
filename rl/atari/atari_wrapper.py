@@ -281,6 +281,29 @@ class LazyFrames(object):
     def __getitem__(self, i):
         return self._force()[..., i]
 
+class ProcessFrame84(gym.ObservationWrapper):
+    def __init__(self, env=None):
+        super(ProcessFrame84, self).__init__(env)
+        self.observation_space = spaces.Box(
+            low=0, high=255, shape=(84, 84, 1), dtype=np.uint8)
+
+    def observation(self, obs):
+        return ProcessFrame84.process(obs)
+
+    @staticmethod
+    def process(frame):
+        if frame.size == 210 * 160 * 3:
+            img = np.reshape(frame, [210, 160, 3]).astype(np.float32)
+        elif frame.size == 250 * 160 * 3:
+            img = np.reshape(frame, [250, 160, 3]).astype(np.float32)
+        else:
+            assert False, "Unknown resolution."
+        img = img[:, :, 0] * 0.299 + img[:, :, 1] * 0.587 + img[:, :, 2] * 0.114
+        resized_screen = cv2.resize(img, (84, 110), interpolation=cv2.INTER_AREA)
+        x_t = resized_screen[18:102, :]
+        x_t = np.reshape(x_t, [84, 84, 1])
+        return x_t.astype(np.uint8)
+
 def make_atari(env_id, max_episode_steps=None):
     env = gym.make(env_id)
     assert 'NoFrameskip' in env.spec.id
@@ -306,6 +329,23 @@ def wrap_deepmind(env, episode_life=True, clip_rewards=True, frame_stack=False, 
         env = FrameStack(env, 4)
     return env
 
+# forked from https://github.com/Shmuma/ptan/blob/master/ptan/common/wrappers.py
+def wrap_dqn(env, stack_frames=4, episodic_life=True, reward_clipping=True):
+    """Apply a common set of wrappers for Atari games."""
+    assert 'NoFrameskip' in env.spec.id
+    if episodic_life:
+        env = EpisodicLifeEnv(env)
+    env = NoopResetEnv(env, noop_max=30)
+    env = MaxAndSkipEnv(env, skip=4)
+    if 'FIRE' in env.unwrapped.get_action_meanings():
+        env = FireResetEnv(env)
+    env = ProcessFrame84(env)
+    env = FrameStack(env, stack_frames)
+    if reward_clipping:
+        env = ClipRewardEnv(env)
+    return env
+
+
 def set_model(outdim):
     model_set = [['conv', 8, 32, 4, tf.nn.relu],
                  ['conv', 4, 64, 2, tf.nn.relu],
@@ -318,7 +358,8 @@ def set_model(outdim):
 
 def main(argv):
     #env = make_atari(FLAGS.env)
-    env = wrap_deepmind(gym.make(FLAGS.env), frame_stack=True)
+    #env = wrap_deepmind(gym.make(FLAGS.env), frame_stack=True)
+    env = wrap_dqn(gym.make(FLAGS.env))
     
     if FLAGS.agent == 'Rainbow':
         FLAGS.network = 'Dueling_Net'
