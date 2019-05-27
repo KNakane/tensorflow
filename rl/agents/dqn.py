@@ -40,11 +40,11 @@ class DQN(Agent):
         reward = np.array(reward, dtype=np.float32)
         done = np.array(done, dtype=np.float32)
 
+        loss, td_error = self._train_body(self.bs, eval_act_index, done, bs_, reward, p_idx, weights)
+
         # check to replace target parameters
         if self._iteration % self.replace_target_iter == 0:
             self.update_target_net()
-
-        loss, td_error = self._train_body(self.bs, eval_act_index, done, bs_, reward, p_idx, weights)
 
         # increasing epsilon
         self.epsilon = self.epsilon + self.epsilon_increment if self.epsilon < self.epsilon_max else self.epsilon_max
