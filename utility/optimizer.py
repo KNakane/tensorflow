@@ -43,6 +43,6 @@ class Adam(SGD):
 
 
 class RMSProp(SGD):
-    def __init__(self, learning_rate=0.1, decay_step=1000, decay_rate=0.95):
-        super().__init__(learning_rate=learning_rate, decay_step=decay_step, decay_rate=decay_rate)
-        self.method = tf.train.RMSPropOptimizer(self.lr)
+    def __init__(self, learning_rate=0.1, momentum=0.95, epsilon=0.01):
+        super().__init__(learning_rate=learning_rate)
+        self.method = tf.train.RMSPropOptimizer(self.lr, momentum=momentum, epsilon=epsilon)
