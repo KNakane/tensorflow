@@ -60,7 +60,7 @@ def main(argv):
                               batch_size=FLAGS.batch_size, 
                               e_greedy=0.9,
                               replace_target_iter=1,
-                              e_greedy_increment=0.01,
+                              e_greedy_decrement=0.01,
                               optimizer=FLAGS.opt,
                               is_categorical=FLAGS.category,
                               max_action=env.action_space.high[0],

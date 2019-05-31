@@ -10,10 +10,11 @@ class Agent(tf.contrib.checkpoint.Checkpointable):
             n_features,
             learning_rate=0.01,
             reward_decay=0.99,
-            e_greedy=0.9,
+            e_greedy=0.1,
             replace_target_iter=300,
             batch_size=32,
-            e_greedy_increment=None,
+            e_greedy_decrement=None,
+            update_interval=4,
             optimizer=None,
             network=None,
             trainable=True,
@@ -30,15 +31,16 @@ class Agent(tf.contrib.checkpoint.Checkpointable):
         self.n_features = n_features
         self.lr = learning_rate
         self.discount = reward_decay #discount
-        self.epsilon_max = e_greedy
+        self.epsilon_min = e_greedy
         self.replace_target_iter = replace_target_iter
         self.batch_size = batch_size
         self._optimizer = optimizer
         self.is_categorical = is_categorical
         self.is_noise = is_noise
         self.trainable = trainable
-        self.epsilon_increment = e_greedy_increment
-        self.epsilon = 0 if e_greedy_increment is not None else self.epsilon_max
+        self.epsilon_decrement = e_greedy_decrement
+        self.update_interval = update_interval
+        self.epsilon = 0 if self.is_noise else max(e_greedy - self.epsilon_decrement * self.n_warmup,self.epsilon_min)
         self.device = "/gpu:{}".format(gpu) if gpu >= 0 else "/cpu:0"
 
         # total learning step
@@ -62,7 +64,7 @@ class Agent(tf.contrib.checkpoint.Checkpointable):
             observation = np.array(observation)
         observation = observation[np.newaxis, :]
 
-        if np.random.uniform() < self.epsilon:
+        if np.random.uniform() > self.epsilon:
             # forward feed the observation and get q value for every actions
             actions_value = self.inference(observation)
             if self.is_categorical:

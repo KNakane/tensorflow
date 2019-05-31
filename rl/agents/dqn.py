@@ -46,8 +46,8 @@ class DQN(Agent):
         if self._iteration % self.replace_target_iter == 0:
             self.update_target_net()
 
-        # increasing epsilon
-        self.epsilon = self.epsilon + self.epsilon_increment if self.epsilon < self.epsilon_max else self.epsilon_max
+        # decreasing epsilon
+        self.epsilon = max(self.epsilon - self.epsilon_decrement * self.update_interval, self.epsilon_min)
 
         self._iteration += 1
 
@@ -131,8 +131,8 @@ class DDQN(DQN):
 
         loss, td_error = self._train_body(self.bs, eval_act_index, done, bs_, reward, p_idx, weights)
 
-        # increasing epsilon
-        self.epsilon = self.epsilon + self.epsilon_increment if self.epsilon < self.epsilon_max else self.epsilon_max
+        # decreasing epsilon
+        self.epsilon = max(self.epsilon - self.epsilon_decrement * self.update_interval, self.epsilon_min)
 
         self._iteration += 1
 
