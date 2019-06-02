@@ -70,7 +70,7 @@ def main(argv):
                               e_greedy=0.9,
                               reward_decay=0.99,
                               replace_target_iter=1000,
-                              e_greedy_decrement=0.0005,
+                              e_greedy_decrement=0.0001,
                               optimizer=FLAGS.opt,
                               network=FLAGS.network,
                               is_categorical=FLAGS.category,

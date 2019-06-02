@@ -64,7 +64,7 @@ def main(argv):
                               batch_size=FLAGS.batch_size, 
                               e_greedy=0.0 if FLAGS.noise else 0.1,
                               replace_target_iter=30,
-                              e_greedy_decrement=0.001,
+                              e_greedy_decrement=0.0001,
                               optimizer=FLAGS.opt,
                               network=FLAGS.network,
                               is_categorical=FLAGS.category,

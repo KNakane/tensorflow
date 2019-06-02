@@ -396,7 +396,6 @@ def main(argv):
                 e_greedy=0.0 if FLAGS.noise else 0.1,
                 reward_decay=0.99,
                 replace_target_iter=FLAGS.model_update,
-                e_greedy_decrement=0.0001,
                 optimizer=FLAGS.opt,
                 network=FLAGS.network,
                 is_categorical=FLAGS.category,
@@ -466,7 +465,7 @@ if __name__ == '__main__':
     flags = tf.app.flags
     FLAGS = flags.FLAGS
     flags.DEFINE_string('agent', 'DQN', 'Choise Agents -> [DQN, DDQN, Rainbow]')
-    flags.DEFINE_string('env', 'Breakout-v0', 'Choice the environment')
+    flags.DEFINE_string('env', 'BreakoutNoFrameskip-v4', 'Choice the environment')
     flags.DEFINE_string('network', 'EagerNN', 'Choise Network -> [EagerNN, Dueling_Net]')
     flags.DEFINE_integer('n_episode', '1000000', 'Input max episode')
     flags.DEFINE_integer('step', '1000000', 'Input max steps')
