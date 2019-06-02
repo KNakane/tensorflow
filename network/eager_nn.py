@@ -107,7 +107,7 @@ class Dueling_Net(BasedEagerNN):
         else:
             # Dueling part
             V, A = tf.expand_dims(x[:,0], -1), x[:,1:]
-            return V + A - tf.expand_dims(tf.reduce_mean(A, axis=-1), axis=-1)
+            return V + A - tf.reduce_mean(A, axis=1, keepdims=True)
             
 
 class ActorNet(BasedEagerNN):
