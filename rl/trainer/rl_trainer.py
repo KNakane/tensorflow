@@ -128,7 +128,7 @@ class BasedTrainer():
         """
         if self.init_model_dir is not None:
             self.util.restore_agent(self.agent ,self.init_model_dir)
-        print('--------------------------- test --------------------------------------------')
+        print('------------------------------------ test --------------------------------------------')
         for test_episode in range(1, self.test_episode+1):
             with tf.contrib.summary.always_record_summaries():
                 frames = []
@@ -136,6 +136,7 @@ class BasedTrainer():
                 test_total_reward = 0
                 test_state = self.env.reset()
                 for test_step in range(1, self.max_steps+1):
+                    start_time = time.time()
                     if self.test_render:
                         self.env.render()
                     if self.test_frame:
@@ -144,13 +145,14 @@ class BasedTrainer():
                     test_next_state, test_reward, test_done, _ = self.env.step(test_action)
                     test_total_reward += test_reward
                     
-                    if test_done or test_step == self.max_steps - 1:
+                    if test_done or test_step == self.max_steps:
+                        time_per_episode = (time.time() - start_time) * 1000
                         test_total_steps += test_step
                         tf.contrib.summary.scalar('test/total_steps', test_total_steps)
                         tf.contrib.summary.scalar('test/steps_per_episode', test_step)
                         tf.contrib.summary.scalar('test/total_reward', test_total_reward)
                         tf.contrib.summary.scalar('test/average_reward', test_total_reward / test_step)
-                        print("test_episode: %d total_steps: %d  steps/episode: %d  total_reward: %0.2f"%(test_episode, test_total_steps, test_step, test_total_reward))
+                        print("test_episode: %d total_steps: %d  steps/episode: %d  total_reward: %0.2f time/step: %0.3fus"%(test_episode, test_total_steps, test_step, test_total_reward, time_per_episode))
                         metrics = OrderedDict({
                             "episode": test_episode,
                             "total_steps": test_total_steps,
@@ -162,7 +164,7 @@ class BasedTrainer():
                 self.env.close()
             if len(frames) > 0:
                 display_frames_as_gif(frames, "test_{}_{}".format(episode, test_episode), self.util.res_dir)
-        print('-----------------------------------------------------------------------------')
+        print('--------------------------------------------------------------------------------------')
         return
 
 
