@@ -47,7 +47,7 @@ class DQN(Agent):
             self.update_target_net()
 
         # decreasing epsilon
-        self.epsilon = max(self.epsilon - self.epsilon_decrement * self.update_interval, self.epsilon_min)
+        self.epsilon = max(self.epsilon - self.epsilon_decrement, self.epsilon_min)
 
         self._iteration += 1
 
@@ -93,9 +93,9 @@ class DQN(Agent):
                             tf.log(tf.gather_nd(Q_distributional_chosen_by_action_online, l_id)) \
                         + Q_distributional_chosen_by_action_target * b_minus_l * \
                             tf.log(tf.gather_nd(Q_distributional_chosen_by_action_online, u_id))
-                    error = tf.reduce_sum(error, axis=1)
+                    error = tf.reduce_mean(error, axis=1)
                     td_error = tf.abs(error)
-                    loss = tf.reduce_sum(tf.negative(error) * weights)
+                    loss = tf.reduce_mean(tf.negative(error) * weights)
                 else:
                     q_next, q_eval = self.q_next.inference(bs_), self.q_eval.inference(bs)
                     q_target = reward + self.discount ** tf.cast(p_idx, tf.float32) * tf.reduce_max(q_next, axis = 1) * (1. - done)
@@ -103,7 +103,7 @@ class DQN(Agent):
                     action_list = tf.concat([tf.expand_dims(tf.range(self.batch_size), axis=1), eval_act_index], axis=1)
                     q_eval = tf.gather_nd(q_eval, action_list)
                     td_error = tf.abs(q_target - q_eval)
-                    loss = tf.reduce_sum(tf.losses.huber_loss(labels=q_target, predictions=q_eval) * weights)
+                    loss = tf.reduce_mean(tf.losses.huber_loss(labels=q_target, predictions=q_eval) * weights)
             self.q_eval.optimize(loss, global_step, tape)
 
         return loss, td_error
@@ -125,14 +125,14 @@ class DDQN(DQN):
         reward = np.array(reward, dtype=np.float32)
         done = np.array(done, dtype=np.float32)
 
+        loss, td_error = self._train_body(self.bs, eval_act_index, done, bs_, reward, p_idx, weights)
+
         # check to replace target parameters
         if self._iteration % self.replace_target_iter == 0:
             self.update_target_net()
 
-        loss, td_error = self._train_body(self.bs, eval_act_index, done, bs_, reward, p_idx, weights)
-
         # decreasing epsilon
-        self.epsilon = max(self.epsilon - self.epsilon_decrement * self.update_interval, self.epsilon_min)
+        self.epsilon = max(self.epsilon - self.epsilon_decrement, self.epsilon_min)
 
         self._iteration += 1
 
@@ -176,20 +176,20 @@ class DDQN(DQN):
                             tf.log(tf.gather_nd(Q_distributional_chosen_by_action_online, l_id)) \
                         + Q_distributional_chosen_by_action_target * b_minus_l * \
                             tf.log(tf.gather_nd(Q_distributional_chosen_by_action_online, u_id))
-                    error = tf.reduce_sum(error, axis=1)
+                    error = tf.reduce_mean(error, axis=1)
                     td_error = tf.abs(error)
-                    loss = tf.reduce_sum(tf.negative(error) * weights)
+                    loss = tf.reduce_mean(tf.negative(error) * weights)
                 else:
                     q_next, q_eval = self.q_next.inference(bs_), self.q_eval.inference(bs)
                     q_eval4next = tf.argmax(self.q_eval.inference(bs_), axis=1, output_type=tf.int32)
-                    indices = tf.concat(values=[tf.expand_dims(tf.range(self.batch_size), axis=1), tf.expand_dims(q_eval4next, axis=1)], axis=1)
-                    selected_q_next = tf.gather_nd(q_next, indices)
-                    q_target = reward + self.discount ** tf.cast(p_idx, tf.float32) * selected_q_next * (1. - done)
+                    indices = tf.concat([tf.expand_dims(tf.range(self.batch_size), axis=1), tf.expand_dims(q_eval4next, axis=1)], axis=1)
+                    q_target = tf.gather_nd(q_next, indices)
+                    q_target = reward + self.discount ** tf.cast(p_idx, tf.float32) * q_target * (1. - done)
                     q_target = tf.stop_gradient(q_target)
                     action_list = tf.concat([tf.expand_dims(tf.range(self.batch_size), axis=1), eval_act_index], axis=1)
                     q_eval = tf.gather_nd(q_eval, action_list)
                     td_error = tf.abs(q_target - q_eval)
-                    loss = tf.reduce_sum(tf.losses.huber_loss(labels=q_target, predictions=q_eval) * weights)
+                    loss = tf.reduce_mean(tf.losses.huber_loss(labels=q_target, predictions=q_eval) * weights)
             self.q_eval.optimize(loss, global_step, tape)
             
         return loss, td_error
@@ -205,11 +205,11 @@ class Rainbow(DDQN):
         reward = np.array(reward, dtype=np.float32)
         done = np.array(done, dtype=np.float32)
 
+        loss, td_error = self._train_body(self.bs, eval_act_index, done, bs_, reward, p_idx, weights)
+
         # check to replace target parameters
         if self._iteration % self.replace_target_iter == 0:
             self.update_target_net()
-
-        loss, td_error = self._train_body(self.bs, eval_act_index, done, bs_, reward, p_idx, weights)
 
         self._iteration += 1
 
@@ -251,9 +251,9 @@ class Rainbow(DDQN):
                         tf.log(tf.gather_nd(Q_distributional_chosen_by_action_online, l_id)) \
                     + Q_distributional_chosen_by_action_target * b_minus_l * \
                         tf.log(tf.gather_nd(Q_distributional_chosen_by_action_online, u_id))
-                error = tf.reduce_sum(error, axis=1)
+                error = tf.reduce_mean(error, axis=1)
                 td_error = tf.abs(error)
-                loss = tf.reduce_sum(tf.negative(error) * weights)
+                loss = tf.reduce_mean(tf.negative(error) * weights)
 
             self.q_eval.optimize(loss, global_step, tape)
             

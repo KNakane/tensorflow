@@ -14,7 +14,7 @@ class Agent(tf.contrib.checkpoint.Checkpointable):
             replace_target_iter=300,
             batch_size=32,
             e_greedy_decrement=None,
-            update_interval=4,
+            epsilon_decay_step=10**6,
             optimizer=None,
             network=None,
             trainable=True,
@@ -38,9 +38,8 @@ class Agent(tf.contrib.checkpoint.Checkpointable):
         self.is_categorical = is_categorical
         self.is_noise = is_noise
         self.trainable = trainable
-        self.epsilon_decrement = e_greedy_decrement
-        self.update_interval = update_interval
-        self.epsilon = 0 if self.is_noise else max(e_greedy - self.epsilon_decrement * self.n_warmup,self.epsilon_min)
+        self.epsilon = 0.9
+        self.epsilon_decrement = e_greedy_decrement if e_greedy_decrement is not None else (self.epsilon - self.epsilon_min)/ epsilon_decay_step
         self.device = "/gpu:{}".format(gpu) if gpu >= 0 else "/cpu:0"
 
         # total learning step
