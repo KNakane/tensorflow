@@ -67,6 +67,24 @@ class GAN(BasedGAN):
                 g_loss += self.G.loss()
             return d_loss, g_loss
 
+class UnrolledGAN(GAN):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def set_parameter(self, copy_para):
+        return [tf.assign(target_param, param) for param, target_param in zip(copy_para, self.D.weight)]
+
+    def loss(self, real_logit, fake_logit):
+        with tf.variable_scope('loss'):
+            with tf.variable_scope('Discriminator_loss'):
+                d_loss = -tf.reduce_mean(tf.log(real_logit + self.eps) + tf.log(1. - fake_logit + self.eps))
+            with tf.variable_scope('Generator_loss'):
+                g_loss = -tf.reduce_mean(tf.log(fake_logit + self.eps))
+            if self._l2_reg:
+                d_loss += self.D.loss()
+                g_loss += self.G.loss()
+            return d_loss, g_loss
+
 
 class DCGAN(GAN):
     def __init__(self, *args, **kwargs):
@@ -280,7 +298,7 @@ class WGAN_GP(WGAN):
         real_logit = self.D(inputs)
         fake_logit = self.D(fake_img, reuse=True)
         x_hat_logit = self.D(x_hat, reuse=True)
-        self.grad = tf.gradients(x_hat_logit, x_hat)[0]
+        self.grad = tf.gradients(x_hat_logit, [x_hat])[0]
         return real_logit, fake_logit#, fake_img
 
     def loss(self, real_logit, fake_logit):
@@ -484,3 +502,50 @@ class infoGAN(DCGAN):
                 d_loss += self.D.loss()
                 g_loss += self.G.loss()
             return d_loss, g_loss
+
+class DRAGAN(DCGAN):
+    """
+    On Convergence and Stability of GANs
+    """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # DRAGAN parameter
+        self.lambd = 0.25
+
+    def get_perturbed_batch(self, minibatch):
+        return minibatch + 0.5 * minibatch.std() * np.random.random(minibatch.shape)
+
+    def inference(self, inputs, batch_size, labels=None):
+        real_logit, fake_logit = super().inference(inputs=inputs, batch_size=batch_size, labels=labels)
+        alpha = tf.random_uniform(shape=inputs.get_shape(), minval=0.,maxval=1.)
+        p_inputs = self.get_perturbed_batch(inputs)
+        differences = p_inputs - inputs
+        interpolates = inputs + (alpha * differences)
+        D_inter = self.D(interpolates)
+        self.grad = tf.gradients(D_inter, [interpolates])[0]
+        return real_logit, fake_logit
+
+    def loss(self, real_logit, fake_logit):
+        with tf.variable_scope('loss'):
+            with tf.variable_scope('Discriminator_loss'):
+                d_loss = -tf.reduce_mean(tf.log(real_logit + self.eps) + tf.log(1. - fake_logit + self.eps))
+            with tf.variable_scope('Generator_loss'):
+                g_loss = -tf.reduce_mean(tf.log(fake_logit + self.eps))
+            if self._l2_reg:
+                d_loss += self.D.loss()
+                g_loss += self.G.loss()
+
+            # DRAGAN Loss
+            slopes = tf.sqrt(tf.reduce_sum(tf.square(self.grad), reduction_indices=[1]))
+            gradient_penalty = tf.reduce_mean((slopes - 1.) ** 2)
+            d_loss += self.lambd * gradient_penalty
+
+            return d_loss, g_loss
+
+
+class VGAN(DCGAN):
+    """
+    Variational Discriminator Bottleneck GAN
+    """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)

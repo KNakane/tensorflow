@@ -98,7 +98,7 @@ class DQN(Agent):
                     loss = tf.reduce_mean(tf.negative(error) * weights)
                 else:
                     q_next, q_eval = self.q_next.inference(bs_), self.q_eval.inference(bs)
-                    q_target = reward + self.discount ** tf.cast(p_idx, tf.float32) * tf.reduce_max(q_next, axis = 1) * (1. - done)
+                    q_target = reward + self.discount ** tf.cast(p_idx, tf.float32) * tf.reduce_max(q_next, axis=1) * (1. - done)
                     q_target = tf.stop_gradient(q_target)
                     action_list = tf.concat([tf.expand_dims(tf.range(self.batch_size), axis=1), eval_act_index], axis=1)
                     q_eval = tf.gather_nd(q_eval, action_list)

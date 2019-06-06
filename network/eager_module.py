@@ -90,11 +90,11 @@ class NoisyDense(tf.keras.layers.Layer):
     def build(self, input_shape):
         assert len(input_shape) >= 2
         self.input_dim = input_shape[-1]
-        self.kernel_shape = tf.constant((self.input_dim, self.units))
+        self.kernel_shape = tf.constant((self.input_dim.value, self.units))
         self.bias_shape = tf.constant((self.units,))
 
         self.kernel = self.add_weight(
-            shape=[self.input_dim, self.units],
+            shape=(self.input_dim, self.units),
             initializer=tf.initializers.orthogonal(dtype=tf.float32),
             name='kernel',
             dtype=tf.float32,

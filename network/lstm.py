@@ -2,7 +2,7 @@
 import os,sys
 import tensorflow as tf
 sys.path.append('./utility')
-from module import Module
+from model import Model
 from optimizer import *
 
 num_of_input_nodes = 1
@@ -12,30 +12,20 @@ length_of_sequences = 10
 size_of_mini_batch = 32
 forget_bias = 0.8
 
-class LSTM(Module):
-    def __init__(self, 
-                 model=None,
-                 name='LSTM',
-                 out_dim=10,
-                 opt=Adam,   # Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]
-                 lr=0.001,
-                 l2_reg=False,
-                 l2_reg_scale=0.0001,
-                 trainable=False
-                 ):
-        super().__init__(l2_reg=l2_reg,l2_reg_scale=l2_reg_scale, trainable=trainable)
-        self.model = model
-        self.name = name
-        self.out_dim = out_dim
-        if self._trainable:
-            self.optimizer = eval(opt)(learning_rate=lr)
+class LSTM(Model):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def _build(self):
+        self._layers.append(tf.keras.layers.LSTM(32))
+        self._layers.append(tf.keras.layers.Dense(self.out_dim))
     
     def inference(self, outputs, reuse=False):
         with tf.variable_scope(self.name):
             if reuse:
                 tf.get_variable_scope().reuse_variables()
-            outputs = tf.keras.layers.Embedding(self.out_dim, 64,input_length=outputs.shape[1])(outputs)
-            outputs = tf.keras.layers.LSTM(self.out_dim)(outputs)
+            for layer in self._layers:
+                outputs = layer(outputs)
         return outputs
 
     def test_inference(self, outputs, reuse=False):
