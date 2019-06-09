@@ -10,6 +10,7 @@ requests
 opencv-python
 optuna
 pygame==1.9.4
+gym-super-mario-bros
 box2d-py
 roboschool
 -e git+https://github.com/ntasfi/PyGame-Learning-Environment.git#egg=ple
