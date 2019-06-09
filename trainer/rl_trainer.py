@@ -141,7 +141,7 @@ class BasedTrainer():
                         self.env.render()
                     if self.test_frame:
                         frames.append(self.env.render(mode='rgb_array'))
-                    test_action = self.agent.test_choose_action(np.array(test_state))
+                    test_action = self.agent.test_choose_action(test_state)
                     test_next_state, test_reward, test_done, _ = self.env.step(test_action)
                     test_total_reward += test_reward
                     
