@@ -54,7 +54,7 @@ def main(argv):
                               batch_size=FLAGS.batch_size, 
                               e_greedy=0.9,
                               replace_target_iter=1,
-                              e_greedy_increment=0.01,
+                              e_greedy_decrement=0.001,
                               optimizer=FLAGS.opt,
                               is_categorical=FLAGS.category,
                               max_action=env.action_space.high[0],
@@ -92,7 +92,7 @@ if __name__ == '__main__':
     flags.DEFINE_integer('step', '100000', 'Input max steps')
     flags.DEFINE_integer('batch_size', '32', 'Input batch size')
     flags.DEFINE_integer('multi_step', '1', 'how many multi_step')
-    flags.DEFINE_integer('n_warmup', '400', 'n_warmup value')
+    flags.DEFINE_integer('n_warmup', '3000', 'n_warmup value')
     flags.DEFINE_integer('model_update', '1', 'target_model_update_freq')
     flags.DEFINE_boolean('render', 'False', 'render')
     flags.DEFINE_boolean('priority', 'False', 'prioritized Experience Replay')

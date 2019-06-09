@@ -128,7 +128,7 @@ class TD3(Agent):
     def test_choose_action(self, observation):
         observation = observation[np.newaxis, :]
         action = self.inference(observation)
-        return action[0]
+        return np.array(action[0])
 
 
     def update_q_net(self, replay_data, weights):
