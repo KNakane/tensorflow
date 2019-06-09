@@ -513,15 +513,30 @@ class DRAGAN(DCGAN):
         self.lambd = 0.25
 
     def get_perturbed_batch(self, minibatch):
-        return minibatch + 0.5 * minibatch.std() * np.random.random(minibatch.shape)
+        return minibatch + 0.5 * tf.keras.backend.std(minibatch) * tf.random_uniform(shape=minibatch.get_shape())
 
     def inference(self, inputs, batch_size, labels=None):
-        real_logit, fake_logit = super().inference(inputs=inputs, batch_size=batch_size, labels=labels)
+        self.z = tf.random_normal((batch_size, self._z_dim), dtype=tf.float32)
+        fake_img = self.G(self.combine_distribution(self.z, labels) if self.conditional else self.z)
+        
+        if self.conditional and labels is not None:
+            """
+            fake_img = self.combine_image(fake_img, labels)
+            inputs = self.combine_image(inputs, labels)
+            """
+
+            fake_img = self.combine_binary_image(fake_img, labels)
+            inputs = self.combine_binary_image(inputs, labels)
+            
+
+        real_logit = tf.nn.sigmoid(self.D(inputs))
+        fake_logit = tf.nn.sigmoid(self.D(fake_img, reuse=True))
+        
         alpha = tf.random_uniform(shape=inputs.get_shape(), minval=0.,maxval=1.)
         p_inputs = self.get_perturbed_batch(inputs)
         differences = p_inputs - inputs
         interpolates = inputs + (alpha * differences)
-        D_inter = self.D(interpolates)
+        D_inter = self.D(interpolates, reuse=True)
         self.grad = tf.gradients(D_inter, [interpolates])[0]
         return real_logit, fake_logit
 

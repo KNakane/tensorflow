@@ -2,6 +2,7 @@ import sys
 sys.path.append('./utility')
 sys.path.append('./network')
 sys.path.append('./dataset')
+sys.path.append('./trainer')
 import tensorflow as tf
 from cnn import CNN
 from lenet import LeNet, VGG

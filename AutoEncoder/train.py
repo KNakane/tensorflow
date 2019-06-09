@@ -1,4 +1,5 @@
 import sys
+sys.path.append('./trainer')
 sys.path.append('./utility')
 sys.path.append('./network')
 sys.path.append('./dataset')
@@ -6,7 +7,7 @@ import tensorflow as tf
 from ae import AutoEncoder, VAE, CVAE
 from load import Load
 from utils import Utils
-from trainer import Train
+from trainer import AETrainer
 from collections import OrderedDict
 from hooks import SavedModelBuilderHook, MyLoggerHook, AEHook
 
@@ -22,12 +23,14 @@ def set_model(outdim, size=28, channel=1):
               ['deconv',  5, 16, 2, tf.nn.relu],
               ['deconv',  5, outdim, 2, None]]
     """
-    encode = [['fc', 500, tf.nn.elu],
-              ['fc', 100, tf.nn.elu],
+    encode = [['fc', 256, tf.nn.elu],
+              ['fc', 128, tf.nn.elu],
+              ['fc', 64, tf.nn.elu],
               ['fc', outdim, None]]
 
-    decode = [['fc', 100, tf.nn.elu],
-              ['fc', 500, tf.nn.elu],
+    decode = [['fc', 64, tf.nn.elu],
+              ['fc', 128, tf.nn.elu],
+              ['fc', 256, tf.nn.elu],
               ['fc', size*size*channel, tf.nn.sigmoid],
               ['reshape', [-1, size, size, channel]]]
     return encode, decode
@@ -52,7 +55,7 @@ def main(argv):
     model = eval(FLAGS.network)(encode=encode, decode=decode, denoise=FLAGS.denoise, size=data.size, channel=data.channel, name=FLAGS.network, out_dim=data.output_dim, lr=FLAGS.lr, opt=FLAGS.opt, trainable=True)
 
     #training
-    trainer = Train(FLAGS, message, data, model, FLAGS.network)
+    trainer = AETrainer(FLAGS, message, data, model, FLAGS.network)
     trainer.train()
     return
 

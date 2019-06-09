@@ -10,7 +10,7 @@ class Model(Module):
                  model=None,
                  name='Model',
                  out_dim=10,
-                 opt=Adam,   # Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]
+                 opt="Adam",   # Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]
                  lr=0.001,
                  l2_reg=False,
                  l2_reg_scale=0.0001,

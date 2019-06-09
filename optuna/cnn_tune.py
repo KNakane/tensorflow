@@ -12,7 +12,7 @@ from lenet import LeNet
 from resnet import ResNet, ResNeXt, SENet
 from dense_net import DenseNet
 from load import Load
-from trainer import Train
+from trainer import OptunaTrain
 from search import Optuna
 from train import set_model
 from functools import partial
@@ -41,8 +41,8 @@ def objective(trial):
     model = eval(FLAGS.network)(model=model_set, name=FLAGS.network, out_dim=data.output_dim, lr=param['lr'], opt=param['opt'], trainable=True)
 
     #training
-    trainer = Train(FLAGS=FLAGS, message=None, data=data, model=model, name='tuning')
-    test_accuracy = trainer.optuna_train()
+    trainer = OptunaTrain(FLAGS=FLAGS, message=None, data=data, model=model, name='tuning')
+    test_accuracy = trainer.train()
     return -test_accuracy
     
 
