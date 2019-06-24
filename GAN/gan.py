@@ -324,6 +324,24 @@ class LSGAN(GAN):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+    def inference(self, inputs, batch_size, labels=None):
+        self.z = tf.random_normal((batch_size, self._z_dim), dtype=tf.float32)
+        fake_img = self.G(self.combine_distribution(self.z, labels) if self.conditional else self.z)
+        
+        if self.conditional and labels is not None:
+            """
+            fake_img = self.combine_image(fake_img, labels)
+            inputs = self.combine_image(inputs, labels)
+            """
+
+            fake_img = self.combine_binary_image(fake_img, labels)
+            inputs = self.combine_binary_image(inputs, labels)
+            
+
+        real_logit = self.D(inputs)
+        fake_logit = self.D(fake_img, reuse=True)
+        return real_logit, fake_logit#, fake_img
+
     def loss(self, real_logit, fake_logit):
         with tf.variable_scope('loss'):
             d_loss = tf.reduce_mean(0.5 * tf.square(real_logit - 1) + 0.5 * tf.square(fake_logit))
