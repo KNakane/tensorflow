@@ -74,6 +74,8 @@ class Agent(tf.contrib.checkpoint.Checkpointable):
             return np.random.randint(0, self.n_actions)
 
     def test_choose_action(self, observation):
+        if not isinstance(observation, np.ndarray):
+            observation = np.array(observation)
         observation = observation[np.newaxis, :]
         actions_value = self.inference(observation)
         if self.is_categorical:
