@@ -5,7 +5,7 @@ sys.path.append('./dataset')
 import tensorflow as tf
 from utils import Utils
 from collections import OrderedDict
-from hooks import SavedModelBuilderHook, MyLoggerHook, OptunaHook, AEHook
+from hooks import SavedModelBuilderHook, MyLoggerHook, OptunaHook, AEHook, GanHook
 
 class BasedTrainer():
     def __init__(self,
@@ -224,6 +224,59 @@ class AETrainer(BasedTrainer):
         
         self.util.construct_figure(test_input, test_output)
         return
+
+
+class GANTrainer(BasedTrainer):
+    def __init__(self, FLAGS, **kwargs):
+        super().__init__(FLAGS, **kwargs)
+        self.n_disc_update = FLAGS.n_disc_update
+        self.condtional = FLAGS.conditional
+
+    def build_logits(self, train_data, train_ans, valid_data, valid_ans):
+        # train
+        self.train_logits = self.model.inference(train_data, train_ans) if self.conditional else self.model.inference(train_data)
+        self.train_loss = self.model.loss(self.train_logits, train_data)
+        self.predict = self.model.predict(train_data)
+        self.opt_D, self.opt_G = self.model.optimize(self.train_loss, self.global_step)
+        self.train_accuracy = self.model.evaluate(self.train_logits, train_data)
+
+        # test
+        self.test_logits = self.model.test_inference(valid_data, valid_ans, True) if self.conditional else self.model.test_inference(valid_data, reuse=True)
+        self.test_loss = self.model.loss(self.test_logits, valid_data)
+        self.test_accuracy = self.model.evaluate(self.test_logits, valid_data)
+
+        return 
+
+    def hook_append(self, metrics, signature_def_map=None):
+        """
+        hooksをまとめる関数
+        """
+        hooks = super().hook_append(metrics=metrics, signature_def_map=signature_def_map)
+        hooks.append(MyLoggerHook(self.message, self.util.log_dir, metrics, every_n_iter=100))
+        hooks.append(SavedModelBuilderHook(self.util.saved_model_path, signature_def_map))
+        hooks.append(GanHook(self.test_logits, self.util.log_dir, every_n_iter=100))
+        if self.max_steps:
+            hooks.append(tf.train.StopAtStepHook(last_step=self.max_steps))
+        return hooks
+
+    def train(self):
+        self.util.conf_log()
+        inputs, corrects, valid_inputs, valid_labels = self.load()
+        self.build_logits(inputs, corrects, valid_inputs, valid_labels)
+        self.summary(inputs, valid_inputs)
+        session = self.before_train()
+
+        with session:
+            if self.restore_dir is not None:
+                ckpt = tf.train.get_checkpoint_state(self.restore_dir)
+                if ckpt and ckpt.model_checkpoint_path:
+                    # Restores from checkpoint
+                    saver.restore(session, ckpt.model_checkpoint_path)
+            for _ in range(self.max_steps):
+                for _ in range(self.n_disc_update):
+                    session.run([self.opt_D])
+                session.run([self.opt_G])
+        return 
 
 
 class OptunaTrain(BasedTrainer):

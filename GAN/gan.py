@@ -9,6 +9,7 @@ class GAN(BasedGAN):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.eps = 1e-14
+        self.name = 'GAN'
 
     def build(self):
         
@@ -70,6 +71,7 @@ class GAN(BasedGAN):
 class UnrolledGAN(GAN):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.name = 'UnrolledGAN'
 
     def set_parameter(self, copy_para):
         return [tf.assign(target_param, param) for param, target_param in zip(copy_para, self.D.weight)]
@@ -89,6 +91,7 @@ class UnrolledGAN(GAN):
 class DCGAN(GAN):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.name = 'DCGAN'
 
     def build(self):
         """
@@ -164,6 +167,7 @@ class WGAN(GAN):
     """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.name = 'WGAN'
     
     def build(self):
         gen_model = [
@@ -248,6 +252,7 @@ class WGAN_GP(WGAN):
     """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.name = 'WGAN_GP'
 
     def build(self):
         gen_model = [
@@ -323,6 +328,7 @@ class LSGAN(GAN):
     """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.name = 'LSGAN'
 
     def inference(self, inputs, batch_size, labels=None):
         self.z = tf.random_normal((batch_size, self._z_dim), dtype=tf.float32)
@@ -359,6 +365,7 @@ class ACGAN(DCGAN):
     def __init__(self, *args, **kwargs):
         kwargs['conditional'] = True
         super().__init__(*args, **kwargs)
+        self.name = 'LSGAN'
 
     def build(self):
         gen_model = [
@@ -442,6 +449,7 @@ class infoGAN(DCGAN):
     """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.name = 'infoGAN'
 
     def build(self):
         gen_model = [
@@ -529,6 +537,7 @@ class DRAGAN(DCGAN):
         super().__init__(*args, **kwargs)
         # DRAGAN parameter
         self.lambd = 0.25
+        self.name = 'DRAGAN'
 
     def get_perturbed_batch(self, minibatch):
         return minibatch + 0.5 * tf.keras.backend.std(minibatch) * tf.random_uniform(shape=minibatch.get_shape())
