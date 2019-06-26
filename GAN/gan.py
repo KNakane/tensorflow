@@ -135,16 +135,16 @@ class DCGAN(GAN):
             ['reshape', [-1, 4, 4, 512]],
             ['BN'],
             ['Leaky_ReLU'],
-            #['deconv', 5, 256, 2, None], # cifar
-            ['deconv', 5, 256, 3, None], # mnist
+            ['deconv', 5, 256, 2, None], # cifar
+            #['deconv', 5, 256, 3, None], # mnist
             ['BN'],
             ['Leaky_ReLU'],
             ['deconv', 5, 128, 2, None],
             ['BN'],
             ['Leaky_ReLU'],
-            #['deconv', 5, self.channel, 2, None], # cifar
-            ['deconv', 5, self.channel, 1, None, 'valid'], # mnist
-            ['tanh']]
+            ['deconv', 5, self.channel, 2, None], # cifar
+            #['deconv', 5, self.channel, 1, None, 'valid'], # mnist
+            ['sigmoid']]
 
         dis_model = [
             ['conv', 5, 64, 2, None],
@@ -152,8 +152,8 @@ class DCGAN(GAN):
             ['conv', 5, 128, 2, None],
             ['BN'],
             ['Leaky_ReLU'],
-            ['reshape', [-1, 7*7*128]], # mnist
-            #['reshape', [-1, 8*8*128]], # cifar10
+            #['reshape', [-1, 7*7*128]], # mnist
+            ['reshape', [-1, 8*8*128]], # cifar10
             ['fc', 1, None]
         ]
 
@@ -322,7 +322,7 @@ class WGAN_GP(WGAN):
                 opt_G = self.g_optimizer.optimize(loss=g_loss, global_step=global_step, var_list=self.G.var)
                 return opt_D, opt_G
 
-class LSGAN(GAN):
+class LSGAN(DCGAN):
     """
     Least Square GAN
     """
@@ -365,7 +365,7 @@ class ACGAN(DCGAN):
     def __init__(self, *args, **kwargs):
         kwargs['conditional'] = True
         super().__init__(*args, **kwargs)
-        self.name = 'LSGAN'
+        self.name = 'ACGAN'
 
     def build(self):
         gen_model = [
@@ -382,7 +382,7 @@ class ACGAN(DCGAN):
             ['deconv', 5, 64, 2, None],
             ['BN'],
             ['Leaky_ReLU'],
-            ['deconv', 5, self.channel, 2, tf.nn.tanh]]
+            ['deconv', 5, self.channel, 2, tf.nn.sigmoid]]
 
         dis_model = [
             ['conv', 5, 64, 2, tf.nn.leaky_relu],
@@ -396,7 +396,7 @@ class ACGAN(DCGAN):
             ['BN'],
             ['Leaky_ReLU'],
             ['reshape', [-1, 2*2*512]],
-            ['fc', 1 + self.class_num, tf.nn.sigmoid]
+            ['fc', 1 + self.class_num, None]
         ]
 
         self.D = Discriminator(dis_model)
