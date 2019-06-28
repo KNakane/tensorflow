@@ -322,7 +322,7 @@ class GanHook(tf.train.SessionRunHook):
             try:
                 plt.imshow(samples[i].reshape(28, 28), cmap='Greys_r')
             except:
-                plt.imshow(samples[i])
+                plt.imshow(np.clip(samples[i],0,255))
 
         
         name = self.log_dir + '/{}.png'.format(str(iteration).zfill(3))

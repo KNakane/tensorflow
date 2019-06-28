@@ -44,14 +44,14 @@ class GAN(BasedGAN):
         fake_img = self.G(self.combine_distribution(self.z, labels) if self.conditional else self.z)
         
         if self.conditional and labels is not None:
-            """
+            
             fake_img = self.combine_image(fake_img, labels)
             inputs = self.combine_image(inputs, labels)
             """
-
+            
             fake_img = self.combine_binary_image(fake_img, labels)
             inputs = self.combine_binary_image(inputs, labels)
-            
+            """
 
         real_logit = tf.nn.sigmoid(self.D(inputs))
         fake_logit = tf.nn.sigmoid(self.D(fake_img, reuse=True))
@@ -131,25 +131,70 @@ class DCGAN(GAN):
         """
 
         gen_model = [
-            ['fc', 4*4*512, None],
-            ['reshape', [-1, 4, 4, 512]],
+            ['fc', 4*4*256, None],
             ['BN'],
             ['Leaky_ReLU'],
-            ['deconv', 5, 256, 2, None], # cifar
+            ['reshape', [-1, 4, 4, 256]],
+            ['deconv', 2, 128, 2, None], # cifar
+            ['deconv', 2, 128, 1, None], # cifar
             #['deconv', 5, 256, 3, None], # mnist
             ['BN'],
             ['Leaky_ReLU'],
-            ['deconv', 5, 128, 2, None],
+            ['deconv', 3, 64, 2, None],
+            ['deconv', 3, 64, 1, None], # cifar
             ['BN'],
             ['Leaky_ReLU'],
-            ['deconv', 5, self.channel, 2, None], # cifar
+            ['deconv', 5, self.channel, 2, tf.nn.tanh]] # cifar
             #['deconv', 5, self.channel, 1, None, 'valid'], # mnist
-            ['sigmoid']]
 
+        """
         dis_model = [
             ['conv', 5, 64, 2, None],
             ['Leaky_ReLU'],
             ['conv', 5, 128, 2, None],
+            ['BN'],
+            ['Leaky_ReLU'],
+            #['reshape', [-1, 7*7*128]], # mnist
+            ['reshape', [-1, 8*8*128]], # cifar10
+            ['fc', 1, None]
+        ]
+        
+
+        gen_model = [
+            ['fc', 128 * 8 * 8, tf.nn.relu],
+            ['BN'],
+            ['Leaky_ReLU'],
+            ['reshape', [-1, 8, 8, 128]],
+            ['conv', 4, 128, 1, None],
+            ['BN'],
+            ['Leaky_ReLU'],
+            ['deconv', 4, 128, 2, None],
+            ['BN'],
+            ['Leaky_ReLU'],
+            ['conv', 5, 128, 1, None],
+            ['BN'],
+            ['Leaky_ReLU'],
+            ['deconv', 4, 128, 2, None],
+            ['BN'],
+            ['Leaky_ReLU'],
+            ['conv', 5, 128, 1, None],
+            ['BN'],
+            ['Leaky_ReLU'],
+            ['conv', 5, 128, 1, None],
+            ['BN'],
+            ['Leaky_ReLU'],
+            ['conv', 5, self.channel, 1, tf.nn.tanh]
+        ]
+        """
+
+        dis_model = [
+            ['conv', 3, 128, 1, None],
+            ['BN'],
+            ['Leaky_ReLU'],
+            ['conv', 4, 128, 2, None],
+            ['BN'],
+            ['Leaky_ReLU'],
+            ['conv', 4, 128, 2, None],
             ['BN'],
             ['Leaky_ReLU'],
             #['reshape', [-1, 7*7*128]], # mnist
@@ -335,14 +380,14 @@ class LSGAN(DCGAN):
         fake_img = self.G(self.combine_distribution(self.z, labels) if self.conditional else self.z)
         
         if self.conditional and labels is not None:
-            """
+            
             fake_img = self.combine_image(fake_img, labels)
             inputs = self.combine_image(inputs, labels)
             """
 
             fake_img = self.combine_binary_image(fake_img, labels)
             inputs = self.combine_binary_image(inputs, labels)
-            
+            """
 
         real_logit = self.D(inputs)
         fake_logit = self.D(fake_img, reuse=True)
@@ -369,20 +414,21 @@ class ACGAN(DCGAN):
 
     def build(self):
         gen_model = [
-            ['fc', 2*2*512, None],
-            ['reshape', [-1, 2, 2, 512]],
+            ['fc', 4*4*256, None],
             ['BN'],
             ['Leaky_ReLU'],
-            ['deconv', 5, 256, 2, None],
+            ['reshape', [-1, 4, 4, 256]],
+            ['deconv', 2, 128, 2, None], # cifar
+            ['deconv', 2, 128, 1, None], # cifar
+            #['deconv', 5, 256, 3, None], # mnist
             ['BN'],
             ['Leaky_ReLU'],
-            ['deconv', 5, 128, 2, None],
+            ['deconv', 3, 64, 2, None],
+            ['deconv', 3, 64, 1, None], # cifar
             ['BN'],
             ['Leaky_ReLU'],
-            ['deconv', 5, 64, 2, None],
-            ['BN'],
-            ['Leaky_ReLU'],
-            ['deconv', 5, self.channel, 2, tf.nn.sigmoid]]
+            ['deconv', 5, self.channel, 2, tf.nn.tanh]] # cifar
+            #['deconv', 5, self.channel, 1, None, 'valid'], # mnist
 
         dis_model = [
             ['conv', 5, 64, 2, tf.nn.leaky_relu],
@@ -547,13 +593,14 @@ class DRAGAN(DCGAN):
         fake_img = self.G(self.combine_distribution(self.z, labels) if self.conditional else self.z)
         
         if self.conditional and labels is not None:
-            """
+
             fake_img = self.combine_image(fake_img, labels)
             inputs = self.combine_image(inputs, labels)
             """
 
             fake_img = self.combine_binary_image(fake_img, labels)
             inputs = self.combine_binary_image(inputs, labels)
+            """
             
 
         real_logit = tf.nn.sigmoid(self.D(inputs))
