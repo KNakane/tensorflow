@@ -32,9 +32,9 @@ class GAN(BasedGAN):
         self.G = Generator(self.generator_model, self._l2_reg, self.l2_reg_scale)
         self.G_ = Generator(self.generator_model, trainable=False)
 
-    def predict(self, inputs, batch_size):
+    def predict(self, inputs, batch_size, index=None):
         if self.conditional:
-            indices = np.array([x%self.class_num for x in range(batch_size)],dtype=np.int32)
+            indices = index if index is not None else np.array([x%self.class_num for x in range(batch_size)],dtype=np.int32)
             labels = tf.one_hot(indices, depth=self.class_num, dtype=tf.float32)
             inputs = self.combine_distribution(inputs, labels)
         return self.G_(inputs, reuse=True)

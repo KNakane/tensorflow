@@ -166,17 +166,20 @@ class Utils():
         plt.savefig(self.log_dir + '/construct_figure.png')
 
     def gan_plot(self, samples):
-        fig = plt.figure(figsize=(4, 4))
-        gs = gridspec.GridSpec(4, 4)
+        fig = plt.figure(figsize=(6, 6))
+        gs = gridspec.GridSpec(6, 6)
         gs.update(wspace=0.05, hspace=0.05)
 
-        for i, sample in enumerate(samples):
+        for i in range(36):
             ax = plt.subplot(gs[i])
             plt.axis('off')
             ax.set_xticklabels([])
             ax.set_yticklabels([])
             ax.set_aspect('equal')
-            plt.imshow(sample.reshape(28, 28), cmap='Greys_r')
+            try:
+                plt.imshow(samples[i].reshape(28, 28), cmap='Greys_r')
+            except:
+                plt.imshow(np.clip(samples[i],0,255))
 
         i = 0
         while(True):

@@ -336,7 +336,7 @@ class OptunaTrain(BasedTrainer):
             "test accuracy":self.test_accuracy})
 
         hooks = self.hook_append(metrics)
-        config = tf.ConfigProto(allow_soft_placement=True, log_device_placement=False, gpu_options=tf.GPUOptions(per_process_gpu_memory_fraction=0.7))
+        config = tf.ConfigProto(allow_soft_placement=True, log_device_placement=False, gpu_options=tf.GPUOptions(per_process_gpu_memory_fraction=1.0))
 
         session = tf.train.MonitoredTrainingSession(
                     config=config,

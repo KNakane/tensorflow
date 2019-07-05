@@ -8,6 +8,12 @@ from utils import Utils
 from gan import GAN, DCGAN, WGAN, WGAN_GP, LSGAN, ACGAN, DRAGAN
 
 
+def tile_index(batch_size):
+    index = [9, 23, 28, 32, 39, 42]
+    for _ in range(49):
+        index.extend([9, 23, 28, 32, 39, 42])
+    return index
+
 def main(args):
     print("------------Start Evaluation-----------")
     print("CheckPoint : {}".format(FLAGS.ckpt_dir))
@@ -18,7 +24,11 @@ def main(args):
     # load dataset
     data = Load(FLAGS.data)
     batch_size = 100
-    inputs = tf.random.uniform([batch_size*3, FLAGS.z_dim],-1,1)
+    dataset = data.load(data.x_train, data.y_train, batch_size=batch_size, is_training=True)
+    iterator = dataset.make_initializable_iterator()
+    inputs, labels = iterator.get_next()
+    test_inputs = tf.random.uniform([batch_size*3, FLAGS.z_dim],-1,+1)
+    index = tile_index(batch_size*3)
 
     model = eval(FLAGS.network)(z_dim=FLAGS.z_dim,
                                 size=data.size,
@@ -28,12 +38,17 @@ def main(args):
                                 conditional=FLAGS.conditional,
                                 opt=None,
                                 trainable=False)
+    
+    
+    D_logits, D_logits_ = model.inference(inputs, batch_size, labels)
+    G = model.predict(test_inputs, batch_size*3, index)
 
     tf.train.Saver()
     with tf.Session() as sess:
         utils = Utils(sess=sess)
+        utils.initial()
         if utils.restore_model(FLAGS.ckpt_dir):
-            image = sess.run(model.predict(inputs, batch_size*3))
+            image = sess.run(G)
             utils.gan_plot(image)
             return
         else:

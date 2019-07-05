@@ -116,7 +116,7 @@ class BasedGAN(Module):
     def build(self):
         raise NotImplementedError()
 
-    def predict(self):
+    def predict(self, inputs, batch_size, index=None):
         raise NotImplementedError()
 
     def inference(self, inputs, batch_size):
