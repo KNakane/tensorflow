@@ -166,6 +166,9 @@ class Utils():
         plt.savefig(self.log_dir + '/construct_figure.png')
 
     def gan_plot(self, samples):
+        """
+        GANで生成した画像の図を作成する
+        """
         fig = plt.figure(figsize=(6, 6))
         gs = gridspec.GridSpec(6, 6)
         gs.update(wspace=0.05, hspace=0.05)
