@@ -133,18 +133,19 @@ class DCGAN(GAN):
         gen_model = [
             ['fc', 4*4*256, None],
             ['BN'],
-            ['Leaky_ReLU'],
+            ['ReLU'],#['Leaky_ReLU'],
             ['reshape', [-1, 4, 4, 256]],
             ['deconv', 2, 128, 2, None], # cifar
             ['deconv', 2, 128, 1, None], # cifar
             #['deconv', 5, 256, 3, None], # mnist
             ['BN'],
-            ['Leaky_ReLU'],
+            ['ReLU'],#['Leaky_ReLU'],
             ['deconv', 3, 64, 2, None],
             ['deconv', 3, 64, 1, None], # cifar
             ['BN'],
-            ['Leaky_ReLU'],
-            ['deconv', 5, self.channel, 2, tf.nn.tanh]] # cifar
+            ['ReLU'],#['Leaky_ReLU'],
+            ['deconv', 2, self.channel, 2, None], # cifar
+            ['deconv', 2, self.channel, 1, tf.nn.tanh]] # cifar
             #['deconv', 5, self.channel, 1, None, 'valid'], # mnist
 
         """
