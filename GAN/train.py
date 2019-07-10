@@ -102,7 +102,7 @@ def main(args):
         "train_accuracy": train_accuracy}
 
     hooks.append(MyLoggerHook(message, util.log_dir, metrics, every_n_iter=100))
-    hooks.append(GanHook(G, util.log_dir, every_n_iter=1000))
+    hooks.append(GanHook(G, util.log_dir, every_n_iter=10000))
     hooks.append(tf.train.NanTensorHook(dis_loss))
     hooks.append(tf.train.NanTensorHook(gen_loss))
 
