@@ -33,7 +33,7 @@ class LSTM(Model):
 
     def loss(self, logits, labels):
         #loss = tf.reduce_mean(tf.square(logits - labels))
-        loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=labels))
+        loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=logits, labels=labels))
         if self._l2_reg:
             loss += tf.losses.get_regularization_loss()  
         return loss
