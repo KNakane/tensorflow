@@ -5,7 +5,7 @@ sys.path.append('./dataset')
 import tensorflow as tf
 from utils import Utils
 from collections import OrderedDict
-from hooks import SavedModelBuilderHook, MyLoggerHook, OptunaHook, AEHook, GanHook
+from hooks import SavedModelBuilderHook, MyLoggerHook, OptunaHook, AEHook, GanHook, EarlyStopping
 
 class BasedTrainer():
     def __init__(self,
@@ -151,6 +151,7 @@ class Train(BasedTrainer):
         hooks = super().hook_append(metrics=metrics, signature_def_map=signature_def_map)
         hooks.append(MyLoggerHook(self.message, self.util.log_dir, metrics, every_n_iter=100))
         hooks.append(SavedModelBuilderHook(self.util.saved_model_path, signature_def_map))
+        hooks.append(EarlyStopping(valid_loss=self.test_loss, patience=500, verbose=1))
         if self.max_steps:
             hooks.append(tf.train.StopAtStepHook(last_step=self.max_steps))
         return hooks
