@@ -45,36 +45,42 @@ class EarlyStopping(tf.train.SessionRunHook):
 
     parameters
     -----------
-    tensors : dict 表示させたい内容
+    valid_loss : tensor
+        validation loss
+
+    patience : int
+        how many times do you take into account to compare validation loss
+
+    verbose : bool
+        whether print or not
 
     return
     ----------
-    学習終了時に結果を表示する
+    None
 
     """
-    def __init__(self,smoothing=.997,tolerance=.03):
-        self.lowestloss=float("inf")
-        self.currentsmoothedloss=-1
-        self.tolerance=tolerance
-        self.smoothing=smoothing
+    def __init__(self, valid_loss, patience=0, verbose=True):
+        self._step = 0
+        self._loss = float('inf')
+        self.valid_loss = valid_loss
+        self.patience = patience
+        self.verbose = verbose
 
     def before_run(self, run_context):
-        graph = ops.get_default_graph()
-        self.lossop=graph.get_operation_by_name("loss")
-        self.element = self.lossop.outputs[0]
-        return tf.train.SessionRunArgs([self.element])
+        return tf.train.SessionRunArgs(self.valid_loss)
 
     def after_run(self, run_context, run_values):
-        loss=run_values.results[0]
-        if(self.currentsmoothedloss<0):
-            self.currentsmoothedloss=loss*1.5
-        self.currentsmoothedloss=self.currentsmoothedloss*self.smoothing+loss*(1-self.smoothing)
-        if(self.currentsmoothedloss<self.lowestloss):
-            self.lowestloss=self.currentsmoothedloss
-        if(self.currentsmoothedloss>self.lowestloss+self.tolerance):
-            run_context.request_stop()
-            print("REQUESTED_STOP")
-            raise ValueError('Model Stopping because loss is increasing from EarlyStopping hook')
+        loss = run_values.results
+        if self._loss < loss:
+            self._step += 1
+            if self._step > self.patience:
+                if self.verbose:
+                    run_context.request_stop()
+                    print("REQUESTED_STOP because of EarlyStopping")
+        else:
+            self._step = 0
+            self._loss = loss
+        return
 
 class OptunaHook(tf.train.SessionRunHook):
     """
