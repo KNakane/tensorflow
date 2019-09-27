@@ -57,10 +57,6 @@ class Load():
 
             labels = labels.reshape(labels.shape[0])
 
-            if augmentation is not None and is_training:
-                augment = Augment(images, labels)
-                images, labels = eval('augment.'+ augmentation)()
-
             if is_training: # training dataset
                 self.x_train, self.y_train = images, labels
                 self.features_placeholder = tf.placeholder(self.x_train.dtype, self.x_train.shape, name='input_images')
