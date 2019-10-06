@@ -64,3 +64,15 @@ class Load():
         dataset = dataset.prefetch(tf.contrib.data.AUTOTUNE)
 
         return dataset
+
+    def next_batch(self, batch_size):
+        '''
+        Return a total of `batch_size` random samples and labels. 
+        '''
+        idx = np.arange(0 , len(self.x_train))
+        np.random.shuffle(idx)
+        idx = idx[:batch_size]
+        data_shuffle = [self.x_train[ i] for i in idx]
+        labels_shuffle = [self.y_train[ i] for i in idx]
+
+        return idx, np.asarray(data_shuffle), np.asarray(labels_shuffle)
