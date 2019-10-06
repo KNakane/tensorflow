@@ -53,7 +53,7 @@ $ pyenv install 3.6.7
 $ pyenv global 3.6.7
 $ git clone https://github.com/KNakane/tensorflow.git
 $ pip install -r requirements.txt
-$ pip install tensorflow==1.12.0 or pip install tensorflow-gpu==1.12.0
+$ pip install tensorflow==2.0.0 or pip install tensorflow-gpu==2.0.0
 ```
 
 # Usage
@@ -86,9 +86,7 @@ tensorflow
 ┃   
 ┣ RNN :  RNNで学習するディレクトリ  
 ┃   
-┣ dataset  : dataset取得用ディレクトリ  
-┃   
-┣ network  : DLのNetworkを構築するディレクトリ    
+┣ dataset  : dataset取得用ディレクトリ     
 ┃  
 ┣ optuna : PFNが作成したハイパーパラメータチューニングを行うディレクトリ    
 ┃  
