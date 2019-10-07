@@ -1,8 +1,8 @@
 import os,sys
 import numpy as np
 import tensorflow as tf
-from keras.datasets import *
-from Augmentation import Augment
+from tensorflow.keras.datasets import *
+#from dataset.Augmentation import Augment
 
 class Load():
     def __init__(self, name):
@@ -61,7 +61,7 @@ class Load():
 
         if is_training:
             dataset = dataset.shuffle(buffer_size).repeat()  # depends on sample size
-        dataset = dataset.prefetch(tf.contrib.data.AUTOTUNE)
+        dataset = dataset.prefetch(tf.data.experimental.AUTOTUNE )
 
         return dataset
 

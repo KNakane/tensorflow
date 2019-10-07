@@ -1,8 +1,8 @@
 import os, sys
 import time
 import tensorflow as tf
-from utils import Utils
-from eager_load import Load
+from utility.utils import Utils
+from dataset.load import Load
 from collections import OrderedDict
 
 class Trainer():
@@ -19,7 +19,6 @@ class Trainer():
         self.n_epoch = FLAGS.n_epoch
         self.batch_size = FLAGS.batch_size
         self.restore_dir = FLAGS.init_model
-        self.global_step = tf.train.get_or_create_global_step()
         self.util = Utils(prefix=self.name)
         self.util.initial() 
         if hasattr(FLAGS, 'aug'):
@@ -43,7 +42,7 @@ class Trainer():
             running_acc = 0
             start_time = time.time()
             for (batch, (images, labels)) in enumerate(dataset.take(self.batch_size)):
-                loss, acc = self._train_body(self.model, images, labels, self.global_step)
+                loss, acc = self._train_body(self.model, images, labels)
                 running_loss += tf.reduce_mean(loss)
                 running_acc += tf.reduce_mean(acc)
             time_per_episode = time.time() - start_time
@@ -53,15 +52,15 @@ class Trainer():
     def begin_train(self):
         self.util.write_configuration(self.message, True)
         self.util.save_init(self.model)
-        return tf.contrib.summary.create_file_writer(self.util.tf_board)
+        return tf.summary.create_file_writer(self.util.tf_board)
 
-    @tf.contrib.eager.defun
-    def _train_body(self, model, images, labels, global_steps):
+    @tf.function
+    def _train_body(self, model, images, labels):
         with tf.GradientTape() as tape:
             y_pre = model.inference(images)
             acc = model.accuracy(y_pre, labels)
             loss = model.loss(y_pre, labels)
-        model.optimize(loss, global_steps, tape)
+        model.optimize(loss, tape)
         return loss, acc
 
     def epoch_end(self, epoch, loss, accuracy, time):

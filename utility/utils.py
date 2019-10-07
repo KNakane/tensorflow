@@ -21,15 +21,15 @@ class Utils():
         self.saved_model_path = self.model_path + "/saved_model"
 
     def conf_log(self):
-        if tf.gfile.Exists(self.res_dir):
-            tf.gfile.DeleteRecursively(self.res_dir)
-        tf.gfile.MakeDirs(self.res_dir)
+        if tf.io.gfile.exists(self.res_dir):
+            tf.io.gfile.remove(self.res_dir)
+        tf.io.gfile.makedirs(self.res_dir)
         return
 
     def initial(self):
         self.conf_log()
         if not os.path.isdir(self.log_dir):
-            tf.gfile.MakeDirs(self.log_dir)
+            tf.io.gfile.makedirs(self.log_dir)
         return
 
     def write_configuration(self, message, _print=False):
@@ -79,9 +79,9 @@ class Utils():
 
     def save_init(self, model):
         self.checkpoint = tf.train.Checkpoint(policy=model)
-        self.saver = tf.contrib.checkpoint.CheckpointManager(self.checkpoint,
-                                                             directory=self.model_path,
-                                                             max_to_keep=5)
+        self.saver =  tf.train.CheckpointManager(self.checkpoint,
+                                                 directory=self.model_path,
+                                                 max_to_keep=5)
         return
 
     def save_model(self, episode=None):
