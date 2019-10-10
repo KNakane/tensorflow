@@ -84,11 +84,11 @@ class Utils():
                                                  max_to_keep=5)
         return
 
-    def save_model(self, episode=None):
+    def save_model(self, global_step=None):
         if self.sess is not None:
-            self.saver.save(self.sess, self.log_dir + "/model.ckpt"%episode)
+            self.saver.save(self.sess, self.log_dir + "/model.ckpt"%global_step)
         else:
-            self.saver.save(checkpoint_number=tf.train.get_or_create_global_step())
+            self.saver.save(checkpoint_number=global_step)
 
     def restore_agent(self, model, log_dir=None):
         self.checkpoint = tf.train.Checkpoint(policy=model)

@@ -54,10 +54,8 @@ class Load():
         dataset = tf.data.Dataset.from_tensor_slices((images, labels))
 
         # Transform and batch data at the same time
-        dataset = dataset.apply(tf.data.experimental.map_and_batch(
-            preprocess_fn, batch_size,
-            num_parallel_batches=4,  # cpu cores
-            drop_remainder=True if is_training else False))
+        dataset = dataset.map(map_func=preprocess_fn, num_parallel_calls=4)
+        dataset = dataset.batch(batch_size, drop_remainder=True if is_training else False)
 
         if is_training:
             dataset = dataset.shuffle(buffer_size).repeat()  # depends on sample size

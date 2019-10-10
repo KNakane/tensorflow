@@ -2,6 +2,7 @@ import os, sys
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.models import Model
+from utility.optimizer import *
 
 class MyModel(Model):
     def __init__(self, 
@@ -16,17 +17,22 @@ class MyModel(Model):
         super().__init__()
         self.model_name = name
         self.out_dim = out_dim
-        self.opt = opt
+        self.optimizer = eval(opt)(learning_rate=lr)
         self._build()
+        self.loss_function = tf.losses.CategoricalCrossentropy()
+        self.accuracy_function = tf.keras.metrics.CategoricalAccuracy()
 
     def _build(self):
-        NotImplementedError
+        raise NotImplementedError()
 
     def inference(self, x):
-        return
+        raise NotImplementedError()
 
-    def loss(self, logits, answer, regression=False):
-        return tf.keras.losses.MeanSquaredError() if regression else tf.losses.CategoricalCrossentropy()
+    def test_inference(self, x):
+        return self.inference(x)
+
+    def loss(self, logits, answer):
+        return self.loss_function(y_true=answer, y_pred=logits)
 
     def optimize(self, loss, tape=None):
         assert tape is not None, 'please set tape in opmize'
@@ -35,5 +41,5 @@ class MyModel(Model):
         return
 
     def accuracy(self, logits, answer):
-        accuracy = tf.keras.metrics.CategoricalAccuracy(name='train_accuracy')
-        return accuracy(logits, answer)
+        self.accuracy_function(y_true=answer, y_pred=logits)
+        return self.accuracy_function.result()
