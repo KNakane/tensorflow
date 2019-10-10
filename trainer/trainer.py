@@ -17,6 +17,9 @@ class Trainer():
         self.data = data
         self.model = model
         self.n_epoch = FLAGS.n_epoch
+        self.save_checkpoint_steps = self.max_steps / 10 if FLAGS.save_checkpoint_steps is None else FLAGS.save_checkpoint_steps
+        self.checkpoints_to_keep = FLAGS.checkpoints_to_keep
+        self.keep_checkpoint_every_n_hours = FLAGS.keep_checkpoint_every_n_hours
         self.batch_size = FLAGS.batch_size
         self.restore_dir = FLAGS.init_model
         self.util = Utils(prefix=self.name)
@@ -31,7 +34,7 @@ class Trainer():
 
     def begin_train(self):
         self.util.write_configuration(self.message, True)
-        self.util.save_init(self.model)
+        self.util.save_init(self.model, keep=self.checkpoints_to_keep, n_hour=self.keep_checkpoint_every_n_hours)
         return tf.summary.create_file_writer(self.util.tf_board)
 
     @tf.function
@@ -71,7 +74,7 @@ class Trainer():
         print("epoch: %d  train_loss: %.4f  train_accuracy: %.3f test_loss: %.4f  test_accuracy: %.3f  time/step: %0.3fms" 
                                 %(metrics['epoch'], metrics['train_loss'], metrics['train_accuracy'], metrics['test_loss'], metrics['test_accuracy'], metrics['time/step']))
         self.util.write_log(message=metrics)
-        if metrics['epoch'] % 50 == 0:
+        if metrics['epoch'] % self.save_checkpoint_steps == 0:
             self.util.save_model(global_step=metrics['epoch'])
         return
 

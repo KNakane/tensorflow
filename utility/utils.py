@@ -77,11 +77,12 @@ class Utils():
                 f.write(str(info))
         return 
 
-    def save_init(self, model):
+    def save_init(self, model, keep=5, n_hour=1):
         self.checkpoint = tf.train.Checkpoint(policy=model)
         self.saver =  tf.train.CheckpointManager(self.checkpoint,
                                                  directory=self.model_path,
-                                                 max_to_keep=5)
+                                                 keep_checkpoint_every_n_hours=n_hour,
+                                                 max_to_keep=keep)
         return
 
     def save_model(self, global_step=None):
