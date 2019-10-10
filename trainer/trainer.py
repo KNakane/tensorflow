@@ -51,10 +51,14 @@ class Trainer():
         return loss, acc
 
     def epoch_end(self, metrics, other=None):
+        try:
+            learning_rate = self.model.optimizer.lr(metrics['epoch']).numpy()
+        except:
+            learning_rate = self.model.optimizer.lr
         tf.summary.experimental.set_step(metrics['epoch'])
         tf.summary.scalar('detail/epoch', metrics['epoch'])
         tf.summary.scalar('detail/time_per_step', metrics['time/step'])
-        tf.summary.scalar('detail/learning_rate', self.model.optimizer.lr)
+        tf.summary.scalar('detail/learning_rate', learning_rate)
         tf.summary.scalar('train/loss', metrics['train_loss'])
         tf.summary.scalar('train/accuracy', metrics['train_accuracy'])
         tf.summary.scalar('test/loss', metrics['test_loss'])

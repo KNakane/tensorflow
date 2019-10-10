@@ -17,7 +17,7 @@ class MyModel(Model):
         super().__init__()
         self.model_name = name
         self.out_dim = out_dim
-        self.optimizer = eval(opt)(learning_rate=lr)
+        self.optimizer = eval(opt)(learning_rate=lr, decay_step=10, decay_rate=0.95)
         self._build()
         self.loss_function = tf.losses.CategoricalCrossentropy()
         self.accuracy_function = tf.keras.metrics.CategoricalAccuracy()
