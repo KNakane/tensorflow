@@ -1,6 +1,6 @@
 wget
 tqdm
-numpy
+numpy==1.16.4
 keras
 gym
 gym[atari]
