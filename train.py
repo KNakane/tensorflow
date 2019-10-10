@@ -2,7 +2,7 @@ import os, sys
 from absl import app
 from absl import flags
 import tensorflow as tf
-from CNN.lenet import LeNet
+from CNN.lenet import LeNet, VGG
 from dataset.load import Load
 from trainer.trainer import Trainer
 from collections import OrderedDict

@@ -18,6 +18,7 @@ class MyModel(Model):
         self.model_name = name
         self.out_dim = out_dim
         self.optimizer = eval(opt)(learning_rate=lr, decay_step=None, decay_rate=0.95)
+        self.l2_regularizer = l2_reg_scale if l2_reg else None
         self._build()
         self.loss_function = tf.losses.CategoricalCrossentropy()
         self.accuracy_function = tf.keras.metrics.CategoricalAccuracy()
