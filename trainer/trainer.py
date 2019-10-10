@@ -81,7 +81,6 @@ class Trainer():
         if self.restore_dir is not None:
             self.util.restore_agent(self.model ,self.restore_dir)
         
-        #inputs, corrects, valid_inputs, valid_labels = self.load()
         train_dataset, test_dataset = self.load()
 
         # set mean loss
@@ -115,3 +114,13 @@ class Trainer():
             })
             self.epoch_end(metrics, other_metrics)
         return
+
+
+class AE_Trainer(Trainer):
+    def __init__(self,
+                 FLAGS,
+                 message,
+                 data,
+                 model,
+                 name):
+        super().__init__()
