@@ -2,10 +2,12 @@ import os, sys
 import numpy as np
 import tensorflow as tf
 from CNN.model import MyModel
+from utility.optimizer import *
 
 class LeNet(MyModel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.optimizer = eval(kwargs['opt'])(learning_rate=kwargs['lr'], decay_step=None, decay_rate=0.95)
 
     def _build(self):
         self.conv1 = tf.keras.layers.Conv2D(6, kernel_size=(5, 5), padding='valid', activation='relu', kernel_regularizer=self.l2_regularizer)
