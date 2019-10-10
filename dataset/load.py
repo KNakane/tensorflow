@@ -59,6 +59,8 @@ class Load():
 
         if is_training:
             dataset = dataset.shuffle(buffer_size).repeat()  # depends on sample size
+        else:
+            dataset = dataset.shuffle(buffer_size)
         dataset = dataset.prefetch(tf.data.experimental.AUTOTUNE )
 
         return dataset
