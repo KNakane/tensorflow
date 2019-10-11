@@ -17,7 +17,7 @@ class Trainer():
         self.data = data
         self.model = model
         self.n_epoch = FLAGS.n_epoch
-        self.save_checkpoint_steps = self.max_steps / 10 if FLAGS.save_checkpoint_steps is None else FLAGS.save_checkpoint_steps
+        self.save_checkpoint_steps = self.n_epoch / 10 if FLAGS.save_checkpoint_steps is None else FLAGS.save_checkpoint_steps
         self.checkpoints_to_keep = FLAGS.checkpoints_to_keep
         self.keep_checkpoint_every_n_hours = FLAGS.keep_checkpoint_every_n_hours
         self.batch_size = FLAGS.batch_size
@@ -44,20 +44,17 @@ class Trainer():
             loss = self.model.loss(y_pre, labels)
         self.model.optimize(loss, tape)
         acc = self.model.accuracy(y_pre, labels)
-        return loss, acc
+        return y_pre, loss, acc
 
     @tf.function
     def _test_body(self, images, labels):
         y_pre = self.model.inference(images)
         loss = self.model.loss(y_pre, labels)
         acc = self.model.accuracy(y_pre, labels)
-        return loss, acc
+        return y_pre, loss, acc
 
     def epoch_end(self, metrics, other=None):
-        try:
-            learning_rate = self.model.optimizer.lr(metrics['epoch']).numpy()
-        except:
-            learning_rate = self.model.optimizer.lr
+        learning_rate = self.model.optimizer.lr(metrics['epoch']).numpy() if type(self.model.optimizer.lr) is tf.optimizers.schedules.ExponentialDecay else self.model.optimizer.lr
         tf.summary.experimental.set_step(metrics['epoch'])
         tf.summary.scalar('detail/epoch', metrics['epoch'])
         tf.summary.scalar('detail/time_per_step', metrics['time/step'])
@@ -93,11 +90,11 @@ class Trainer():
         for i in range(1, self.n_epoch+1):
             start_time = time.time()
             for (_, (train_images, train_labels)) in enumerate(train_dataset.take(self.batch_size)):
-                loss, train_accuracy = self._train_body(train_images, train_labels)
+                _, loss, train_accuracy = self._train_body(train_images, train_labels)
                 train_loss = train_loss_fn(loss)
             time_per_episode = time.time() - start_time
             for (_, (test_images, test_labels)) in enumerate(test_dataset.take(self.batch_size)):
-                loss, test_accuracy = self._test_body(test_images, test_labels)
+                _, loss, test_accuracy = self._test_body(test_images, test_labels)
                 test_loss = test_loss_fn(loss)
 
             # Training results
@@ -120,10 +117,42 @@ class Trainer():
 
 
 class AE_Trainer(Trainer):
-    def __init__(self,
-                 FLAGS,
-                 message,
-                 data,
-                 model,
-                 name):
-        super().__init__()
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def train(self):
+        board_writer = self.begin_train()
+        board_writer.set_as_default()
+        if self.restore_dir is not None:
+            self.util.restore_agent(self.model ,self.restore_dir)
+        
+        train_dataset, test_dataset = self.load()
+
+        for i in range(1, self.n_epoch+1):
+            start_time = time.time()
+            for (_, (train_images, _)) in enumerate(train_dataset.take(self.batch_size)):
+                train_pre, train_loss, train_accuracy = self._train_body(train_images, train_images)
+            time_per_episode = time.time() - start_time
+            for (_, (test_images, _)) in enumerate(test_dataset.take(self.batch_size)):
+                test_pre, test_loss, test_accuracy = self._test_body(test_images, test_images)
+
+            # Training results
+            metrics = OrderedDict({
+                "epoch": i,
+                "train_loss": train_loss.numpy(),
+                "train_accuracy":train_accuracy.numpy(),
+                "test_loss": test_loss.numpy(),
+                "test_accuracy" : test_accuracy.numpy(),
+                "time/step": time_per_episode
+            })
+
+            #
+            other_metrics = OrderedDict({
+                "train_image" : train_images[:3],
+                "test_image" : test_images[:3],
+                "Decode_train_image" : train_pre,
+                "Decode_test_image" : test_pre
+            })
+            self.epoch_end(metrics, other_metrics)
+            self.util.construct_figure(test_images, test_pre)
+        return
