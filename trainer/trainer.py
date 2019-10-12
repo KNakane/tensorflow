@@ -139,7 +139,7 @@ class AE_Trainer(Trainer):
             for (_, (test_images, _)) in enumerate(test_dataset.take(self.batch_size)):
                 test_pre, test_loss, test_accuracy = self._test_body(test_images, test_images)
 
-            if i % self.save_checkpoint_steps == 0:
+            if i == 1 or i % 50 == 0:
                 self.util.construct_figure(test_images.numpy(), test_pre.numpy(), i)
 
             # Training results
