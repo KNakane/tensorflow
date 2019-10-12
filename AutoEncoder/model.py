@@ -1,4 +1,5 @@
 import os, sys
+import numpy as np
 import tensorflow as tf
 from tensorflow.keras.models import Model
 from utility.optimizer import *
@@ -52,6 +53,7 @@ class Decoder(Model):
         self.fc1 = tf.keras.layers.Dense(64, activation='relu', kernel_regularizer=self.l2_regularizer)
         self.fc2 = tf.keras.layers.Dense(128, activation='relu', kernel_regularizer=self.l2_regularizer)
         self.fc3 = tf.keras.layers.Dense(256, activation='relu', kernel_regularizer=self.l2_regularizer)
+        self.fc4 = tf.keras.layers.Dense(28*28, activation='relu', kernel_regularizer=self.l2_regularizer)
         self.out = tf.keras.layers.Reshape((28,28,1))
         return
 
@@ -59,6 +61,7 @@ class Decoder(Model):
         x = self.fc1(x)
         x = self.fc2(x)
         x = self.fc3(x)
+        x = self.fc4(x)
         x = self.out(x)
         return x
 
@@ -99,6 +102,18 @@ class AutoEncoder(Model):
     def loss(self, logits, anser):
         loss = tf.reduce_mean(tf.square(logits - anser))
         return loss
+    
+    def optimize(self, loss, tape=None):
+        assert tape is not None, 'please set tape in opmize'
+        grads = tape.gradient(loss, self.trainable_variables)
+        self.optimizer.method.apply_gradients(zip(grads, self.trainable_variables))
+        return
+
+    def accuracy(self, logits, answer, eps=1e-10):
+        marginal_likelihood = tf.reduce_sum(answer * tf.math.log(logits + eps) + (1 - answer) * tf.math.log(1 - logits + eps),
+                                            [1, 2])
+        neg_loglikelihood = -tf.reduce_mean(marginal_likelihood)
+        return neg_loglikelihood
 
 
 class VAE(AutoEncoder):
