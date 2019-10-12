@@ -66,6 +66,9 @@ class Trainer():
         if 'train_image' in other and len(other['train_image'].shape) == 4:
             tf.summary.image('train/image', other['train_image'])
             tf.summary.image('test/image', other['test_image'])
+        if 'Decode_train_image' in other:
+            tf.summary.image('train/decode_image', other['Decode_train_image'])
+            tf.summary.image('test/decode_image', other['Decode_test_image'])
 
 
         print("epoch: %d  train_loss: %.4f  train_accuracy: %.3f test_loss: %.4f  test_accuracy: %.3f  time/step: %0.3fms" 
@@ -136,11 +139,14 @@ class AE_Trainer(Trainer):
             for (_, (test_images, _)) in enumerate(test_dataset.take(self.batch_size)):
                 test_pre, test_loss, test_accuracy = self._test_body(test_images, test_images)
 
+            if i % self.save_checkpoint_steps == 0:
+                self.util.construct_figure(test_images.numpy(), test_pre.numpy(), i)
+
             # Training results
             metrics = OrderedDict({
                 "epoch": i,
                 "train_loss": train_loss.numpy(),
-                "train_accuracy":train_accuracy.numpy(),
+                "train_accuracy":train_accuracy,
                 "test_loss": test_loss.numpy(),
                 "test_accuracy" : test_accuracy.numpy(),
                 "time/step": time_per_episode
@@ -154,5 +160,4 @@ class AE_Trainer(Trainer):
                 "Decode_test_image" : test_pre
             })
             self.epoch_end(metrics, other_metrics)
-            self.util.construct_figure(test_images, test_pre)
         return
