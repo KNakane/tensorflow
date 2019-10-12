@@ -39,13 +39,15 @@ class Decoder(Model):
     def __init__(self, 
                  model=None,
                  name='Encoder',
-                 out_dim=10,
+                 size=28,
+                 channel=1,
                  l2_reg=False,
                  l2_reg_scale=0.0001
                  ):
         super().__init__()
         self.model_name = name
-        self.out_dim = out_dim
+        self.size = size
+        self.channel = channel
         self.l2_regularizer = l2_reg_scale if l2_reg else None
         self._build()
 
@@ -53,8 +55,8 @@ class Decoder(Model):
         self.fc1 = tf.keras.layers.Dense(64, activation='relu', kernel_regularizer=self.l2_regularizer)
         self.fc2 = tf.keras.layers.Dense(128, activation='relu', kernel_regularizer=self.l2_regularizer)
         self.fc3 = tf.keras.layers.Dense(256, activation='relu', kernel_regularizer=self.l2_regularizer)
-        self.fc4 = tf.keras.layers.Dense(28*28, activation='relu', kernel_regularizer=self.l2_regularizer)
-        self.out = tf.keras.layers.Reshape((28,28,1))
+        self.fc4 = tf.keras.layers.Dense(self.size**2 * self.channel, activation='sigmoid', kernel_regularizer=self.l2_regularizer)
+        self.out = tf.keras.layers.Reshape((self.size,self.size,self.channel))
         return
 
     def __call__(self, x):
@@ -80,8 +82,8 @@ class AutoEncoder(Model):
                  ):
         super().__init__()
         self.model_name = name
-        self.encode = Encoder(l2_reg, l2_reg_scale)
-        self.decode = Decoder(l2_reg, l2_reg_scale)
+        self.encode = Encoder(out_dim=out_dim, l2_reg=l2_reg, l2_reg_scale=l2_reg_scale)
+        self.decode = Decoder(size=size, channel=channel, l2_reg=l2_reg, l2_reg_scale=l2_reg_scale)
         self.denoise = denoise
         self.out_dim = out_dim
         self.optimizer = eval(opt)(learning_rate=lr, decay_step=None, decay_rate=0.95)
@@ -110,23 +112,50 @@ class AutoEncoder(Model):
         return
 
     def accuracy(self, logits, answer, eps=1e-10):
-        marginal_likelihood = tf.reduce_sum(answer * tf.math.log(logits + eps) + (1 - answer) * tf.math.log(1 - logits + eps),
+        marginal_likelihood = tf.reduce_mean(answer * tf.math.log(logits + eps) + (1 - answer) * tf.math.log(1 - logits + eps),
                                             [1, 2])
         neg_loglikelihood = -tf.reduce_mean(marginal_likelihood)
         return neg_loglikelihood
 
 
 class VAE(AutoEncoder):
-    def __init__(self, 
-                 encode=None,
-                 decode=None,
-                 denoise=False,
-                 name='VAE',
-                 out_dim=10,
-                 opt="Adam",   # Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]
-                 lr=0.001,
-                 l2_reg=False,
-                 l2_reg_scale=0.0001
-                 ):
-        super.__init__(encode=encode, decode=decode, denoise=denoise, name=name, out_dim=out_dim, opt=opt, lr=lr, l2_reg=l2_reg, l2_reg_scale=l2_reg_scale)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
+    def inference(self, outputs):
+        self.inputs = outputs
+        if self.denoise:
+            outputs = self.noise(outputs)
+        outputs = self.encode(outputs)
+        self.mu, self.var = tf.split(outputs, num_or_size_splits=2, axis=1)
+        compose_img = self.re_parameterization(self.mu, self.var)
+        outputs = tf.clip_by_value(self.decode(compose_img), 1e-8, 1 - 1e-8)
+        return outputs
+
+    def test_inference(self, outputs):
+        batch_size = tf.constant(outputs.shape[0], dtype=tf.int32)
+        compose_img = self.gaussian(batch_size,20)
+        outputs = tf.clip_by_value(self.decode_(compose_img), 1e-8, 1 - 1e-8)
+        return outputs
+
+    def loss(self, logits, answer):
+        epsilon = 1e-10
+        reconstruct_loss = tf.reduce_mean(-tf.reduce_sum(answer * tf.math.log(epsilon + logits) + (1 - answer) * tf.math.log(epsilon + 1 - logits), axis=1))
+        KL_divergence = tf.reduce_mean(-0.5 * tf.reduce_sum(1 + self.var - tf.square(self.mu) - tf.exp(self.var), axis=1))      
+        return reconstruct_loss + KL_divergence
+
+    def re_parameterization(self, mu, var):
+        """
+        Reparametarization trick
+        parameters
+        ---
+        mu, var : numpy array or tensor
+            mu is average, var is variance
+        """
+        std = var**0.5
+        eps = tf.random.normal(tf.shape(var), 0, 1, dtype=tf.float32)
+        return mu + tf.sqrt(tf.exp(std)) * eps
+
+    def gaussian(self, batch_size, n_dim, mean=0, var=1):
+        z = tf.random.normal(shape=(batch_size, n_dim), mean=mean, stddev=var)
+        return z
