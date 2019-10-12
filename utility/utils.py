@@ -122,7 +122,7 @@ class Utils():
         builder.save()
         return
 
-    def construct_figure(self, x_test, decoded_imgs, n=10):
+    def construct_figure(self, x_test, decoded_imgs, step, n=10):
         '''
         元の画像と生成した画像10枚ずつを保存する
         parameters
@@ -156,7 +156,8 @@ class Utils():
             ax.get_yaxis().set_visible(False)
             
             plt.tight_layout()
-        plt.savefig(self.log_dir + '/construct_figure.png')
+        plt.savefig(self.log_dir + '/construct_figure_{}.png'.format(step))
+        plt.close()
 
     def reconstruct_image(self, decoded_imgs):
         """
@@ -165,6 +166,7 @@ class Utils():
         plt.figure(figsize=(8, 8)) 
         plt.imshow(decoded_imgs, cmap="gray")
         plt.savefig(self.log_dir + '/construct_figure.png')
+        plt.close()
 
     def gan_plot(self, samples):
         """
