@@ -41,7 +41,7 @@ def construction_image(FLAGS):
         "Augmentation": FLAGS.aug})
 
     data = Load(FLAGS.data)
-    model = eval(FLAGS.network)(name=FLAGS.network, out_dim=data.output_dim, lr=FLAGS.lr, opt=FLAGS.opt, l2_reg=FLAGS.l2_norm)
+    model = eval(FLAGS.network)(name=FLAGS.network, size=data.size, channel=data.channel, out_dim=data.output_dim*2, lr=FLAGS.lr, opt=FLAGS.opt, l2_reg=FLAGS.l2_norm)
 
     #training
     trainer = AE_Trainer(FLAGS, message, data, model, FLAGS.network)
