@@ -135,7 +135,7 @@ class VAE(AutoEncoder):
     
     def re_parameterization(self, mu, var):
         with tf.variable_scope('re_parameterization'):
-            std = tf.exp(0.5 * var)
+            std = var ** 0.5
             eps = tf.random_normal(tf.shape(var), 0, 1, dtype=tf.float32)
             return mu + tf.sqrt(tf.exp(std)) * eps
 
