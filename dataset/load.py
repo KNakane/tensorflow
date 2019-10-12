@@ -46,7 +46,7 @@ class Load():
         def preprocess_fn(image, label):
             '''A transformation function to preprocess raw data
             into trainable input. '''
-            x = tf.reshape(tf.cast(image, tf.float32), (self.size, self.size, self.channel))
+            x = tf.reshape(tf.cast(image, tf.float32), (self.size, self.size, self.channel)) / 255.0
             y = tf.one_hot(tf.cast(label, tf.uint8), self.output_dim)
             return x, y
 
