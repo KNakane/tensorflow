@@ -26,12 +26,12 @@ class Encoder(Model):
         self.out = tf.keras.layers.Dense(self.out_dim, activation='relu', kernel_regularizer=self.l2_regularizer)
         return
 
-    def __call__(self, x):
-        x = self.flat(x)
-        x = self.fc1(x)
-        x = self.fc2(x)
-        x = self.fc3(x)
-        x = self.out(x)
+    def __call__(self, x, trainable=True):
+        x = self.flat(x, training=trainable)
+        x = self.fc1(x, training=trainable)
+        x = self.fc2(x, training=trainable)
+        x = self.fc3(x, training=trainable)
+        x = self.out(x, training=trainable)
         return x
 
 
@@ -59,12 +59,12 @@ class Decoder(Model):
         self.out = tf.keras.layers.Reshape((self.size,self.size,self.channel))
         return
 
-    def __call__(self, x):
-        x = self.fc1(x)
-        x = self.fc2(x)
-        x = self.fc3(x)
-        x = self.fc4(x)
-        x = self.out(x)
+    def __call__(self, x, trainable=True):
+        x = self.fc1(x, training=trainable)
+        x = self.fc2(x, training=trainable)
+        x = self.fc3(x, training=trainable)
+        x = self.fc4(x, training=trainable)
+        x = self.out(x, training=trainable)
         return x
 
 
@@ -93,13 +93,16 @@ class AutoEncoder(Model):
         outputs += tf.random_normal(tf.shape(outputs))
         return tf.clip_by_value(outputs, 1e-8, 1 - 1e-8)
     
-    def inference(self, outputs):
+    def inference(self, outputs, trainable=True):
         self.inputs = outputs
         if self.denoise:
             outputs = self.noise(outputs)
-        outputs = self.encode(outputs)
-        outputs = self.decode(outputs)
+        outputs = self.encode(outputs, trainable)
+        outputs = self.decode(outputs, trainable)
         return outputs
+
+    def test_inference(self, outputs, trainable=False):
+        return self.inference(outputs, trainable=trainable)
 
     def loss(self, logits, anser):
         loss = tf.reduce_mean(tf.square(logits - anser))
@@ -122,26 +125,30 @@ class VAE(AutoEncoder):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def inference(self, outputs):
+    def inference(self, outputs, trainable=True):
         self.inputs = outputs
         if self.denoise:
             outputs = self.noise(outputs)
-        outputs = self.encode(outputs)
+        outputs = self.encode(outputs, trainable)
         self.mu, self.var = tf.split(outputs, num_or_size_splits=2, axis=1)
         compose_img = self.re_parameterization(self.mu, self.var)
-        outputs = tf.clip_by_value(self.decode(compose_img), 1e-8, 1 - 1e-8)
+        outputs = tf.clip_by_value(self.decode(compose_img, trainable), 1e-8, 1 - 1e-8)
         return outputs
 
-    def test_inference(self, outputs):
+    def test_inference(self, outputs, trainable=False):
         batch_size = tf.constant(outputs.shape[0], dtype=tf.int32)
         compose_img = self.gaussian(batch_size,20)
-        outputs = tf.clip_by_value(self.decode_(compose_img), 1e-8, 1 - 1e-8)
+        outputs = tf.clip_by_value(self.decode_(compose_img, trainable), 1e-8, 1 - 1e-8)
         return outputs
 
     def loss(self, logits, answer):
         epsilon = 1e-10
+        if len(logits.shape) > 2:
+            logits = tf.reshape(logits, [logits.shape[0], -1])
+        if len(answer.shape) > 2:
+            answer = tf.reshape(answer, [answer.shape[0], -1])
         reconstruct_loss = tf.reduce_mean(-tf.reduce_sum(answer * tf.math.log(epsilon + logits) + (1 - answer) * tf.math.log(epsilon + 1 - logits), axis=1))
-        KL_divergence = tf.reduce_mean(-0.5 * tf.reduce_sum(1 + self.var - tf.square(self.mu) - tf.exp(self.var), axis=1))      
+        KL_divergence = tf.reduce_mean(-0.5 * tf.reduce_sum(1 + self.var - tf.square(self.mu) - tf.exp(self.var), axis=1))
         return reconstruct_loss + KL_divergence
 
     def re_parameterization(self, mu, var):
@@ -152,7 +159,7 @@ class VAE(AutoEncoder):
         mu, var : numpy array or tensor
             mu is average, var is variance
         """
-        std = var**0.5
+        std = var*0.5
         eps = tf.random.normal(tf.shape(var), 0, 1, dtype=tf.float32)
         return mu + tf.sqrt(tf.exp(std)) * eps
 
