@@ -199,6 +199,28 @@ class Utils():
         plt.close(fig)
 
         return 
+    
+    def plot_figure(self, samples, iteration):
+        fig = plt.figure(figsize=(6, 6))
+        gs = gridspec.GridSpec(6, 6)
+        gs.update(wspace=0.05, hspace=0.05)
+
+        for i in range(36):
+            ax = plt.subplot(gs[i])
+            plt.axis('off')
+            ax.set_xticklabels([])
+            ax.set_yticklabels([])
+            ax.set_aspect('equal')
+            try:
+                plt.imshow(samples[i].reshape(28, 28), cmap='Greys_r')
+            except:
+                plt.imshow(np.clip(samples[i],0,255))
+
+        name = self.log_dir + '/{}.png'.format(str(iteration).zfill(3))
+        plt.savefig(name, bbox_inches='tight')
+        plt.close(fig)
+
+        return
 
     def MDN_figure(self, x, y, y_test):
         [pi, sigma, mu] = y_test
