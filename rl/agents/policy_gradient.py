@@ -14,7 +14,7 @@ class PolicyGradient(Agent):
         # ------------------ build eval_net ------------------
         self.q_eval = eval(self.network)(model=self.model, out_dim=self.n_actions, name='Q_net', opt=self._optimizer, lr=self.lr, trainable=self.trainable, is_categorical=self.is_categorical)
 
-    @tf.contrib.eager.defun
+    @tf.function
     def inference(self, state):
         return tf.keras.layers.Softmax()(self.q_eval.inference(state))
 
@@ -37,7 +37,7 @@ class PolicyGradient(Agent):
         reward = self._discount_and_norm_rewards(reward)
         return self._train_body(self.bs, eval_act_index, reward, weights)
 
-    @tf.contrib.eager.defun
+    @tf.function
     def _train_body(self, bs, eval_act_index, reward, weights):
         global_step = tf.train.get_or_create_global_step()
 

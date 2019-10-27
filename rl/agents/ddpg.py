@@ -31,7 +31,7 @@ class DDPG(Agent):
         self.critic = CriticNet(model=self.model[1], out_dim=1, name='CriticNet', opt=self._optimizer, lr=self.lr, trainable=self.trainable)
         self.critic_target = CriticNet(model=self.model[1], out_dim=1, name='CriticNet_target',trainable=False)
 
-    @tf.contrib.eager.defun
+    @tf.function
     def inference(self, state):
         return self.actor.inference(state)
 
@@ -56,7 +56,7 @@ class DDPG(Agent):
         p_idx = np.reshape(p_idx,(self.batch_size,1))
         return self._train_body(self.bs, eval_act_index, done, bs_, reward, p_idx, weights)
 
-    @tf.contrib.eager.defun
+    @tf.function
     def _train_body(self, bs, eval_act_index, done, bs_, reward, p_idx, weights):
         global_step = tf.train.get_or_create_global_step()
 
@@ -115,7 +115,7 @@ class TD3(Agent):
         self.critic_target1 = CriticNet(model=self.model[1], out_dim=1, name='CriticNet_target1',trainable=False)
         self.critic_target2 = CriticNet(model=self.model[1], out_dim=1, name='CriticNet_target2',trainable=False)
 
-    @tf.contrib.eager.defun
+    @tf.function
     def inference(self, state):
         return self.actor.inference(state)
 
@@ -146,7 +146,7 @@ class TD3(Agent):
         return [critic_loss1, critic_loss2, self.actor_loss], td_error
 
 
-    @tf.contrib.eager.defun
+    @tf.function
     def _train_critic(self, bs, eval_act_index, done, bs_, reward, p_idx, weights, noise_clip=0.5):
         with tf.device(self.device):
             global_step = tf.train.get_or_create_global_step()
@@ -173,7 +173,7 @@ class TD3(Agent):
 
             return critic_loss1, critic_loss2, td_error
         
-    @tf.contrib.eager.defun
+    @tf.function
     def _train_actor(self, bs):
         with tf.device(self.device):
             global_step = tf.train.get_or_create_global_step()

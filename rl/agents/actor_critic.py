@@ -23,7 +23,7 @@ class A3C(Agent):
             v += l.get_weights()
         return v
 
-    @tf.contrib.eager.defun
+    @tf.function
     def inference(self, state):
         action, _ = self.q_eval.inference(state)
         return action

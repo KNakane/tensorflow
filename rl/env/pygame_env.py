@@ -1,7 +1,7 @@
 import numpy as np
 from PIL import Image
 from collections import deque
-from observer import Observer
+from rl.env.observer import Observer
 
 class PygameObserver(Observer):
 

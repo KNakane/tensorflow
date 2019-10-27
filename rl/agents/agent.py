@@ -2,7 +2,7 @@
 import numpy as np
 import tensorflow as tf
 
-class Agent(tf.contrib.checkpoint.Checkpointable):
+class Agent(tf.keras.Model):
     def __init__(
             self,
             model,
@@ -22,8 +22,6 @@ class Agent(tf.contrib.checkpoint.Checkpointable):
             is_noise=False,
             gpu=0
     ):
-        # Eager Mode
-        tf.enable_eager_execution()
         self.model = model
         self.network = network
         self.n_actions = n_actions

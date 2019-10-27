@@ -53,7 +53,7 @@ class DQN(Agent):
 
         return loss, td_error
 
-    @tf.contrib.eager.defun
+    @tf.function
     def _train_body(self, bs, eval_act_index, done, bs_, reward, p_idx, weights):
 
         global_step = tf.train.get_or_create_global_step()
@@ -140,7 +140,7 @@ class DDQN(DQN):
 
         
 
-    @tf.contrib.eager.defun
+    @tf.function
     def _train_body(self, bs, eval_act_index, done, bs_, reward, p_idx, weights):
         with tf.device(self.device):
             global_step = tf.train.get_or_create_global_step()
@@ -216,7 +216,7 @@ class Rainbow(DDQN):
         return loss, td_error
 
     
-    @tf.contrib.eager.defun
+    @tf.function
     def _train_body(self, bs, eval_act_index, done, bs_, reward, p_idx, weights):
         with tf.device(self.device):
             global_step = tf.train.get_or_create_global_step()

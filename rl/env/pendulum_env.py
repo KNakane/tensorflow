@@ -1,4 +1,4 @@
-from observer import Observer
+from rl.env.observer import Observer
 
 class WrappedPendulumEnv(Observer):
     def __init__(self, env, penalize_action=False, penalty_coef=0.05):
