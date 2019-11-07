@@ -1,4 +1,4 @@
-import sys
+import sys, re
 sys.path.append('./utility')
 sys.path.append('./network')
 sys.path.append('./dataset')
@@ -80,13 +80,13 @@ class BasedTrainer():
                                    self.data.valid_labels_placeholder: self.data.y_test})
         
         # create saver
-        saver = tf.train.Saver(
+        self.saver = tf.train.Saver(
                 max_to_keep=self.checkpoints_to_keep,
                 keep_checkpoint_every_n_hours=self.keep_checkpoint_every_n_hours)
 
         scaffold = tf.train.Scaffold(
             init_fn=init_fn,
-            saver=saver)
+            saver=self.saver)
 
         tf.logging.set_verbosity(tf.logging.INFO)
         config = tf.ConfigProto(allow_soft_placement=True, log_device_placement=False)
@@ -165,10 +165,12 @@ class Train(BasedTrainer):
 
         with session:
             if self.restore_dir is not None:
+                if not re.search(r'model', self.restore_dir):
+                    self.restore_dir = self.restore_dir + 'model/'
                 ckpt = tf.train.get_checkpoint_state(self.restore_dir)
                 if ckpt and ckpt.model_checkpoint_path:
                     # Restores from checkpoint
-                    saver.restore(session, ckpt.model_checkpoint_path)
+                    self.saver.restore(session, ckpt.model_checkpoint_path)
             while not session.should_stop():
                 session.run([self.train_op])
         return 
@@ -219,7 +221,7 @@ class AETrainer(BasedTrainer):
                 ckpt = tf.train.get_checkpoint_state(self.restore_dir)
                 if ckpt and ckpt.model_checkpoint_path:
                     # Restores from checkpoint
-                    saver.restore(session, ckpt.model_checkpoint_path)
+                    self.saver.restore(session, ckpt.model_checkpoint_path)
             while not session.should_stop():
                 _, test_input, test_output = session.run([self.train_op, valid_inputs, self.test_logits])
         
@@ -272,7 +274,7 @@ class GANTrainer(BasedTrainer):
                 ckpt = tf.train.get_checkpoint_state(self.restore_dir)
                 if ckpt and ckpt.model_checkpoint_path:
                     # Restores from checkpoint
-                    saver.restore(session, ckpt.model_checkpoint_path)
+                    self.saver.restore(session, ckpt.model_checkpoint_path)
             for _ in range(self.max_steps):
                 for _ in range(self.n_disc_update):
                     session.run([self.opt_D])
