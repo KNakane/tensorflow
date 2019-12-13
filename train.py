@@ -1,6 +1,5 @@
 import os, sys
-from absl import app
-from absl import flags
+import argparse
 import tensorflow as tf
 from CNN.lenet import LeNet, VGG
 from AutoEncoder.model import AutoEncoder, VAE
@@ -11,100 +10,101 @@ from trainer.trainer import Trainer, AE_Trainer, GAN_Trainer
 from collections import OrderedDict
 
 
-def image_recognition(FLAGS):
+def image_recognition(args):
     message = OrderedDict({
-        "Network": FLAGS.network,
-        "data": FLAGS.data,
-        "epoch":FLAGS.n_epoch,
-        "batch_size": FLAGS.batch_size,
-        "Optimizer":FLAGS.opt,
-        "learning_rate":FLAGS.lr,
-        "l2_norm": FLAGS.l2_norm,
-        "Augmentation": FLAGS.aug})
+        "Network": args.network,
+        "data": args.data,
+        "epoch":args.n_epoch,
+        "batch_size": args.batch_size,
+        "Optimizer":args.opt,
+        "learning_rate":args.lr,
+        "l2_norm": args.l2_norm,
+        "Augmentation": args.aug})
 
-    data = Load(FLAGS.data)
-    model = eval(FLAGS.network)(name=FLAGS.network, out_dim=data.output_dim, lr=FLAGS.lr, opt=FLAGS.opt, l2_reg=FLAGS.l2_norm)
+    data = Load(args.data)
+    model = eval(args.network)(name=args.network, out_dim=data.output_dim, lr=args.lr, opt=args.opt, l2_reg=args.l2_norm)
 
     #training
-    trainer = Trainer(FLAGS, message, data, model, FLAGS.network)
+    trainer = Trainer(args, message, data, model, args.network)
     trainer.train()
     return
 
-def construction_image(FLAGS):
+def construction_image(args):
     message = OrderedDict({
-        "Network": FLAGS.network,
-        "data": FLAGS.data,
-        "epoch":FLAGS.n_epoch,
-        "batch_size": FLAGS.batch_size,
-        "Denoising":FLAGS.denoise,
-        "Optimizer":FLAGS.opt,
-        "learning_rate":FLAGS.lr,
-        "l2_norm": FLAGS.l2_norm,
-        "Augmentation": FLAGS.aug})
+        "Network": args.network,
+        "data": args.data,
+        "epoch":args.n_epoch,
+        "batch_size": args.batch_size,
+        "Denoising":args.denoise,
+        "Optimizer":args.opt,
+        "learning_rate":args.lr,
+        "l2_norm": args.l2_norm,
+        "Augmentation": args.aug})
 
-    data = Load(FLAGS.data)
-    model = eval(FLAGS.network)(name=FLAGS.network, size=data.size, channel=data.channel, out_dim=data.output_dim*2, lr=FLAGS.lr, opt=FLAGS.opt, l2_reg=FLAGS.l2_norm)
+    data = Load(args.data)
+    model = eval(args.network)(name=args.network, size=data.size, channel=data.channel, out_dim=data.output_dim*2, lr=args.lr, opt=args.opt, l2_reg=args.l2_norm)
 
     #training
-    trainer = AE_Trainer(FLAGS, message, data, model, FLAGS.network)
+    trainer = AE_Trainer(args, message, data, model, args.network)
     trainer.train()
     return
 
-def GAN_fn(FLAGS):
+def GAN_fn(args):
     message = OrderedDict({
-        "Network": FLAGS.network,
-        "Conditional": FLAGS.conditional,
-        "data": FLAGS.data,
-        "z_dim": FLAGS.z_dim,
-        "epoch":FLAGS.n_epoch,
-        "batch_size": FLAGS.batch_size,
-        "Optimizer":FLAGS.opt,
-        "learning_rate":FLAGS.lr,
-        "n_disc_update":FLAGS.n_disc_update,
-        "l2_norm":FLAGS.l2_norm,
-        "Augmentation": FLAGS.aug})
+        "Network": args.network,
+        "Conditional": args.conditional,
+        "data": args.data,
+        "z_dim": args.z_dim,
+        "epoch":args.n_epoch,
+        "batch_size": args.batch_size,
+        "Optimizer":args.opt,
+        "learning_rate":args.lr,
+        "n_disc_update":args.n_disc_update,
+        "l2_norm":args.l2_norm,
+        "Augmentation": args.aug})
 
-    data = Load(FLAGS.data)
-    model = eval(FLAGS.network)(z_dim=FLAGS.z_dim,
+    data = Load(args.data)
+    model = eval(args.network)(z_dim=args.z_dim,
                                 size=data.size,
                                 channel=data.channel,
-                                name=FLAGS.network,
+                                name=args.network,
                                 class_num=data.output_dim,
-                                lr=FLAGS.lr, opt=FLAGS.opt, l2_reg=FLAGS.l2_norm)
+                                lr=args.lr, opt=args.opt, l2_reg=args.l2_norm)
 
     #training
-    trainer = GAN_Trainer(FLAGS, message, data, model, FLAGS.network)
+    trainer = GAN_Trainer(args, message, data, model, args.network)
     trainer.train()
     return
 
 
 def main(args):
-    if FLAGS.network == 'LeNet' or FLAGS.network == 'VGG':
-        image_recognition(FLAGS)
-    elif FLAGS.network == 'AutoEncoder' or FLAGS.network == 'VAE':
-        construction_image(FLAGS)
-    elif FLAGS.network == 'GAN' or FLAGS.network == 'DCGAN':
-        GAN_fn(FLAGS)
+    if args.network == 'LeNet' or args.network == 'VGG':
+        image_recognition(args)
+    elif args.network == 'AutoEncoder' or args.network == 'VAE':
+        construction_image(args)
+    elif args.network == 'GAN' or args.network == 'DCGAN':
+        GAN_fn(args)
     else:
         raise NotImplementedError()
     return
 
 if __name__ == '__main__':
-    FLAGS = flags.FLAGS
-    flags.DEFINE_string('network', 'LeNet', 'Choice the training data name -> [LeNet,VGG,AutoEncoder,VAE,GAN,DCGAN]')
-    flags.DEFINE_string('data', 'mnist', 'Choice the training data name -> ["mnist","cifar10","cifar100","kuzushiji"]')
-    flags.DEFINE_integer('n_epoch', '1000', 'Input max epoch')
-    flags.DEFINE_integer('batch_size', '32', 'Input batch size')
-    flags.DEFINE_float('lr', '0.001', 'Input learning rate')
-    flags.DEFINE_string('opt', 'SGD', 'Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]')
-    flags.DEFINE_string('aug','None','Choice the Augmentation -> ["shift","mirror","rotate","shift_rotate","cutout","random_erace"]')
-    flags.DEFINE_bool('denoise', 'False', 'True : Denoising AE, False : standard AE')
-    flags.DEFINE_bool('l2_norm', 'False', 'Input learning rate')
-    flags.DEFINE_integer('z_dim', '100', 'Latent z dimension')
-    flags.DEFINE_bool('conditional', 'False', 'Conditional true or false')
-    flags.DEFINE_integer('n_disc_update', '2', 'Input max epoch')
-    flags.DEFINE_string('init_model', 'None', 'Choice the checkpoint directpry(ex. ./results/181225_193106/model)')
-    flags.DEFINE_integer('checkpoints_to_keep', 5,'checkpoint keep count')
-    flags.DEFINE_integer('keep_checkpoint_every_n_hours', 1, 'checkpoint create ')
-    flags.DEFINE_integer('save_checkpoint_steps', 100,'save checkpoint step')
-    app.run(main)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--network', default='LeNet', type=str, choices=['LeNet','VGG','AutoEncoder','VAE','GAN','DCGAN'])
+    parser.add_argument('--data', default='mnist', type=str, choices=['mnist','cifar10','cifar100','kuzushiji'])
+    parser.add_argument('--n_epoch', default=1000, type=int, help='Input max epoch')
+    parser.add_argument('--batch_size', default=32, type=int, help='Input batch size')
+    parser.add_argument('--lr', default=0.001, type=float, help='Input learning rate')
+    parser.add_argument('--opt', default='SGD', type=str, choices=['SGD','Momentum','Adadelta','Adagrad','Adam','RMSProp'])
+    parser.add_argument('--aug', default=None, type=str, choices=['shift','mirror','rotate','shift_rotate','cutout','random_erace'])
+    parser.add_argument('--denoise', action='store_true', help='True : Denoising AE, False : standard AE')
+    parser.add_argument('--l2_norm', action='store_true', help='L2 normalization or not')
+    parser.add_argument('--z_dim', default=100, type=int, help='Latent z dimension')
+    parser.add_argument('--conditional', action='store_true', help='Conditional true or false')
+    parser.add_argument('--n_disc_update', default=2, type=int, help='Learning times for discriminator')
+    parser.add_argument('--init_model', default=None, type=str, help='Choice the checkpoint directpry(ex. ./results/181225_193106/model)')
+    parser.add_argument('--checkpoints_to_keep', default=5, type=int, help='checkpoint keep count')
+    parser.add_argument('--keep_checkpoint_every_n_hours', default=1, type=int, help='checkpoint create hour')
+    parser.add_argument('--save_checkpoint_steps', default=100, type=int, help='save checkpoint step')
+    args = parser.parse_args()
+    main(args)
