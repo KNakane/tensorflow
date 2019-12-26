@@ -40,17 +40,23 @@ class Trainer():
     @tf.function
     def _train_body(self, images, labels):
         with tf.GradientTape() as tape:
-            y_pre = self.model.inference(images)
-            loss = self.model.loss(y_pre, labels)
+            with tf.name_scope('train_logits'):
+                y_pre = self.model.inference(images)
+            with tf.name_scope('train_loss'):
+                loss = self.model.loss(y_pre, labels)
         self.model.optimize(loss, tape)
-        acc = self.model.accuracy(y_pre, labels)
+        with tf.name_scope('train_accuracy'):
+            acc = self.model.accuracy(y_pre, labels)
         return y_pre, loss, acc
 
     @tf.function
     def _test_body(self, images, labels):
-        y_pre = self.model.test_inference(images)
-        loss = self.model.loss(y_pre, labels)
-        acc = self.model.accuracy(y_pre, labels)
+        with tf.name_scope('test_logits'):
+            y_pre = self.model.test_inference(images)
+        with tf.name_scope('test_loss'):
+            loss = self.model.loss(y_pre, labels)
+        with tf.name_scope('test_accuracy'):
+            acc = self.model.accuracy(y_pre, labels)
         return y_pre, loss, acc
 
     def epoch_end(self, metrics, other=None):
@@ -80,7 +86,7 @@ class Trainer():
 
     def train(self):
         board_writer = self.begin_train()
-        board_writer.set_as_default()
+
         if self.restore_dir is not None:
             self.util.restore_agent(self.model ,self.restore_dir)
         
@@ -90,32 +96,40 @@ class Trainer():
         train_loss_fn = tf.keras.metrics.Mean(name='train_loss')
         test_loss_fn = tf.keras.metrics.Mean(name='test_loss')
 
-        for i in range(1, self.n_epoch+1):
-            start_time = time.time()
-            for (_, (train_images, train_labels)) in enumerate(train_dataset.take(self.batch_size)):
-                _, loss, train_accuracy = self._train_body(train_images, train_labels)
-                train_loss = train_loss_fn(loss)
-            time_per_episode = time.time() - start_time
-            for (_, (test_images, test_labels)) in enumerate(test_dataset.take(self.batch_size)):
-                _, loss, test_accuracy = self._test_body(test_images, test_labels)
-                test_loss = test_loss_fn(loss)
+        # Graph for tensorboard
+        tf.summary.trace_on(graph=True, profiler=True)
 
-            # Training results
-            metrics = OrderedDict({
-                "epoch": i,
-                "train_loss": train_loss.numpy(),
-                "train_accuracy":train_accuracy.numpy(),
-                "test_loss": test_loss.numpy(),
-                "test_accuracy" : test_accuracy.numpy(),
-                "time/epoch": time_per_episode
-            })
+        with board_writer.as_default():
+            tf.summary.trace_export("summary", step=1, profiler_outdir=self.util.log_dir)
+            for i in range(1, self.n_epoch+1):
+                start_time = time.time()
+                for (_, (train_images, train_labels)) in enumerate(train_dataset.take(self.batch_size)):
+                    _, loss, train_accuracy = self._train_body(train_images, train_labels)
+                    train_loss = train_loss_fn(loss)
+                time_per_episode = time.time() - start_time
+                for (_, (test_images, test_labels)) in enumerate(test_dataset.take(self.batch_size)):
+                    _, loss, test_accuracy = self._test_body(test_images, test_labels)
+                    test_loss = test_loss_fn(loss)
 
-            #
-            other_metrics = OrderedDict({
-                "train_image" : train_images[:3],
-                "test_image" : test_images[:3]
-            })
-            self.epoch_end(metrics, other_metrics)
+                # Training results
+                metrics = OrderedDict({
+                    "epoch": i,
+                    "train_loss": train_loss.numpy(),
+                    "train_accuracy":train_accuracy.numpy(),
+                    "test_loss": test_loss.numpy(),
+                    "test_accuracy" : test_accuracy.numpy(),
+                    "time/epoch": time_per_episode
+                })
+
+                #
+                other_metrics = OrderedDict({
+                    "train_image" : train_images[:3],
+                    "test_image" : test_images[:3]
+                })
+                self.epoch_end(metrics, other_metrics)
+        
+        
+        tf.summary.trace_off()
         return
 
 
