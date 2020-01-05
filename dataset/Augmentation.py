@@ -1,7 +1,8 @@
 import os, sys
 import numpy as np
 from tqdm import trange
-from scipy.misc import imresize
+#from scipy.misc import imresize
+from PIL import Image
 from scipy.ndimage.interpolation import shift, rotate
 
 class Augment():
@@ -42,7 +43,7 @@ class Augment():
             h, w = self.img[i].shape[0], self.img[i].shape[1]
             angle = np.random.randint(*angle_range)
             image = rotate(self.img[i], angle)
-            aug.append(imresize(image, (h, w)))
+            aug.append(np.array(Image.fromarray(image).resize((h, w), resample=2)))
         self.aug_img = np.vstack((self.aug_img, np.asarray(aug)))
         self.aug_label = np.hstack((self.aug_label, self.label))
         return self.aug_img, self.aug_label
@@ -62,7 +63,7 @@ class Augment():
             h, w = self.img[i].shape[0], self.img[i].shape[1]
             angle = np.random.randint(*angle_range)
             image = rotate(self.img[i], angle)
-            aug.append(imresize(image, (h, w)))
+            aug.append(np.array(Image.fromarray(image).resize((h, w), resample=2)))
         self.aug_img = np.vstack((self.aug_img, np.asarray(aug)))
         self.aug_label = np.hstack((self.aug_label, self.label))
         return self.aug_img, self.aug_label

@@ -3,16 +3,18 @@ import requests
 import numpy as np
 from tqdm import tqdm
 import tensorflow as tf
-from keras.datasets import *
-from Augmentation import Augment
+from tensorflow.keras.datasets import *
+from dataset.Augmentation import Augment
 
 class Load():
     def __init__(self, name):
         if name == "kuzushiji":
-            self.get_kuzushiji()
+            (self.x_train, self.y_train), (self.x_test, self.y_test) = self.get_kuzushiji()
+            self.size, self.channel = 28, 1
+            self.output_dim = 49
         else:
-            self.name = 'tf.keras.datasets.'+ name
-            self.datasets = eval(self.name)
+            __name = 'tf.keras.datasets.'+ name
+            self.datasets = eval(__name)
             (self.x_train, self.y_train), (self.x_test, self.y_test) = self.get()
             if name == 'mnist':
                 self.size, self.channel = 28, 1
@@ -39,12 +41,8 @@ class Load():
         train_label = np.load('./dataset/k49-train-labels.npz')
         test_image = np.load('./dataset/k49-test-imgs.npz')
         test_label = np.load('./dataset/k49-test-labels.npz')
-        self.x_train = train_image['arr_0']
-        self.y_train = train_label['arr_0']
-        self.x_test = test_image['arr_0']
-        self.y_test = test_label['arr_0']
-        self.size, self.channel = 28, 1
-        self.output_dim = 49
+        return (train_image['arr_0'], train_label['arr_0']), (test_image['arr_0'], test_label['arr_0'])
+        
 
     def load(self, images, labels, batch_size, buffer_size=1000, is_training=False, augmentation=None):
         with tf.variable_scope('{}_dataset'.format('training' if is_training is True else 'validation')):
@@ -58,6 +56,9 @@ class Load():
             labels = labels.reshape(labels.shape[0])
 
             if is_training: # training dataset
+                if augmentation is not None:
+                    augment = Augment(images, labels)
+                    images, labels = eval('augment.' + augmentation)()
                 self.x_train, self.y_train = images, labels
                 self.features_placeholder = tf.placeholder(self.x_train.dtype, self.x_train.shape, name='input_images')
                 self.labels_placeholder = tf.placeholder(self.y_train.dtype, self.y_train.shape, name='labels')
