@@ -2,6 +2,7 @@ import os, sys
 import argparse
 import tensorflow as tf
 from CNN.lenet import LeNet, VGG
+from CNN.resnet import ResNet18, ResNet34
 from AutoEncoder.model import AutoEncoder, VAE
 from GAN.gan import GAN
 from GAN.dcgan import DCGAN
@@ -78,7 +79,7 @@ def GAN_fn(args):
 
 
 def main(args):
-    if args.network == 'LeNet' or args.network == 'VGG':
+    if args.network == 'LeNet' or args.network == 'VGG' or args.network == 'ResNet18' or args.network == 'ResNet34':
         image_recognition(args)
     elif args.network == 'AutoEncoder' or args.network == 'VAE':
         construction_image(args)
@@ -90,7 +91,7 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--network', default='LeNet', type=str, choices=['LeNet','VGG','AutoEncoder','VAE','GAN','DCGAN'])
+    parser.add_argument('--network', default='LeNet', type=str, choices=['LeNet','VGG','ResNet18','ResNet34','AutoEncoder','VAE','GAN','DCGAN'])
     parser.add_argument('--data', default='mnist', type=str, choices=['mnist','cifar10','cifar100','kuzushiji'])
     parser.add_argument('--n_epoch', default=1000, type=int, help='Input max epoch')
     parser.add_argument('--batch_size', default=32, type=int, help='Input batch size')
@@ -101,7 +102,7 @@ if __name__ == '__main__':
     parser.add_argument('--l2_norm', action='store_true', help='L2 normalization or not')
     parser.add_argument('--z_dim', default=100, type=int, help='Latent z dimension')
     parser.add_argument('--conditional', action='store_true', help='Conditional true or false')
-    parser.add_argument('--n_disc_update', default=2, type=int, help='Learning times for discriminator')
+    parser.add_argument('--n_disc_update', default=1, type=int, help='Learning times for discriminator')
     parser.add_argument('--init_model', default=None, type=str, help='Choice the checkpoint directpry(ex. ./results/181225_193106/model)')
     parser.add_argument('--checkpoints_to_keep', default=5, type=int, help='checkpoint keep count')
     parser.add_argument('--keep_checkpoint_every_n_hours', default=1, type=int, help='checkpoint create hour')
