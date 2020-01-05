@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 import os,sys
 import tensorflow as tf
-sys.path.append('./utility')
-from model import Model
-from optimizer import *
+from network.model import Model
+from utility.optimizer import *
 
 class CNN(Model):
     def __init__(self, *args, **kwargs):

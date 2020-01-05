@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
 # Based on https://github.com/taki0112/Densenet-Tensorflow
-import sys
-sys.path.append('./utility')
 import tensorflow as tf
-from model import Model
-from optimizer import *
+from network.model import Model
+from utility.optimizer import *
 
 class DenseNet(Model):
     def __init__(self, *args, **kwargs):

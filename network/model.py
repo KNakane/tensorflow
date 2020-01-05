@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 import os,sys
 import tensorflow as tf
-sys.path.append('./utility')
-from module import Module
-from optimizer import *
+from network.module import Module
+from utility.optimizer import *
 
 class Model(Module):
     def __init__(self, 

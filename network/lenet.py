@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
-import sys
-sys.path.append('./utility')
 import tensorflow as tf
-from model import Model
-from optimizer import *
+from network.model import Model
+from utility.optimizer import *
 
 class LeNet(Model):
     def __init__(self, *args, **kwargs):
