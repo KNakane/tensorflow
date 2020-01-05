@@ -1,11 +1,8 @@
-import sys, re
-sys.path.append('./utility')
-sys.path.append('./network')
-sys.path.append('./dataset')
+import re
 import tensorflow as tf
-from utils import Utils
+from utility.utils import Utils
 from collections import OrderedDict
-from hooks import SavedModelBuilderHook, MyLoggerHook, OptunaHook, AEHook, GanHook, EarlyStopping
+from utility.hooks import SavedModelBuilderHook, MyLoggerHook, OptunaHook, AEHook, GanHook, EarlyStopping
 
 class BasedTrainer():
     def __init__(self,
@@ -19,10 +16,7 @@ class BasedTrainer():
         self.max_steps = FLAGS.n_epoch
         self.save_checkpoint_steps = self.max_steps / 10 if FLAGS.save_checkpoint_steps is None else FLAGS.save_checkpoint_steps
         self.batch_size = FLAGS.batch_size
-        if hasattr(FLAGS, 'aug') and FLAGS.aug != "None":
-            self.aug = FLAGS.aug
-        else:
-            self.aug = None
+        self.aug = FLAGS.aug
         self.name = name
         self.message = message
         self.data = data
