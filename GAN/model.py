@@ -62,6 +62,7 @@ class BasedGAN(Model):
         self.l2_regularizer = l2_reg_scale if l2_reg else None
         self.g_optimizer = eval(opt)(learning_rate=lr*5, decay_step=None)
         self.d_optimizer = eval(opt)(learning_rate=lr, decay_step=None)
+        self.cross_entropy = tf.keras.losses.BinaryCrossentropy(from_logits=True)
         if self.conditional:
             self.class_num = class_num
         self._build()
