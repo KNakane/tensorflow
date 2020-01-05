@@ -51,7 +51,6 @@ class Discriminator(BasedDiscriminator):
 class GAN(BasedGAN):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.cross_entropy = tf.keras.losses.BinaryCrossentropy(from_logits=True)
 
     def _build(self):
         self.G = Generator(size=self.size, channel=self.channel, l2_reg=self._l2_reg, l2_reg_scale=self.l2_regularizer)
@@ -68,8 +67,10 @@ class GAN(BasedGAN):
             fake_img = self.combine_binary_image(fake_img, labels)
             inputs = self.combine_binary_image(inputs, labels)
             """
-        real_logit = tf.nn.sigmoid(self.D(inputs, trainable=trainable))
-        fake_logit = tf.nn.sigmoid(self.D(fake_img, trainable=trainable))
+        #real_logit = tf.nn.sigmoid(self.D(inputs, trainable=trainable))
+        #fake_logit = tf.nn.sigmoid(self.D(fake_img, trainable=trainable))
+        real_logit = self.D(inputs, trainable=trainable)
+        fake_logit = self.D(fake_img, trainable=trainable)
         return fake_logit, real_logit, fake_img
 
     def test_inference(self, inputs, batch_size, index=None, trainable=False):
@@ -80,10 +81,6 @@ class GAN(BasedGAN):
         return self.G(inputs, trainable=trainable)
 
     def loss(self, fake_logit, real_logit):
-        eps = 1e-14
-        d_loss = -tf.reduce_mean(tf.math.log(real_logit + eps) + tf.math.log(1. - fake_logit + eps))
-        g_loss = -tf.reduce_mean(tf.math.log(fake_logit + eps))
-        """
         # discriminator loss
         real_loss = self.cross_entropy(tf.ones_like(real_logit), real_logit)
         fake_loss = self.cross_entropy(tf.zeros_like(fake_logit), fake_logit)
@@ -91,7 +88,6 @@ class GAN(BasedGAN):
 
         # generator loss
         g_loss = self.cross_entropy(tf.ones_like(fake_logit), fake_logit)
-        """
         return d_loss, g_loss
 
     def generator_optimize(self, g_loss, tape=None):
