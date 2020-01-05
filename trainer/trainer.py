@@ -100,12 +100,15 @@ class Trainer():
         tf.summary.trace_on(graph=True, profiler=True)
 
         with board_writer.as_default():
-            tf.summary.trace_export("summary", step=1, profiler_outdir=self.util.log_dir)
             for i in range(1, self.n_epoch+1):
                 start_time = time.time()
                 for (_, (train_images, train_labels)) in enumerate(train_dataset.take(self.batch_size)):
                     _, loss, train_accuracy = self._train_body(train_images, train_labels)
                     train_loss = train_loss_fn(loss)
+                if i == 1:
+                    tf.summary.trace_export("summary", step=1, profiler_outdir=self.util.tf_board)
+                    tf.summary.trace_off()
+
                 time_per_episode = time.time() - start_time
                 for (_, (test_images, test_labels)) in enumerate(test_dataset.take(self.batch_size)):
                     _, loss, test_accuracy = self._test_body(test_images, test_labels)
@@ -235,12 +238,12 @@ class GAN_Trainer(Trainer):
             self.util.restore_agent(self.model ,self.restore_dir)
         
         train_dataset, _ = self.load()
-        test_inputs = tf.random.uniform([self.batch_size*3, self.z_dim],-1,+1)
+        test_inputs = tf.random.uniform([self.batch_size*3, self.z_dim], dtype=tf.float32)
 
         for i in range(1, self.n_epoch+1):
             start_time = time.time()
             for (j, (train_images, _)) in enumerate(train_dataset.take(self.batch_size)):
-                train_pre, dis_loss, gene_loss, train_accuracy = self._train_body(train_images, train_images)
+                train_pre, dis_loss, gene_loss, train_accuracy = self._train_body(train_images, None)
             time_per_episode = time.time() - start_time
             test_pre = self._test_body(test_inputs)
 
