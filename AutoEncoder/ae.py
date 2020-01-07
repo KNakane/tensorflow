@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
-import os,sys
-sys.path.append('../utility')
 import numpy as np
 import tensorflow as tf
-from model import Model
-from optimizer import *
+from network.model import Model
+from utility.optimizer import *
 
 class Encode(Model):
     def __init__(self, model, l2_reg=False, l2_reg_scale=0.0001, name='Encode', trainable=True):
