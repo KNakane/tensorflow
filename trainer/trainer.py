@@ -13,6 +13,7 @@ class BasedTrainer():
                  name):
         self.checkpoints_to_keep = FLAGS.checkpoints_to_keep
         self.keep_checkpoint_every_n_hours = FLAGS.keep_checkpoint_every_n_hours
+        self.early_stopping = FLAGS.early_stopping
         self.max_steps = FLAGS.n_epoch
         self.save_checkpoint_steps = self.max_steps / 10 if FLAGS.save_checkpoint_steps is None else FLAGS.save_checkpoint_steps
         self.batch_size = FLAGS.batch_size
@@ -145,7 +146,8 @@ class Train(BasedTrainer):
         hooks = super().hook_append(metrics=metrics, signature_def_map=signature_def_map)
         hooks.append(MyLoggerHook(self.message, self.util.log_dir, metrics, every_n_iter=100))
         hooks.append(SavedModelBuilderHook(self.util.saved_model_path, signature_def_map))
-        hooks.append(EarlyStopping(valid_loss=self.test_loss, patience=500, verbose=1))
+        if self.early_stopping:
+            hooks.append(EarlyStopping(valid_loss=self.test_loss, patience=500, verbose=1))
         if self.max_steps:
             hooks.append(tf.train.StopAtStepHook(last_step=self.max_steps))
         return hooks
@@ -227,7 +229,7 @@ class GANTrainer(BasedTrainer):
     def __init__(self, FLAGS, **kwargs):
         super().__init__(FLAGS, **kwargs)
         self.n_disc_update = FLAGS.n_disc_update
-        self.condtional = FLAGS.conditional
+        self.conditional = FLAGS.conditional
 
     def build_logits(self, train_data, train_ans, valid_data, valid_ans):
         # train

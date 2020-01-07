@@ -38,6 +38,7 @@ def image_recognition(args):
         "Optimizer":FLAGS.opt,
         "learning_rate":FLAGS.lr,
         "l2_norm": FLAGS.l2_norm,
+        "Early_stopping": FLAGS.early_stopping,
         "Augmentation": FLAGS.aug})
 
     # prepare training
@@ -62,6 +63,7 @@ def construction_image(args):
         "Optimizer":FLAGS.opt,
         "learning_rate":FLAGS.lr,
         "l2_norm": FLAGS.l2_norm,
+        "Early_stopping": FLAGS.early_stopping,
         "Augmentation": FLAGS.aug})
 
     ## load dataset
@@ -89,6 +91,7 @@ def GAN_fn(args):
         "learning_rate":FLAGS.lr,
         "n_disc_update":FLAGS.n_disc_update,
         "l2_norm":FLAGS.l2_norm,
+        "Early_stopping": FLAGS.early_stopping,
         "Augmentation": FLAGS.aug})
 
     return
@@ -116,6 +119,7 @@ if __name__ == '__main__':
     flags.DEFINE_string('opt', 'SGD', 'Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]')
     flags.DEFINE_string('aug',None,'Choice the Augmentation -> ["shift","mirror","rotate","shift_rotate","cutout","random_erace"]')
     flags.DEFINE_bool('l2_norm', False, 'Input learning rate')
+    flags.DEFINE_bool('early_stopping', False, 'Whether do early stopping or not')
     flags.DEFINE_bool('denoise', False, 'True : Denoising AE, False : standard AE')
     flags.DEFINE_string('init_model', None, 'Choice the checkpoint directpry(ex. ./results/181225_193106/model)')
     flags.DEFINE_integer('checkpoints_to_keep', 5,'checkpoint keep count')
