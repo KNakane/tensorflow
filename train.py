@@ -1,19 +1,33 @@
 import tensorflow as tf
 from collections import OrderedDict
-from network.cnn import CNN
-from network.lenet import LeNet, VGG
-from network.resnet import ResNet, ResNeXt, SENet, sSENet, scSENet
-from network.dense_net import DenseNet
+from CNN.cnn import CNN
+from CNN.lenet import LeNet, VGG
+from CNN.resnet import ResNet, ResNeXt, SENet, sSENet, scSENet
+from CNN.dense_net import DenseNet
+from AutoEncoder.ae import AutoEncoder
 from dataset.load import Load
-from trainer.trainer import Train
+from trainer.trainer import Train, AETrainer
 
 
-def set_model(outdim):
+def CNN_model(outdim):
     model_set = [['Residual', 3, 16, 2, False, 1],
                  ['Residual', 3, 32, 2, False, 2],
                  ['Residual', 3, 64, 2, False, 3],
                  ['gap', outdim]]
     return model_set
+
+def AE_model(outdim, size=28, channel=1):
+    encode = [['fc', 256, tf.nn.elu],
+              ['fc', 128, tf.nn.elu],
+              ['fc', 64, tf.nn.elu],
+              ['fc', outdim, None]]
+
+    decode = [['fc', 64, tf.nn.elu],
+              ['fc', 128, tf.nn.elu],
+              ['fc', 256, tf.nn.elu],
+              ['fc', size*size*channel, tf.nn.sigmoid],
+              ['reshape', [-1, size, size, channel]]]
+    return encode, decode
 
 def image_recognition(args):
     message = OrderedDict({
@@ -30,7 +44,7 @@ def image_recognition(args):
     ## load dataset
     data = Load(FLAGS.data)
     ## setting models
-    model_set = set_model(data.output_dim)
+    model_set = CNN_model(data.output_dim)
     model = eval(FLAGS.network)(model=model_set, name=FLAGS.network, out_dim=data.output_dim, lr=FLAGS.lr, opt=FLAGS.opt, l2_reg=FLAGS.l2_norm, trainable=True)
 
     #training
@@ -49,6 +63,17 @@ def construction_image(args):
         "learning_rate":FLAGS.lr,
         "l2_norm": FLAGS.l2_norm,
         "Augmentation": FLAGS.aug})
+
+    ## load dataset
+    data = Load(FLAGS.data)
+    
+    ## setting models
+    encode, decode = AE_model(outdim=40, size=data.size, channel=data.channel)
+    model = eval(FLAGS.network)(encode=encode, decode=decode, denoise=FLAGS.denoise, size=data.size, channel=data.channel, name=FLAGS.network, out_dim=data.output_dim, lr=FLAGS.lr, opt=FLAGS.opt, trainable=True)
+
+    #training
+    trainer = AETrainer(FLAGS, message, data, model, FLAGS.network)
+    trainer.train()
 
     return
 
