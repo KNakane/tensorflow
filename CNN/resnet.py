@@ -8,7 +8,7 @@ from utility.optimizer import *
 
 class ResNet(Model):
     def __init__(self, *args, **kwargs):
-        is_stochastic_depth = kwargs.pop('is_stochastic_depth')
+        is_stochastic_depth = False#kwargs.pop('is_stochastic_depth')
         super().__init__(*args, **kwargs)
         #resnet type -> '18, 34, 50, 101, 152'
         self.n_res = 18

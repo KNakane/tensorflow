@@ -60,6 +60,6 @@ class VGG(Model):
 
             featmap = self.fc(featmap, [500, tf.nn.relu])
             featmap = self.fc(featmap, [200, tf.nn.relu])
-            featmap = self.fc(featmap, [self.out_dim, tf.nn.relu])
+            featmap = self.fc(featmap, [self.out_dim, None])
             logits  = tf.identity(featmap, name="output_logits")
             return logits
