@@ -126,16 +126,16 @@ class VAE(AutoEncoder):
 
     def predict(self, outputs, reuse=True):
         with tf.variable_scope(self.name):
-            batch_size = tf.constant(outputs.shape[0], dtype=tf.int32)
-            compose_img = self.gaussian(batch_size,20)
+            compose_img, self.mu, self.var = self.gaussian(outputs.shape[0],20)
             outputs = tf.clip_by_value(self.decode_(compose_img, reuse), 1e-8, 1 - 1e-8)
             return outputs
     
     def re_parameterization(self, mu, var):
         with tf.variable_scope('re_parameterization'):
-            std = var ** 0.5
-            eps = tf.random_normal(tf.shape(var), 0, 1, dtype=tf.float32)
-            return mu + tf.sqrt(tf.exp(std)) * eps
+            #std = var ** 0.5
+            #eps = tf.random_normal(tf.shape(var), 0, 1, dtype=tf.float32)
+            eps = tf.random_normal(tf.shape(var), dtype=tf.float32)
+            return mu + tf.exp(0.5*var) * eps
 
     def loss(self, logits, labels):
         epsilon = 1e-10
@@ -144,15 +144,26 @@ class VAE(AutoEncoder):
                 logits = tf.layers.flatten(logits)
             if len(labels.shape) > 2:
                 labels = tf.layers.flatten(labels)
+            
             with tf.variable_scope('reconstruct_loss'):
-                reconstruct_loss = tf.reduce_mean(-tf.reduce_sum(labels * tf.log(epsilon + logits) + (1 - labels) * tf.log(epsilon + 1 - logits), axis=1))
+                reconstruct_loss = -tf.reduce_sum(labels * tf.log(epsilon + logits) + (1 - labels) * tf.log(epsilon + 1 - logits), axis=1)
             with tf.variable_scope('KL_divergence'):
-                KL_divergence = tf.reduce_mean(-0.5 * tf.reduce_sum(1 + self.var - tf.square(self.mu) - tf.exp(self.var), axis=1))
-            return reconstruct_loss + KL_divergence
+                KL_divergence = 0.5 * tf.reduce_sum(tf.square(self.mu) + tf.exp(self.var)**2 - 2 * self.mu -1, axis=1)
+            """
+            with tf.variable_scope('reconstruct_loss'):
+                reconstruct_loss = tf.reduce_sum(tf.nn.sigmoid_cross_entropy_with_logits(logits=logits, labels=labels), axis=1)
+            with tf.variable_scope('KL_divergence'):
+                KL_divergence = -0.5 * tf.reduce_sum(1 + self.var - tf.square(self.mu) - tf.exp(self.var), axis=1)
+            """
 
-    def gaussian(self, batch_size, n_dim, mean=0, var=1):
-        z = tf.random_normal(shape=(batch_size, n_dim), mean=mean, stddev=var)
-        return z
+            return tf.reduce_mean(reconstruct_loss + KL_divergence)
+
+    def gaussian(self, batch_size, n_dim, mean=0.0, var=1.):
+        tf_batch_size = tf.constant(batch_size, dtype=tf.int32)
+        z = tf.random_normal(shape=(tf_batch_size, n_dim), mean=mean, stddev=var)
+        mean = np.ones([batch_size, n_dim], dtype=np.float32) * mean
+        var = np.ones([batch_size, n_dim], dtype=np.float32) * var
+        return z, mean, var
         
 
 class CVAE(VAE):

@@ -4,7 +4,7 @@ from CNN.cnn import CNN
 from CNN.lenet import LeNet, VGG
 from CNN.resnet import ResNet, ResNeXt, SENet, sSENet, scSENet
 from CNN.dense_net import DenseNet
-from AutoEncoder.ae import AutoEncoder
+from AutoEncoder.ae import AutoEncoder, VAE
 from dataset.load import Load
 from trainer.trainer import Train, AETrainer
 
