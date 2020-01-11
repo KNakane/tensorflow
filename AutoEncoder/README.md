@@ -37,5 +37,9 @@ $ python AutoEncoder/train.py --data (データ名) \
 ![代替テキスト](../sample_results/AutoEncoder/autoencoder.png)
 
 ## VAE
-上 : 入力画像, 下 : 出力画像
+- z空間における生成画像
 ![代替テキスト](../sample_results/AutoEncoder/vae.png)
+
+## CVAE
+- フォントごとに各ラベルの画像を生成
+![代替テキスト](../sample_results/AutoEncoder/cvae.png)
