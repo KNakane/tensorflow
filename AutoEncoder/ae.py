@@ -140,13 +140,11 @@ class VAE(AutoEncoder):
                     z.append(np.array([xi, yi]))
             z = np.stack(z)
 
-            outputs = tf.clip_by_value(self.decode_(tf.constant(z, dtype=tf.float32), reuse), 1e-8, 1 - 1e-8)
+            outputs = tf.clip_by_value(self.decode_(tf.convert_to_tensor(z, dtype=tf.float32), reuse), 1e-8, 1 - 1e-8)
             return outputs
     
     def re_parameterization(self, mu, var):
         with tf.variable_scope('re_parameterization'):
-            #std = var ** 0.5
-            #eps = tf.random_normal(tf.shape(var), 0, 1, dtype=tf.float32)
             eps = tf.random_normal(tf.shape(var), dtype=tf.float32)
             return mu + tf.exp(0.5*var) * eps
 
