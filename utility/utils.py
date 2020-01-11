@@ -177,6 +177,7 @@ class Utils():
             except:
                 plt.imshow(np.clip(decoded_imgs[i],0,255))
 
+        plt.subplots_adjust(left=0, right=1, bottom=0, top=1)
         plt.savefig(self.log_dir + '/construct_figure.png')
 
         plt.close(fig)
@@ -208,6 +209,7 @@ class Utils():
             if os.path.isfile(name):
                 i += 1
             else:
+                plt.subplots_adjust(left=0, right=1, bottom=0, top=1)
                 plt.savefig(name, bbox_inches='tight')
                 break
 

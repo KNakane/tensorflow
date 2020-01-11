@@ -190,7 +190,7 @@ class AETrainer(BasedTrainer):
         self.test_logits = self.model.test_inference(valid_data, valid_ans, True) if self.name == 'CVAE' else self.model.test_inference(valid_data, reuse=True)
         self.test_loss = self.model.loss(self.test_logits, valid_data)
         self.test_accuracy = self.model.evaluate(self.test_logits, valid_data)
-        if self.name == 'VAE':
+        if self.name == 'VAE' or self.name == 'CVAE':
             self.predict_img = self.model.predict(valid_data, reuse=True)
 
         return 
@@ -223,14 +223,14 @@ class AETrainer(BasedTrainer):
             while not session.should_stop():
                 if self.name == 'AE':
                     _, test_input, test_output = session.run([self.train_op, valid_inputs, self.test_logits])
-                elif self.name == 'VAE':
-                    _, test_input, test_output, predict_image = session.run([self.train_op, valid_inputs, self.test_logits, self.predict_img])
+                elif self.name == 'VAE' or self.name == 'CVAE':
+                    _, test_input, _, test_output = session.run([self.train_op, valid_inputs, self.test_logits, self.predict_img])
         
         if self.name == 'AE':
             self.util.construct_figure(test_input, test_output)
         
-        elif self.name == 'VAE' and self.name == 'CVAE':
-            self.util.reconstruct_image(predict_image)
+        elif self.name == 'VAE' or self.name == 'CVAE':
+            self.util.reconstruct_image(test_output)
 
 
 

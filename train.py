@@ -4,7 +4,7 @@ from CNN.cnn import CNN
 from CNN.lenet import LeNet, VGG
 from CNN.resnet import ResNet, ResNeXt, SENet, sSENet, scSENet
 from CNN.dense_net import DenseNet
-from AutoEncoder.ae import AutoEncoder, VAE
+from AutoEncoder.ae import AutoEncoder, VAE, CVAE
 from dataset.load import Load
 from trainer.trainer import Train, AETrainer
 
@@ -70,7 +70,7 @@ def construction_image(args):
     data = Load(FLAGS.data)
     
     ## setting models
-    encode, decode = AE_model(outdim=40, size=data.size, channel=data.channel)
+    encode, decode = AE_model(outdim=4, size=data.size, channel=data.channel)
     model = eval(FLAGS.network)(encode=encode, decode=decode, denoise=FLAGS.denoise, size=data.size, channel=data.channel, name=FLAGS.network, out_dim=data.output_dim, lr=FLAGS.lr, opt=FLAGS.opt, trainable=True)
 
     #training
@@ -99,7 +99,7 @@ def GAN_fn(args):
 def main(args):
     if FLAGS.network == 'CNN' or FLAGS.network == 'LeNet' or FLAGS.network == 'VGG' or FLAGS.network == 'ResNet' or FLAGS.network == 'ResNeXt' or FLAGS.network == 'SENet' or FLAGS.network == 'DenseNet' or FLAGS.network == 'sSENet':
         image_recognition(args)
-    elif FLAGS.network == 'AutoEncoder' or FLAGS.network == 'VAE':
+    elif FLAGS.network == 'AutoEncoder' or FLAGS.network == 'VAE' or FLAGS.network == 'CVAE':
         construction_image(args)
     elif FLAGS.network == 'GAN' or FLAGS.network == 'DCGAN':
         GAN_fn(args)
@@ -111,7 +111,7 @@ def main(args):
 if __name__ == '__main__':
     flags = tf.app.flags
     FLAGS = flags.FLAGS
-    flags.DEFINE_string('network', 'CNN', 'Choice the training data name -> [CNN, LeNet, VGG, ResNet, ResNeXt, SENet, DenseNet, sSENet, AutoEncoder, VAE]')
+    flags.DEFINE_string('network', 'CNN', 'Choice the training data name -> [CNN, LeNet, VGG, ResNet, ResNeXt, SENet, DenseNet, sSENet, AutoEncoder, VAE, CVAE]')
     flags.DEFINE_string('data', 'mnist', 'Choice the training data name -> ["mnist","cifar10","cifar100","kuzushiji"]')
     flags.DEFINE_integer('n_epoch', 1000, 'Input max epoch')
     flags.DEFINE_integer('batch_size', 32, 'Input batch size')

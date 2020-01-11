@@ -209,17 +209,33 @@ class CVAE(VAE):
             return outputs
 
     def test_inference(self, outputs, labels=None, reuse=True):
-        return self.inference(outputs, labels, reuse)
-
-    def predict(self, outputs, reuse=True):
         with tf.variable_scope(self.name):
             batch_size = outputs.shape[0]
             indices = np.array([x%self.class_num for x in range(batch_size)],dtype=np.int32)
             labels = tf.one_hot(indices, depth=self.class_num, dtype=tf.float32)
-            compose_img = tf.convert_to_tensor(self.gaussian(batch_size, n_dim=20), dtype=tf.float32)
-            compose_img = self.combine_distribution(compose_img, labels)
+            compose_img, self.mu, self.var = self.gaussian(batch_size, n_dim=2)
+            compose_img = self.combine_distribution(tf.convert_to_tensor(compose_img, dtype=tf.float32), labels)
             outputs = tf.clip_by_value(self.decode_(compose_img, reuse), 1e-8, 1 - 1e-8)
             return outputs
+
+    def predict(self, outputs, reuse=True):
+        with tf.variable_scope(self.name):
+            x = np.linspace(0, 1, 10)
+            y = np.flip(np.linspace(0, 1, 10))
+            z = []
+            for i, xi in enumerate(x):
+                for j, yi in enumerate(y):
+                    z.append(np.array([xi, yi]))
+            z = np.stack(z)
+
+            indices = np.array([x%self.class_num for x in range(z.shape[0])],dtype=np.int32)
+            labels = tf.one_hot(indices, depth=self.class_num, dtype=tf.float32)
+
+            compose_img = self.combine_distribution(tf.convert_to_tensor(z, dtype=tf.float32), labels)
+            outputs = tf.clip_by_value(self.decode_(compose_img, reuse), 1e-8, 1 - 1e-8)
+            return outputs
+
+        
 
     def combine_distribution(self, z, labels=None):
         """
