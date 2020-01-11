@@ -124,10 +124,23 @@ class VAE(AutoEncoder):
             
             return outputs
 
+    def test_inference(self, outputs, reuse=True):
+        with tf.variable_scope(self.name):
+            compose_img, self.mu, self.var = self.gaussian(outputs.shape[0],2)
+            outputs = tf.clip_by_value(self.decode_(compose_img, reuse), 1e-8, 1 - 1e-8)
+            return outputs
+
     def predict(self, outputs, reuse=True):
         with tf.variable_scope(self.name):
-            compose_img, self.mu, self.var = self.gaussian(outputs.shape[0],20)
-            outputs = tf.clip_by_value(self.decode_(compose_img, reuse), 1e-8, 1 - 1e-8)
+            x = np.linspace(0, 1, 20)
+            y = np.flip(np.linspace(0, 1, 20))
+            z = []
+            for i, xi in enumerate(x):
+                for j, yi in enumerate(y):
+                    z.append(np.array([xi, yi]))
+            z = np.stack(z)
+
+            outputs = tf.clip_by_value(self.decode_(tf.constant(z, dtype=tf.float32), reuse), 1e-8, 1 - 1e-8)
             return outputs
     
     def re_parameterization(self, mu, var):
