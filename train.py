@@ -5,8 +5,9 @@ from CNN.lenet import LeNet, VGG
 from CNN.resnet import ResNet, ResNeXt, SENet, sSENet, scSENet
 from CNN.dense_net import DenseNet
 from AutoEncoder.ae import AutoEncoder, VAE, CVAE
+from GAN.gan import GAN, UnrolledGAN, DCGAN, WGAN, WGAN_GP, LSGAN, ACGAN, infoGAN, DRAGAN
 from dataset.load import Load
-from trainer.trainer import Train, AETrainer
+from trainer.trainer import Train, AETrainer, GANTrainer
 
 
 def CNN_model(outdim):
@@ -94,6 +95,23 @@ def GAN_fn(args):
         "Early_stopping": FLAGS.early_stopping,
         "Augmentation": FLAGS.aug})
 
+    ## load dataset
+    data = Load(FLAGS.data)
+    
+    model = eval(FLAGS.network)(z_dim=FLAGS.z_dim,
+                                size=data.size,
+                                channel=data.channel,
+                                lr=FLAGS.lr,
+                                class_num=data.output_dim,
+                                l2_reg=FLAGS.l2_norm,
+                                conditional=FLAGS.conditional,
+                                opt=FLAGS.opt,
+                                trainable=True)
+
+    #training
+    trainer = GANTrainer(FLAGS, message, data, model, FLAGS.network)
+    trainer.train()
+
     return
 
 def main(args):
@@ -121,6 +139,9 @@ if __name__ == '__main__':
     flags.DEFINE_bool('l2_norm', False, 'Input learning rate')
     flags.DEFINE_bool('early_stopping', False, 'Whether do early stopping or not')
     flags.DEFINE_bool('denoise', False, 'True : Denoising AE, False : standard AE')
+    flags.DEFINE_bool('conditional', False, 'Conditional true or false')
+    flags.DEFINE_integer('z_dim', 100, 'Latent z dimension')
+    flags.DEFINE_integer('n_disc_update', 2, 'Input max epoch')
     flags.DEFINE_string('init_model', None, 'Choice the checkpoint directpry(ex. ./results/181225_193106/model)')
     flags.DEFINE_integer('checkpoints_to_keep', 5,'checkpoint keep count')
     flags.DEFINE_integer('keep_checkpoint_every_n_hours', 1, 'checkpoint create ')

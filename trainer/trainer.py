@@ -232,48 +232,117 @@ class AETrainer(BasedTrainer):
         elif self.name == 'VAE' or self.name == 'CVAE':
             self.util.reconstruct_image(test_output)
 
-
-
         return
 
 
 class GANTrainer(BasedTrainer):
-    def __init__(self, FLAGS, **kwargs):
-        super().__init__(FLAGS, **kwargs)
-        self.n_disc_update = FLAGS.n_disc_update
+    def __init__(self,
+                 FLAGS,
+                 message,
+                 data,
+                 model,
+                 name):
+        super().__init__(FLAGS, message, data, model, name)
+        self.z_dim = FLAGS.z_dim
+        self.n_disc_update = 5 if self.name == 'WGAN' or self.name == 'WGAN-GP' else FLAGS.n_disc_update
         self.conditional = FLAGS.conditional
 
-    def build_logits(self, train_data, train_ans, valid_data, valid_ans):
+    def load(self):
+        # Load Dataset
+        dataset = self.data.load(self.data.x_train, self.data.y_train, batch_size=self.batch_size, is_training=True, augmentation=self.aug)
+        self.iterator = dataset.make_initializable_iterator()
+        inputs, labels = self.iterator.get_next()
+        valid_inputs = tf.random.uniform([self.batch_size*3, self.z_dim],-1,+1)
+        return inputs, labels, valid_inputs
+
+    def build_logits(self, train_data, train_ans, valid_data):
         # train
-        self.train_logits = self.model.inference(train_data, train_ans) if self.conditional else self.model.inference(train_data)
-        self.train_loss = self.model.loss(self.train_logits, train_data)
-        self.predict = self.model.predict(train_data)
-        self.opt_D, self.opt_G = self.model.optimize(self.train_loss, self.global_step)
-        self.train_accuracy = self.model.evaluate(self.train_logits, train_data)
+        D_logits, D_logits_ = self.model.inference(train_data, self.batch_size, train_ans)
+        self.dis_loss, self.gen_loss = self.model.loss(D_logits, D_logits_, train_ans) if self.name == 'ACGAN' else self.model.loss(D_logits, D_logits_)
+        self.opt_D, self.opt_G = self.model.optimize(d_loss=self.dis_loss, g_loss=self.gen_loss, global_step=self.global_step)
+        self.train_accuracy = self.model.evaluate(D_logits, D_logits_)
 
         # test
-        self.test_logits = self.model.test_inference(valid_data, valid_ans, True) if self.conditional else self.model.test_inference(valid_data, reuse=True)
-        self.test_loss = self.model.loss(self.test_logits, valid_data)
-        self.test_accuracy = self.model.evaluate(self.test_logits, valid_data)
-
+        self.test_logits = self.model.predict(valid_data, self.batch_size*3)
         return 
+
+    def summary(self, train_inputs, valid_inputs):
+        """
+        tensorboardに表示するデータをまとめる関数
+        """
+        tf.summary.scalar('global_step', self.global_step)
+        tf.summary.scalar('discriminator_loss', self.dis_loss)
+        tf.summary.scalar('generator_loss', self.gen_loss)
+        tf.summary.histogram('generator_output', self.test_logits)
+        tf.summary.histogram('True_image', train_inputs)
+        tf.summary.image('image', train_inputs)
+        tf.summary.image('fake_image', self.test_logits)
+        return
 
     def hook_append(self, metrics, signature_def_map=None):
         """
         hooksをまとめる関数
         """
-        hooks = super().hook_append(metrics=metrics, signature_def_map=signature_def_map)
+        hooks = []
         hooks.append(MyLoggerHook(self.message, self.util.log_dir, metrics, every_n_iter=100))
         hooks.append(SavedModelBuilderHook(self.util.saved_model_path, signature_def_map))
         hooks.append(GanHook(self.test_logits, self.util.log_dir, every_n_iter=100))
+        hooks.append(tf.train.NanTensorHook(self.dis_loss))
+        hooks.append(tf.train.NanTensorHook(self.gen_loss))
         if self.max_steps:
             hooks.append(tf.train.StopAtStepHook(last_step=self.max_steps))
         return hooks
 
+    def before_train(self):
+
+        def init_fn(scaffold, session):
+            session.run([self.iterator.initializer],
+                        feed_dict={self.data.features_placeholder: self.data.x_train,
+                                   self.data.labels_placeholder: self.data.y_train})
+        
+        # create saver
+        self.saver = tf.train.Saver(
+                max_to_keep=self.checkpoints_to_keep,
+                keep_checkpoint_every_n_hours=self.keep_checkpoint_every_n_hours)
+
+        scaffold = tf.train.Scaffold(
+            init_fn=init_fn,
+            saver=self.saver)
+
+        tf.logging.set_verbosity(tf.logging.INFO)
+        config = tf.ConfigProto(allow_soft_placement=True, log_device_placement=False)
+
+        # saved model
+        signature_def_map = {
+                        'predict': tf.saved_model.signature_def_utils.build_signature_def(
+                            inputs={'inputs': tf.saved_model.utils.build_tensor_info(self.data.features_placeholder)},
+                            outputs={'predict': tf.saved_model.utils.build_tensor_info(self.test_logits)},
+                            method_name=tf.saved_model.signature_constants.PREDICT_METHOD_NAME,)
+                        }
+
+        metrics = OrderedDict({
+            "global_step": self.global_step,
+            "Generator loss": self.gen_loss,
+            "Discriminator loss" : self.dis_loss,
+            "train accuracy":self.train_accuracy})
+
+        hooks = self.hook_append(metrics, signature_def_map)
+
+        session = tf.train.MonitoredTrainingSession(
+            config=config,
+            checkpoint_dir=self.util.model_path,
+            hooks=hooks,
+            scaffold=scaffold,
+            save_summaries_steps=1,
+            save_checkpoint_steps=self.save_checkpoint_steps,
+            summary_dir=self.util.tf_board)
+
+        return session
+
     def train(self):
         self.util.conf_log()
-        inputs, corrects, valid_inputs, valid_labels = self.load()
-        self.build_logits(inputs, corrects, valid_inputs, valid_labels)
+        inputs, corrects, valid_inputs = self.load()
+        self.build_logits(inputs, corrects, valid_inputs)
         self.summary(inputs, valid_inputs)
         session = self.before_train()
 

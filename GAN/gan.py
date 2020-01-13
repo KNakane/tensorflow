@@ -1,9 +1,8 @@
 import os,sys
 import numpy as np
 import tensorflow as tf
-sys.path.append('./utility')
-from optimizer import *
-from based_gan import BasedGAN, Discriminator, Generator, Classifier
+from utility.optimizer import *
+from GAN.based_gan import BasedGAN, Discriminator, Generator, Classifier
 
 class GAN(BasedGAN):
     def __init__(self, *args, **kwargs):
@@ -198,8 +197,8 @@ class DCGAN(GAN):
             ['conv', 4, 128, 2, None],
             ['BN'],
             ['Leaky_ReLU'],
-            #['reshape', [-1, 7*7*128]], # mnist
-            ['reshape', [-1, 8*8*128]], # cifar10
+            ['reshape', [-1, 7*7*128]], # mnist
+            #['reshape', [-1, 8*8*128]], # cifar10
             ['fc', 1, None]
         ]
 
