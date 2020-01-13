@@ -43,7 +43,7 @@ def construction_image(args):
         "Augmentation": args.aug})
 
     data = Load(args.data)
-    model = eval(args.network)(name=args.network, size=data.size, channel=data.channel, out_dim=data.output_dim*2, lr=args.lr, opt=args.opt, l2_reg=args.l2_norm)
+    model = eval(args.network)(name=args.network, size=data.size, channel=data.channel, out_dim=4, lr=args.lr, opt=args.opt, l2_reg=args.l2_norm)
 
     #training
     trainer = AE_Trainer(args, message, data, model, args.network)

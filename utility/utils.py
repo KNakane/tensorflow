@@ -159,14 +159,32 @@ class Utils():
         plt.savefig(self.log_dir + '/construct_figure_{}.png'.format(step))
         plt.close()
 
-    def reconstruct_image(self, decoded_imgs):
+    def reconstruct_image(self, decoded_imgs, step):
         """
         VAEで出力した画像の図を作成する
         """
-        plt.figure(figsize=(8, 8)) 
-        plt.imshow(decoded_imgs, cmap="gray")
-        plt.savefig(self.log_dir + '/construct_figure.png')
-        plt.close()
+        amount_image = int(np.sqrt(decoded_imgs.shape[0]))
+        fig = plt.figure(figsize=(amount_image, amount_image))
+        gs = gridspec.GridSpec(amount_image, amount_image)
+        gs.update(wspace=0.05, hspace=0.05)
+
+        for i in range(amount_image**2):
+            ax = plt.subplot(gs[i])
+            plt.axis('off')
+            ax.set_xticklabels([])
+            ax.set_yticklabels([])
+            ax.set_aspect('equal')
+            try:
+                plt.imshow(decoded_imgs[i].reshape(28, 28), cmap='Greys_r')
+            except:
+                plt.imshow(np.clip(decoded_imgs[i],0,255))
+
+        plt.subplots_adjust(left=0, right=1, bottom=0, top=1)
+        plt.savefig(self.log_dir + '/construct_figure_{}.png'.format(step))
+
+        plt.close(fig)
+
+        return 
 
     def gan_plot(self, samples):
         """

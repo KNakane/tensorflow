@@ -140,6 +140,15 @@ class AE_Trainer(Trainer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+
+    @tf.function
+    def _test_body(self, images, labels):
+        y_pre, loss, acc = super()._test_body(images, labels)
+        with tf.name_scope('Prediction'):
+            predict = self.model.predict(images)
+
+        return y_pre, loss, acc, predict
+
     def train(self):
         board_writer = self.begin_train()
         board_writer.set_as_default()
@@ -154,10 +163,14 @@ class AE_Trainer(Trainer):
                 train_pre, train_loss, train_accuracy = self._train_body(train_images, train_images)
             time_per_episode = time.time() - start_time
             for (_, (test_images, _)) in enumerate(test_dataset.take(self.batch_size)):
-                test_pre, test_loss, test_accuracy = self._test_body(test_images, test_images)
+                test_pre, test_loss, test_accuracy, predict_image = self._test_body(test_images, test_images)
 
             if i == 1 or i % 50 == 0:
-                self.util.construct_figure(test_images.numpy(), test_pre.numpy(), i)
+                if self.name == 'AE':
+                    self.util.construct_figure(test_images.numpy(), test_pre.numpy(), i)
+        
+                elif self.name == 'VAE' or self.name == 'CVAE':
+                    self.util.reconstruct_image(predict_image.numpy(), i)
 
             # Training results
             metrics = OrderedDict({
