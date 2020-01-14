@@ -140,10 +140,22 @@ class AE_Trainer(Trainer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+    @tf.function
+    def _train_body(self, images, correct_image, labels):
+        with tf.GradientTape() as tape:
+            with tf.name_scope('train_logits'):
+                y_pre = self.model.inference(images, labels) if self.name == 'CVAE' else self.model.inference(images)
+            with tf.name_scope('train_loss'):
+                loss = self.model.loss(y_pre, correct_image)
+        self.model.optimize(loss, tape)
+        with tf.name_scope('train_accuracy'):
+            acc = self.model.accuracy(y_pre, correct_image)
+        return y_pre, loss, acc
+
 
     @tf.function
-    def _test_body(self, images, labels):
-        y_pre, loss, acc = super()._test_body(images, labels)
+    def _test_body(self, images, correct_image):
+        y_pre, loss, acc = super()._test_body(images, correct_image)
         with tf.name_scope('Prediction'):
             predict = self.model.predict(images)
 
@@ -159,8 +171,8 @@ class AE_Trainer(Trainer):
 
         for i in range(1, self.n_epoch+1):
             start_time = time.time()
-            for (_, (train_images, _)) in enumerate(train_dataset.take(self.batch_size)):
-                train_pre, train_loss, train_accuracy = self._train_body(train_images, train_images)
+            for (_, (train_images, train_labels)) in enumerate(train_dataset.take(self.batch_size)):
+                train_pre, train_loss, train_accuracy = self._train_body(train_images, train_images, train_labels)
             time_per_episode = time.time() - start_time
             for (_, (test_images, _)) in enumerate(test_dataset.take(self.batch_size)):
                 test_pre, test_loss, test_accuracy, predict_image = self._test_body(test_images, test_images)

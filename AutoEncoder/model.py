@@ -75,6 +75,7 @@ class AutoEncoder(Model):
                  size=28,
                  channel=1,
                  out_dim=10,
+                 class_dim=10,
                  opt="Adam",   # Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]
                  lr=0.001,
                  l2_reg=False,
@@ -85,7 +86,9 @@ class AutoEncoder(Model):
         self.encode = Encoder(out_dim=out_dim, l2_reg=l2_reg, l2_reg_scale=l2_reg_scale)
         self.decode = Decoder(size=size, channel=channel, l2_reg=l2_reg, l2_reg_scale=l2_reg_scale)
         self.denoise = denoise
-        self.out_dim = out_dim
+        self.class_dim = class_dim
+        self.size = size
+        self.channel =  channel
         self.optimizer = eval(opt)(learning_rate=lr, decay_step=None, decay_rate=0.95)
         self.l2_regularizer = l2_reg_scale if l2_reg else None
 
@@ -179,3 +182,71 @@ class VAE(AutoEncoder):
     def gaussian(self, batch_size, n_dim, mean=0, var=1):
         z = tf.random.normal(shape=(batch_size, n_dim), mean=mean, stddev=var)
         return z
+
+class CVAE(VAE):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def inference(self, outputs, labels=None, trainable=True):
+        self.inputs = outputs
+        if self.denoise:
+            outputs = self.noise(outputs)
+        outputs = self.combine_image(outputs, labels)
+        outputs = self.encode(outputs, trainable)
+        self.mu, self.var = tf.split(outputs, num_or_size_splits=2, axis=1)
+        compose_img = self.re_parameterization(self.mu, self.var)
+        compose_img = self.combine_distribution(compose_img, labels)
+        outputs = tf.clip_by_value(self.decode(compose_img, trainable), 1e-8, 1 - 1e-8)
+        return outputs
+
+    def test_inference(self, outputs, trainable=False):
+        return self.inference(outputs, trainable)
+
+    def predict(self, outputs, trainable=False):
+        x = np.linspace(0, 1, 20)
+        y = np.flip(np.linspace(0, 1, 20))
+        z = []
+        for _, xi in enumerate(x):
+            for _, yi in enumerate(y):
+                z.append(np.array([xi, yi]))
+        z = np.stack(z)
+
+        indices = np.array([x % self.class_dim for x in range(z.shape[0])], dtype=np.int32)
+        labels = tf.one_hot(indices, depth=self.class_dim, dtype=tf.float32)
+
+        compose_img = self.combine_distribution(z, labels)
+
+        outputs = tf.clip_by_value(self.decode(compose_img, trainable), 1e-8, 1 - 1e-8)
+        return outputs
+
+    def combine_distribution(self, z, labels=None):
+        """
+        latent vector Z と label情報をConcatする
+        parameters
+        ----------
+        z : 一様分布から生成した乱数
+        label : labelデータ
+        returns
+        ----------
+        image : labelをconcatしたデータ
+        """
+        assert labels is not None
+        return tf.concat([z, labels], axis=1)
+
+    def combine_image(self, image, labels=None):
+        """
+        Generatorで生成した画像とlabelをConcatする
+        
+        parameters
+        ----------
+        image : Generatorで生成した画像
+        label : labelデータ
+        returns
+        ----------
+        image : labelをconcatしたデータ
+        """
+        assert labels is not None
+        labels = tf.reshape(labels, [-1, 1, 1, self.class_dim])
+        label_image = tf.ones((labels.shape[0], self.size, self.size, self.class_dim))
+        label_image = tf.multiply(labels, label_image)
+        return tf.concat([image, label_image], axis=3)

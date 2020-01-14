@@ -3,7 +3,7 @@ import argparse
 import tensorflow as tf
 from CNN.lenet import LeNet, VGG
 from CNN.resnet import ResNet18, ResNet34
-from AutoEncoder.model import AutoEncoder, VAE
+from AutoEncoder.model import AutoEncoder, VAE, CVAE
 from GAN.gan import GAN
 from GAN.dcgan import DCGAN
 from dataset.load import Load
@@ -43,7 +43,7 @@ def construction_image(args):
         "Augmentation": args.aug})
 
     data = Load(args.data)
-    model = eval(args.network)(name=args.network, size=data.size, channel=data.channel, out_dim=4, lr=args.lr, opt=args.opt, l2_reg=args.l2_norm)
+    model = eval(args.network)(name=args.network, size=data.size, channel=data.channel, out_dim=4, class_dim=data.output_dim, lr=args.lr, opt=args.opt, l2_reg=args.l2_norm)
 
     #training
     trainer = AE_Trainer(args, message, data, model, args.network)
@@ -81,7 +81,7 @@ def GAN_fn(args):
 def main(args):
     if args.network == 'LeNet' or args.network == 'VGG' or args.network == 'ResNet18' or args.network == 'ResNet34':
         image_recognition(args)
-    elif args.network == 'AutoEncoder' or args.network == 'VAE':
+    elif args.network == 'AutoEncoder' or args.network == 'VAE' or args.network == 'CVAE':
         construction_image(args)
     elif args.network == 'GAN' or args.network == 'DCGAN':
         GAN_fn(args)
@@ -91,7 +91,7 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--network', default='LeNet', type=str, choices=['LeNet','VGG','ResNet18','ResNet34','AutoEncoder','VAE','GAN','DCGAN'])
+    parser.add_argument('--network', default='LeNet', type=str, choices=['LeNet','VGG','ResNet18','ResNet34','AutoEncoder','VAE', 'CVAE','GAN','DCGAN'])
     parser.add_argument('--data', default='mnist', type=str, choices=['mnist','cifar10','cifar100','kuzushiji'])
     parser.add_argument('--n_epoch', default=1000, type=int, help='Input max epoch')
     parser.add_argument('--batch_size', default=32, type=int, help='Input batch size')
