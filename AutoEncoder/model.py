@@ -199,12 +199,12 @@ class CVAE(VAE):
         outputs = tf.clip_by_value(self.decode(compose_img, trainable), 1e-8, 1 - 1e-8)
         return outputs
 
-    def test_inference(self, outputs, trainable=False):
-        return self.inference(outputs, trainable)
+    def test_inference(self, outputs, labels=None, trainable=False):
+        return self.inference(outputs, labels, trainable)
 
     def predict(self, outputs, trainable=False):
-        x = np.linspace(0, 1, 20)
-        y = np.flip(np.linspace(0, 1, 20))
+        x = np.linspace(0, 1, 20, dtype=np.float32)
+        y = np.flip(np.linspace(0, 1, 20, dtype=np.float32))
         z = []
         for _, xi in enumerate(x):
             for _, yi in enumerate(y):
@@ -212,7 +212,8 @@ class CVAE(VAE):
         z = np.stack(z)
 
         indices = np.array([x % self.class_dim for x in range(z.shape[0])], dtype=np.int32)
-        labels = tf.one_hot(indices, depth=self.class_dim, dtype=tf.float32)
+        labels = np.identity(self.class_dim, dtype=np.float32)[indices]
+        #labels = tf.one_hot(indices, depth=self.class_dim, dtype=tf.float32)
 
         compose_img = self.combine_distribution(z, labels)
 

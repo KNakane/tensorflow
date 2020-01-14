@@ -154,8 +154,13 @@ class AE_Trainer(Trainer):
 
 
     @tf.function
-    def _test_body(self, images, correct_image):
-        y_pre, loss, acc = super()._test_body(images, correct_image)
+    def _test_body(self, images, correct_image, labels):
+        with tf.name_scope('test_logits'):
+            y_pre = self.model.test_inference(images, labels) if self.name == 'CVAE' else self.model.test_inference(images)
+        with tf.name_scope('test_loss'):
+            loss = self.model.loss(y_pre, correct_image)
+        with tf.name_scope('test_accuracy'):
+            acc = self.model.accuracy(y_pre, correct_image)
         with tf.name_scope('Prediction'):
             predict = self.model.predict(images)
 
@@ -174,8 +179,8 @@ class AE_Trainer(Trainer):
             for (_, (train_images, train_labels)) in enumerate(train_dataset.take(self.batch_size)):
                 train_pre, train_loss, train_accuracy = self._train_body(train_images, train_images, train_labels)
             time_per_episode = time.time() - start_time
-            for (_, (test_images, _)) in enumerate(test_dataset.take(self.batch_size)):
-                test_pre, test_loss, test_accuracy, predict_image = self._test_body(test_images, test_images)
+            for (_, (test_images, test_labels)) in enumerate(test_dataset.take(self.batch_size)):
+                test_pre, test_loss, test_accuracy, predict_image = self._test_body(test_images, test_images, test_labels)
 
             if i == 1 or i % 50 == 0:
                 if self.name == 'AE':
