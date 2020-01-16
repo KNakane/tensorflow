@@ -381,11 +381,12 @@ class AEHook(GanHook):
            self.plot_figure(session.run([self.image])[0], self._iter_count)
 
     def plot_figure(self, samples, iteration):
-        fig = plt.figure(figsize=(6, 6))
-        gs = gridspec.GridSpec(6, 6)
+        amount_image = int(np.sqrt(samples.shape[0]))
+        fig = plt.figure(figsize=(amount_image, amount_image))
+        gs = gridspec.GridSpec(amount_image, amount_image)
         gs.update(wspace=0.05, hspace=0.05)
 
-        for i in range(36):
+        for i in range(amount_image**2):
             ax = plt.subplot(gs[i])
             plt.axis('off')
             ax.set_xticklabels([])
@@ -394,9 +395,9 @@ class AEHook(GanHook):
             try:
                 plt.imshow(samples[i].reshape(28, 28), cmap='Greys_r')
             except:
-                plt.imshow(samples[i])
+                plt.imshow(np.clip(samples[i],0,255))
 
-        
+        plt.subplots_adjust(left=0, right=1, bottom=0, top=1)
         name = self.log_dir + '/{}.png'.format(str(iteration).zfill(3))
         plt.savefig(name, bbox_inches='tight')
         plt.close(fig)

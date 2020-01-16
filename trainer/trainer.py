@@ -202,7 +202,7 @@ class AETrainer(BasedTrainer):
         hooks = super().hook_append(metrics=metrics, signature_def_map=signature_def_map)
         hooks.append(MyLoggerHook(self.message, self.util.log_dir, metrics, every_n_iter=100))
         hooks.append(SavedModelBuilderHook(self.util.saved_model_path, signature_def_map))
-        hooks.append(AEHook(self.test_logits, self.util.log_dir, every_n_iter=100))
+        hooks.append(AEHook(self.predict_img, self.util.log_dir, every_n_iter=100) if self.name == 'VAE' or self.name == 'CVAE' else AEHook(self.test_logits, self.util.log_dir, every_n_iter=100))
         if self.max_steps:
             hooks.append(tf.train.StopAtStepHook(last_step=self.max_steps))
         return hooks
