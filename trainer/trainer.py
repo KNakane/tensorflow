@@ -221,12 +221,14 @@ class AETrainer(BasedTrainer):
                     # Restores from checkpoint
                     self.saver.restore(session, ckpt.model_checkpoint_path)
             while not session.should_stop():
-                if self.name == 'AE':
+                if self.name == 'AutoEncoder':
                     _, test_input, test_output = session.run([self.train_op, valid_inputs, self.test_logits])
                 elif self.name == 'VAE' or self.name == 'CVAE':
                     _, test_input, _, test_output = session.run([self.train_op, valid_inputs, self.test_logits, self.predict_img])
+                else:
+                    session.close()
         
-        if self.name == 'AE':
+        if self.name == 'AutoEncoder':
             self.util.construct_figure(test_input, test_output)
         
         elif self.name == 'VAE' or self.name == 'CVAE':
