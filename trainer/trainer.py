@@ -140,7 +140,7 @@ class AE_Trainer(Trainer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    @tf.function
+    #@tf.function
     def _train_body(self, images, correct_image, labels):
         with tf.GradientTape() as tape:
             with tf.name_scope('train_logits'):

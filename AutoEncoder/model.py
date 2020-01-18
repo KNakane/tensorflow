@@ -142,7 +142,9 @@ class VAE(AutoEncoder):
         return outputs
 
     def test_inference(self, outputs, trainable=False):
-        return self.inference(outputs, trainable)
+        compose_img, self.mu, self.var = self.gaussian(outputs.shape[0],2)
+        outputs = tf.clip_by_value(self.decode(compose_img, trainable), 1e-8, 1 - 1e-8)
+        return outputs
 
     def predict(self, outputs, trainable=False):
         x = np.linspace(0, 1, 20)
@@ -152,7 +154,7 @@ class VAE(AutoEncoder):
             for j, yi in enumerate(y):
                 z.append(np.array([xi, yi]))
         z = np.stack(z)
-        outputs = tf.clip_by_value(self.decode(tf.convert_to_tensor(z, dtype=tf.float32), trainable), 1e-8, 1 - 1e-8)
+        outputs = tf.clip_by_value(self.decode(z, trainable), 1e-8, 1 - 1e-8)
         return outputs
 
     def loss(self, logits, answer):
@@ -176,12 +178,14 @@ class VAE(AutoEncoder):
             mu is average, var is variance
         """
         with tf.name_scope('re_parameterization'):
-            eps = tf.random.normal(tf.shape(var), dtype=tf.float32)
+            eps = tf.random.normal(shape=tf.shape(var), mean=mu, stddev=var, dtype=tf.float32)
             return mu + tf.exp(0.5*var) * eps        
 
     def gaussian(self, batch_size, n_dim, mean=0, var=1):
-        z = tf.random.normal(shape=(batch_size, n_dim), mean=mean, stddev=var)
-        return z
+        z = tf.random.normal(shape=(batch_size, n_dim), mean=mean, stddev=var, dtype=tf.float32)
+        mean = np.ones([batch_size, n_dim], dtype=np.float32) * mean
+        var = np.ones([batch_size, n_dim], dtype=np.float32) * var
+        return z, mean, var
 
 class CVAE(VAE):
     def __init__(self, *args, **kwargs):
