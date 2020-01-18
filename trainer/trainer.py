@@ -140,7 +140,7 @@ class AE_Trainer(Trainer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    #@tf.function
+    @tf.function
     def _train_body(self, images, correct_image, labels):
         with tf.GradientTape() as tape:
             with tf.name_scope('train_logits'):
@@ -174,39 +174,49 @@ class AE_Trainer(Trainer):
         
         train_dataset, test_dataset = self.load()
 
-        for i in range(1, self.n_epoch+1):
-            start_time = time.time()
-            for (_, (train_images, train_labels)) in enumerate(train_dataset.take(self.batch_size)):
-                train_pre, train_loss, train_accuracy = self._train_body(train_images, train_images, train_labels)
-            time_per_episode = time.time() - start_time
-            for (_, (test_images, test_labels)) in enumerate(test_dataset.take(self.batch_size)):
-                test_pre, test_loss, test_accuracy, predict_image = self._test_body(test_images, test_images, test_labels)
+        # Graph for tensorboard
+        tf.summary.trace_on(graph=True, profiler=True)
+        with board_writer.as_default():
+            for i in range(1, self.n_epoch+1):
+                start_time = time.time()
+                for (_, (train_images, train_labels)) in enumerate(train_dataset.take(self.batch_size)):
+                    train_pre, train_loss, train_accuracy = self._train_body(train_images, train_images, train_labels)
+                time_per_episode = time.time() - start_time
+                
+                if i == 1:
+                    tf.summary.trace_export("summary", step=1, profiler_outdir=self.util.tf_board)
+                    tf.summary.trace_off()
 
-            if i == 1 or i % 50 == 0:
-                if self.name == 'AE':
-                    self.util.construct_figure(test_images.numpy(), test_pre.numpy(), i)
-        
-                elif self.name == 'VAE' or self.name == 'CVAE':
-                    self.util.reconstruct_image(predict_image.numpy(), i)
+                for (_, (test_images, test_labels)) in enumerate(test_dataset.take(self.batch_size)):
+                    test_pre, test_loss, test_accuracy, predict_image = self._test_body(test_images, test_images, test_labels)
 
-            # Training results
-            metrics = OrderedDict({
-                "epoch": i,
-                "train_loss": train_loss.numpy(),
-                "train_accuracy":train_accuracy,
-                "test_loss": test_loss.numpy(),
-                "test_accuracy" : test_accuracy.numpy(),
-                "time/epoch": time_per_episode
-            })
+                if i == 1 or i % 50 == 0:
+                    if self.name == 'AE':
+                        self.util.construct_figure(test_images.numpy(), test_pre.numpy(), i)
+            
+                    elif self.name == 'VAE' or self.name == 'CVAE':
+                        self.util.reconstruct_image(predict_image.numpy(), i)
 
-            #
-            other_metrics = OrderedDict({
-                "train_image" : train_images[:3],
-                "test_image" : test_images[:3],
-                "Decode_train_image" : train_pre,
-                "Decode_test_image" : test_pre
-            })
-            self.epoch_end(metrics, other_metrics)
+                # Training results
+                metrics = OrderedDict({
+                    "epoch": i,
+                    "train_loss": train_loss.numpy(),
+                    "train_accuracy":train_accuracy,
+                    "test_loss": test_loss.numpy(),
+                    "test_accuracy" : test_accuracy.numpy(),
+                    "time/epoch": time_per_episode
+                })
+
+                #
+                other_metrics = OrderedDict({
+                    "train_image" : train_images[:3],
+                    "test_image" : test_images[:3],
+                    "Decode_train_image" : train_pre,
+                    "Decode_test_image" : test_pre
+                })
+                self.epoch_end(metrics, other_metrics)
+
+        tf.summary.trace_off()
         return
 
 
