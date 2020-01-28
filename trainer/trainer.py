@@ -191,7 +191,7 @@ class AE_Trainer(Trainer):
                     test_pre, test_loss, test_accuracy, predict_image = self._test_body(test_images, test_images, test_labels)
 
                 if i == 1 or i % 50 == 0:
-                    if self.name == 'AE':
+                    if self.name == 'AutoEncoder':
                         self.util.construct_figure(test_images.numpy(), test_pre.numpy(), i)
             
                     elif self.name == 'VAE' or self.name == 'CVAE':
@@ -287,7 +287,7 @@ class GAN_Trainer(Trainer):
             time_per_episode = time.time() - start_time
             test_pre = self._test_body(test_inputs)
 
-            if i == 1 or i % 5 == 0:
+            if i == 1 or i % 50 == 0:
                 self.util.plot_figure(test_pre.numpy(), i)
 
             # Training results
