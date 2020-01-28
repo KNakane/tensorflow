@@ -2,75 +2,14 @@ import os, sys
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.models import Model
+from AutoEncoder.encoder_decoder import Encoder, Decoder, Conv_Encoder, Conv_Decoder
 from utility.optimizer import *
-
-class Encoder(Model):
-    def __init__(self, 
-                 model=None,
-                 name='Encoder',
-                 out_dim=10,
-                 l2_reg=False,
-                 l2_reg_scale=0.0001
-                 ):
-        super().__init__()
-        self.model_name = name
-        self.out_dim = out_dim
-        self.l2_regularizer = l2_reg_scale if l2_reg else None
-        self._build()
-
-    def _build(self):
-        self.flat = tf.keras.layers.Flatten()
-        self.fc1 = tf.keras.layers.Dense(256, activation='relu', kernel_regularizer=self.l2_regularizer)
-        self.fc2 = tf.keras.layers.Dense(128, activation='relu', kernel_regularizer=self.l2_regularizer)
-        self.fc3 = tf.keras.layers.Dense(64, activation='relu', kernel_regularizer=self.l2_regularizer)
-        self.out = tf.keras.layers.Dense(self.out_dim, activation='relu', kernel_regularizer=self.l2_regularizer)
-        return
-
-    def __call__(self, x, trainable=True):
-        x = self.flat(x, training=trainable)
-        x = self.fc1(x, training=trainable)
-        x = self.fc2(x, training=trainable)
-        x = self.fc3(x, training=trainable)
-        x = self.out(x, training=trainable)
-        return x
-
-
-class Decoder(Model):
-    def __init__(self, 
-                 model=None,
-                 name='Encoder',
-                 size=28,
-                 channel=1,
-                 l2_reg=False,
-                 l2_reg_scale=0.0001
-                 ):
-        super().__init__()
-        self.model_name = name
-        self.size = size
-        self.channel = channel
-        self.l2_regularizer = l2_reg_scale if l2_reg else None
-        self._build()
-
-    def _build(self):
-        self.fc1 = tf.keras.layers.Dense(64, activation='relu', kernel_regularizer=self.l2_regularizer)
-        self.fc2 = tf.keras.layers.Dense(128, activation='relu', kernel_regularizer=self.l2_regularizer)
-        self.fc3 = tf.keras.layers.Dense(256, activation='relu', kernel_regularizer=self.l2_regularizer)
-        self.fc4 = tf.keras.layers.Dense(self.size**2 * self.channel, activation='sigmoid', kernel_regularizer=self.l2_regularizer)
-        self.out = tf.keras.layers.Reshape((self.size,self.size,self.channel))
-        return
-
-    def __call__(self, x, trainable=True):
-        x = self.fc1(x, training=trainable)
-        x = self.fc2(x, training=trainable)
-        x = self.fc3(x, training=trainable)
-        x = self.fc4(x, training=trainable)
-        x = self.out(x, training=trainable)
-        return x
 
 
 class AutoEncoder(Model):
     def __init__(self, 
                  denoise=False,
+                 conv=False,
                  name='AutoEncoder',
                  size=28,
                  channel=1,
@@ -83,8 +22,10 @@ class AutoEncoder(Model):
                  ):
         super().__init__()
         self.model_name = name
-        self.encode = Encoder(out_dim=out_dim, l2_reg=l2_reg, l2_reg_scale=l2_reg_scale)
-        self.decode = Decoder(size=size, channel=channel, l2_reg=l2_reg, l2_reg_scale=l2_reg_scale)
+        Encoder_model = Conv_Encoder if conv else Encoder
+        Decoder_model = Conv_Decoder if conv else Decoder
+        self.encode = Encoder_model(out_dim=out_dim, l2_reg=l2_reg, l2_reg_scale=l2_reg_scale)
+        self.decode = Decoder_model(size=size, channel=channel, l2_reg=l2_reg, l2_reg_scale=l2_reg_scale)
         self.denoise = denoise
         self.class_dim = class_dim
         self.size = size
@@ -93,7 +34,7 @@ class AutoEncoder(Model):
         self.l2_regularizer = l2_reg_scale if l2_reg else None
 
     def noise(self, outputs):
-        outputs += tf.random_normal(tf.shape(outputs))
+        outputs += tf.random.normal(tf.shape(outputs))
         return tf.clip_by_value(outputs, 1e-8, 1 - 1e-8)
     
     def inference(self, outputs, trainable=True):

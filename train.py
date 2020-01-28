@@ -43,7 +43,16 @@ def construction_image(args):
         "Augmentation": args.aug})
 
     data = Load(args.data)
-    model = eval(args.network)(name=args.network, size=data.size, channel=data.channel, out_dim=4, class_dim=data.output_dim, lr=args.lr, opt=args.opt, l2_reg=args.l2_norm)
+    model = eval(args.network)(denoise=args.denoise,
+                               conv=args.conv,
+                               name=args.network,
+                               size=data.size,
+                               channel=data.channel,
+                               out_dim=4,
+                               class_dim=data.output_dim,
+                               lr=args.lr,
+                               opt=args.opt,
+                               l2_reg=args.l2_norm)
 
     #training
     trainer = AE_Trainer(args, message, data, model, args.network)
@@ -99,6 +108,7 @@ if __name__ == '__main__':
     parser.add_argument('--opt', default='SGD', type=str, choices=['SGD','Momentum','Adadelta','Adagrad','Adam','RMSProp'])
     parser.add_argument('--aug', default=None, type=str, choices=['shift','mirror','rotate','shift_rotate','cutout','random_erace'])
     parser.add_argument('--denoise', action='store_true', help='True : Denoising AE, False : standard AE')
+    parser.add_argument('--conv', action='store_true', help='True : Convolutional AE, False : standard AE')
     parser.add_argument('--l2_norm', action='store_true', help='L2 normalization or not')
     parser.add_argument('--z_dim', default=100, type=int, help='Latent z dimension')
     parser.add_argument('--conditional', action='store_true', help='Conditional true or false')
