@@ -1,4 +1,4 @@
-import os, sys
+import os, sys, re
 import argparse
 import tensorflow as tf
 from CNN.lenet import LeNet, VGG
@@ -7,8 +7,17 @@ from AutoEncoder.model import AutoEncoder, VAE, CVAE
 from GAN.gan import GAN
 from GAN.dcgan import DCGAN
 from dataset.load import Load
-from trainer.trainer import Trainer, AE_Trainer, GAN_Trainer
 from collections import OrderedDict
+from tensorflow.python.client import device_lib
+from trainer.trainer import Trainer, AE_Trainer, GAN_Trainer
+
+
+def find_gpu():
+    device_list = device_lib.list_local_devices()
+    for device in device_list:
+        if re.match('/device:GPU', device.name):
+            return 0
+    return -1
 
 
 def image_recognition(args):
@@ -20,7 +29,8 @@ def image_recognition(args):
         "Optimizer":args.opt,
         "learning_rate":args.lr,
         "l2_norm": args.l2_norm,
-        "Augmentation": args.aug})
+        "Augmentation": args.aug,
+        "GPU/CPU": args.gpu})
 
     data = Load(args.data)
     model = eval(args.network)(name=args.network, out_dim=data.output_dim, lr=args.lr, opt=args.opt, l2_reg=args.l2_norm)
@@ -40,7 +50,8 @@ def construction_image(args):
         "Optimizer":args.opt,
         "learning_rate":args.lr,
         "l2_norm": args.l2_norm,
-        "Augmentation": args.aug})
+        "Augmentation": args.aug,
+        "GPU/CPU": args.gpu})
 
     data = Load(args.data)
     model = eval(args.network)(denoise=args.denoise,
@@ -71,7 +82,8 @@ def GAN_fn(args):
         "learning_rate":args.lr,
         "n_disc_update":args.n_disc_update,
         "l2_norm":args.l2_norm,
-        "Augmentation": args.aug})
+        "Augmentation": args.aug,
+        "GPU/CPU": args.gpu})
 
     data = Load(args.data)
     model = eval(args.network)(z_dim=args.z_dim,
@@ -88,6 +100,8 @@ def GAN_fn(args):
 
 
 def main(args):
+    gpu = find_gpu()
+    args.gpu = "/gpu:{}".format(gpu) if gpu >= 0 else "/cpu:0"
     if args.network == 'LeNet' or args.network == 'VGG' or args.network == 'ResNet18' or args.network == 'ResNet34':
         image_recognition(args)
     elif args.network == 'AutoEncoder' or args.network == 'VAE' or args.network == 'CVAE':
