@@ -37,6 +37,7 @@ class AutoEncoder(Model):
         outputs += tf.random.normal(tf.shape(outputs))
         return tf.clip_by_value(outputs, 1e-8, 1 - 1e-8)
     
+    @tf.function
     def inference(self, outputs, trainable=True):
         self.inputs = outputs
         if self.denoise:
@@ -72,6 +73,7 @@ class VAE(AutoEncoder):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+    @tf.function
     def inference(self, outputs, trainable=True):
         self.inputs = outputs
         if self.denoise:
@@ -82,6 +84,7 @@ class VAE(AutoEncoder):
         outputs = tf.clip_by_value(self.decode(compose_img, trainable), 1e-8, 1 - 1e-8)
         return outputs
 
+    @tf.function
     def test_inference(self, outputs, trainable=False):
         compose_img, self.mu, self.var = self.gaussian(outputs.shape[0],2)
         outputs = tf.clip_by_value(self.decode(compose_img, trainable), 1e-8, 1 - 1e-8)
@@ -120,7 +123,7 @@ class VAE(AutoEncoder):
         """
         with tf.name_scope('re_parameterization'):
             eps = tf.random.normal(shape=tf.shape(var), mean=mu, stddev=var, dtype=tf.float32)
-            return mu + tf.exp(0.5*var) * eps        
+            return tf.cast(mu + tf.exp(0.5*var) * eps, dtype=tf.float32)    
 
     def gaussian(self, batch_size, n_dim, mean=0, var=1):
         z = tf.random.normal(shape=(batch_size, n_dim), mean=mean, stddev=var, dtype=tf.float32)
