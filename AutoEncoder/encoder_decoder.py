@@ -23,6 +23,7 @@ class Encoder(Model):
         self.out = tf.keras.layers.Dense(self.out_dim, activation='relu', kernel_regularizer=self.l2_regularizer)
         return
 
+    @tf.function
     def __call__(self, x, trainable=True):
         x = self.flat(x, training=trainable)
         x = self.fc1(x, training=trainable)
@@ -43,8 +44,11 @@ class Conv_Encoder(Encoder):
         self.max_pool2 = tf.keras.layers.MaxPooling2D((2, 2), padding='same')
         self.conv3 = tf.keras.layers.Conv2D(filters=8, kernel_size=(3,3), activation='relu', padding='same')
         self.max_pool3 = tf.keras.layers.MaxPooling2D((2, 2), padding='same')
+        self.flat = tf.keras.layers.Flatten()
+        self.out = tf.keras.layers.Dense(self.out_dim, activation='relu', kernel_regularizer=self.l2_regularizer)
         return
 
+    @tf.function
     def __call__(self, x, trainable=True):
         x = self.conv1(x, training=trainable)
         x = self.max_pool1(x, training=trainable)
@@ -52,6 +56,8 @@ class Conv_Encoder(Encoder):
         x = self.max_pool2(x, training=trainable)
         x = self.conv3(x, training=trainable)
         x = self.max_pool3(x, training=trainable)
+        x = self.flat(x, training=trainable)
+        x = self.out(x, training=trainable)
         return x
 
 
@@ -80,6 +86,7 @@ class Decoder(Model):
         self.out = tf.keras.layers.Reshape((self.size,self.size,self.channel))
         return
 
+    @tf.function
     def __call__(self, x, trainable=True):
         x = self.fc1(x, training=trainable)
         x = self.fc2(x, training=trainable)
@@ -94,6 +101,8 @@ class Conv_Decoder(Decoder):
         super().__init__(*args, **kwargs)
 
     def _build(self):
+        self.fc = tf.keras.layers.Dense(8 * 4 * 4, activation='relu', kernel_regularizer=self.l2_regularizer)
+        self.reshape = tf.keras.layers.Reshape(target_shape=(4, 4, 8))
         self.conv1 = tf.keras.layers.Conv2D(filters=8, kernel_size=(3,3), activation='relu', padding='same')
         self.upsample1 = tf.keras.layers.UpSampling2D(size=(2, 2))
         self.conv2 = tf.keras.layers.Conv2D(filters=8, kernel_size=(3,3), activation='relu', padding='same')
@@ -103,7 +112,10 @@ class Conv_Decoder(Decoder):
         self.conv4 = tf.keras.layers.Conv2D(filters=self.channel, kernel_size=(3,3), activation='sigmoid', padding='same')
         return
 
+    @tf.function
     def __call__(self, x, trainable=True):
+        x = self.fc(x, training=trainable)
+        x = self.reshape(x)
         x = self.conv1(x, training=trainable)
         x = self.upsample1(x, training=trainable)
         x = self.conv2(x, training=trainable)
