@@ -55,12 +55,8 @@ class Load():
 
         # Transform and batch data at the same time
         dataset = dataset.map(map_func=preprocess_fn, num_parallel_calls=4)
+        dataset = dataset.shuffle(buffer_size)
         dataset = dataset.batch(batch_size, drop_remainder=True if is_training else False)
-
-        if is_training:
-            dataset = dataset.shuffle(buffer_size).repeat()  # depends on sample size
-        else:
-            dataset = dataset.shuffle(buffer_size)
         dataset = dataset.prefetch(tf.data.experimental.AUTOTUNE )
 
         return dataset
