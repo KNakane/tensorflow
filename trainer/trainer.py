@@ -22,6 +22,7 @@ class Trainer():
         self.keep_checkpoint_every_n_hours = FLAGS.keep_checkpoint_every_n_hours
         self.batch_size = FLAGS.batch_size
         self.restore_dir = FLAGS.init_model
+        self.device = FLAGS.gpu
         self.util = Utils(prefix=self.name)
         self.util.initial()
         if hasattr(FLAGS, 'aug'):
@@ -39,25 +40,27 @@ class Trainer():
 
     @tf.function
     def _train_body(self, images, labels):
-        with tf.GradientTape() as tape:
-            with tf.name_scope('train_logits'):
-                y_pre = self.model.inference(images)
-            with tf.name_scope('train_loss'):
-                loss = self.model.loss(y_pre, labels)
-        self.model.optimize(loss, tape)
-        with tf.name_scope('train_accuracy'):
-            acc = self.model.accuracy(y_pre, labels)
-        return y_pre, loss, acc
+        with tf.device(self.device):
+            with tf.GradientTape() as tape:
+                with tf.name_scope('train_logits'):
+                    y_pre = self.model.inference(images)
+                with tf.name_scope('train_loss'):
+                    loss = self.model.loss(y_pre, labels)
+            self.model.optimize(loss, tape)
+            with tf.name_scope('train_accuracy'):
+                acc = self.model.accuracy(y_pre, labels)
+            return y_pre, loss, acc
 
     @tf.function
     def _test_body(self, images, labels):
-        with tf.name_scope('test_logits'):
-            y_pre = self.model.test_inference(images)
-        with tf.name_scope('test_loss'):
-            loss = self.model.loss(y_pre, labels)
-        with tf.name_scope('test_accuracy'):
-            acc = self.model.accuracy(y_pre, labels)
-        return y_pre, loss, acc
+        with tf.device(self.device):
+            with tf.name_scope('test_logits'):
+                y_pre = self.model.test_inference(images)
+            with tf.name_scope('test_loss'):
+                loss = self.model.loss(y_pre, labels)
+            with tf.name_scope('test_accuracy'):
+                acc = self.model.accuracy(y_pre, labels)
+            return y_pre, loss, acc
 
     def epoch_end(self, metrics, other=None):
         learning_rate = self.model.optimizer.lr(metrics['epoch']).numpy() if type(self.model.optimizer.lr) is tf.optimizers.schedules.ExponentialDecay else self.model.optimizer.lr
@@ -76,8 +79,7 @@ class Trainer():
             tf.summary.image('train/decode_image', other['Decode_train_image'])
             tf.summary.image('test/decode_image', other['Decode_test_image'])
 
-
-        print("epoch: %d  train_loss: %.4f  train_accuracy: %.3f test_loss: %.4f  test_accuracy: %.3f  time/epoch: %0.3fms" 
+        print("epoch: %d  train_loss: %.4f  train_accuracy: %.3f test_loss: %.4f  test_accuracy: %.3f  time/epoch: %0.3fs" 
                                 %(metrics['epoch'], metrics['train_loss'], metrics['train_accuracy'], metrics['test_loss'], metrics['test_accuracy'], metrics['time/epoch']))
         self.util.write_log(message=metrics)
         if metrics['epoch'] % self.save_checkpoint_steps == 0:
@@ -98,11 +100,10 @@ class Trainer():
 
         # Graph for tensorboard
         tf.summary.trace_on(graph=True, profiler=True)
-
         with board_writer.as_default():
             for i in range(1, self.n_epoch+1):
                 start_time = time.time()
-                for (_, (train_images, train_labels)) in enumerate(train_dataset.take(self.batch_size)):
+                for (train_images, train_labels) in train_dataset:
                     _, loss, train_accuracy = self._train_body(train_images, train_labels)
                     train_loss = train_loss_fn(loss)
                 if i == 1:
@@ -110,7 +111,7 @@ class Trainer():
                     tf.summary.trace_off()
 
                 time_per_episode = time.time() - start_time
-                for (_, (test_images, test_labels)) in enumerate(test_dataset.take(self.batch_size)):
+                for (test_images, test_labels) in test_dataset:
                     _, loss, test_accuracy = self._test_body(test_images, test_labels)
                     test_loss = test_loss_fn(loss)
 
@@ -131,8 +132,6 @@ class Trainer():
                 })
                 self.epoch_end(metrics, other_metrics)
         
-        
-        tf.summary.trace_off()
         return
 
 
@@ -142,27 +141,29 @@ class AE_Trainer(Trainer):
 
     @tf.function
     def _train_body(self, images, correct_image, labels):
-        with tf.GradientTape() as tape:
-            with tf.name_scope('train_logits'):
-                y_pre = self.model.inference(images, labels) if self.name == 'CVAE' else self.model.inference(images)
-            with tf.name_scope('train_loss'):
-                loss = self.model.loss(y_pre, correct_image)
-        self.model.optimize(loss, tape)
-        with tf.name_scope('train_accuracy'):
-            acc = self.model.accuracy(y_pre, correct_image)
+        with tf.device(self.device):
+            with tf.GradientTape() as tape:
+                with tf.name_scope('train_logits'):
+                    y_pre = self.model.inference(images, labels) if self.name == 'CVAE' else self.model.inference(images)
+                with tf.name_scope('train_loss'):
+                    loss = self.model.loss(y_pre, correct_image)
+            self.model.optimize(loss, tape)
+            with tf.name_scope('train_accuracy'):
+                acc = self.model.accuracy(y_pre, correct_image)
         return y_pre, loss, acc
 
 
     @tf.function
     def _test_body(self, images, correct_image, labels):
-        with tf.name_scope('test_logits'):
-            y_pre = self.model.test_inference(images, labels) if self.name == 'CVAE' else self.model.test_inference(images)
-        with tf.name_scope('test_loss'):
-            loss = self.model.loss(y_pre, correct_image)
-        with tf.name_scope('test_accuracy'):
-            acc = self.model.accuracy(y_pre, correct_image)
-        with tf.name_scope('Prediction'):
-            predict = self.model.predict(images)
+        with tf.device(self.device):
+            with tf.name_scope('test_logits'):
+                y_pre = self.model.test_inference(images, labels) if self.name == 'CVAE' else self.model.test_inference(images)
+            with tf.name_scope('test_loss'):
+                loss = self.model.loss(y_pre, correct_image)
+            with tf.name_scope('test_accuracy'):
+                acc = self.model.accuracy(y_pre, correct_image)
+            with tf.name_scope('Prediction'):
+                predict = self.model.predict(images)
 
         return y_pre, loss, acc, predict
 
@@ -179,7 +180,7 @@ class AE_Trainer(Trainer):
         with board_writer.as_default():
             for i in range(1, self.n_epoch+1):
                 start_time = time.time()
-                for (_, (train_images, train_labels)) in enumerate(train_dataset.take(self.batch_size)):
+                for (train_images, train_labels) in train_dataset:
                     train_pre, train_loss, train_accuracy = self._train_body(train_images, train_images, train_labels)
                 time_per_episode = time.time() - start_time
                 
@@ -187,7 +188,7 @@ class AE_Trainer(Trainer):
                     tf.summary.trace_export("summary", step=1, profiler_outdir=self.util.tf_board)
                     tf.summary.trace_off()
 
-                for (_, (test_images, test_labels)) in enumerate(test_dataset.take(self.batch_size)):
+                for (test_images, test_labels) in test_dataset:
                     test_pre, test_loss, test_accuracy, predict_image = self._test_body(test_images, test_images, test_labels)
 
                 if i == 1 or i % 50 == 0:
@@ -201,7 +202,7 @@ class AE_Trainer(Trainer):
                 metrics = OrderedDict({
                     "epoch": i,
                     "train_loss": train_loss.numpy(),
-                    "train_accuracy":train_accuracy,
+                    "train_accuracy":train_accuracy.numpy(),
                     "test_loss": test_loss.numpy(),
                     "test_accuracy" : test_accuracy.numpy(),
                     "time/epoch": time_per_episode
@@ -216,7 +217,6 @@ class AE_Trainer(Trainer):
                 })
                 self.epoch_end(metrics, other_metrics)
 
-        tf.summary.trace_off()
         return
 
 
@@ -234,17 +234,19 @@ class GAN_Trainer(Trainer):
 
     @tf.function
     def _train_body(self, images, labels):
-        with tf.GradientTape() as gen_tape, tf.GradientTape() as disc_tape:
-            fake_logit, real_logit, fake_image = self.model.inference(images, self.batch_size)
-            d_loss, g_loss = self.model.loss(fake_logit, real_logit)
-        self.model.discriminator_optimize(d_loss, disc_tape, self.n_disc_update)
-        self.model.generator_optimize(g_loss, gen_tape)
-        acc = self.model.accuracy(real_logit, fake_logit)
+        with tf.device(self.device):
+            with tf.GradientTape() as gen_tape, tf.GradientTape() as disc_tape:
+                fake_logit, real_logit, fake_image = self.model.inference(images, self.batch_size)
+                d_loss, g_loss = self.model.loss(fake_logit, real_logit)
+            self.model.discriminator_optimize(d_loss, disc_tape, self.n_disc_update)
+            self.model.generator_optimize(g_loss, gen_tape)
+            acc = self.model.accuracy(real_logit, fake_logit)
         return fake_image, d_loss, g_loss, acc
 
     @tf.function
     def _test_body(self, images):
-        fake_logit = self.model.test_inference(images, self.batch_size*3)
+        with tf.device(self.device):
+            fake_logit = self.model.test_inference(images, self.batch_size*3)
         return fake_logit
 
     def epoch_end(self, metrics, other=None):
@@ -263,7 +265,7 @@ class GAN_Trainer(Trainer):
             tf.summary.image('train/decode_image', other['Decode_train_image'])
             tf.summary.image('test/decode_image', other['Decode_test_image'])
         
-        print("epoch: %d  Discriminator_loss: %.4f  Generator_loss: %.4f  train_accuracy: %.3f time/epoch: %0.3fms" 
+        print("epoch: %d  Discriminator_loss: %.4f  Generator_loss: %.4f  train_accuracy: %.3f time/epoch: %0.3fs" 
                                 %(metrics['epoch'], metrics['Discriminator_loss'], metrics['Generator_loss'], metrics['train_accuracy'], metrics['time/epoch']))
         self.util.write_log(message=metrics)
         if metrics['epoch'] % self.save_checkpoint_steps == 0:
@@ -280,30 +282,37 @@ class GAN_Trainer(Trainer):
         train_dataset, _ = self.load()
         test_inputs = tf.random.uniform([self.batch_size*3, self.z_dim], dtype=tf.float32)
 
-        for i in range(1, self.n_epoch+1):
-            start_time = time.time()
-            for (j, (train_images, _)) in enumerate(train_dataset.take(self.batch_size)):
-                train_pre, dis_loss, gene_loss, train_accuracy = self._train_body(train_images, None)
-            time_per_episode = time.time() - start_time
-            test_pre = self._test_body(test_inputs)
+        # Graph for tensorboard
+        tf.summary.trace_on(graph=True, profiler=True)
+        with board_writer.as_default():
+            for i in range(1, self.n_epoch+1):
+                start_time = time.time()
+                for (_, (train_images, _)) in enumerate(train_dataset):
+                    train_pre, dis_loss, gene_loss, train_accuracy = self._train_body(train_images, None)
+                time_per_episode = time.time() - start_time
+                test_pre = self._test_body(test_inputs)
 
-            if i == 1 or i % 50 == 0:
-                self.util.plot_figure(test_pre.numpy(), i)
+                if i == 1:
+                    tf.summary.trace_export("summary", step=1, profiler_outdir=self.util.tf_board)
+                    tf.summary.trace_off()
 
-            # Training results
-            metrics = OrderedDict({
-                "epoch": i,
-                "Discriminator_loss": dis_loss.numpy(),
-                "Generator_loss": gene_loss.numpy(),
-                "train_accuracy":train_accuracy,
-                "time/epoch": time_per_episode
-            })
+                if i == 1 or i % 50 == 0:
+                    self.util.plot_figure(test_pre.numpy(), i)
 
-            #
-            other_metrics = OrderedDict({
-                "train_image" : train_images[:3],
-                "Decode_train_image" : train_pre,
-                "Decode_test_image" : test_pre
-            })
-            self.epoch_end(metrics, other_metrics)
+                # Training results
+                metrics = OrderedDict({
+                    "epoch": i,
+                    "Discriminator_loss": dis_loss.numpy(),
+                    "Generator_loss": gene_loss.numpy(),
+                    "train_accuracy":train_accuracy.numpy(),
+                    "time/epoch": time_per_episode
+                })
+
+                #
+                other_metrics = OrderedDict({
+                    "train_image" : train_images[:3],
+                    "Decode_train_image" : train_pre,
+                    "Decode_test_image" : test_pre
+                })
+                self.epoch_end(metrics, other_metrics)
         return
