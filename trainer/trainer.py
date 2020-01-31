@@ -43,24 +43,24 @@ class Trainer():
         with tf.device(self.device):
             with tf.GradientTape() as tape:
                 with tf.name_scope('train_logits'):
-                    y_pre = self.model.inference(images)
+                    y_pre = self.model(images)
                 with tf.name_scope('train_loss'):
                     loss = self.model.loss(y_pre, labels)
             self.model.optimize(loss, tape)
             with tf.name_scope('train_accuracy'):
                 acc = self.model.accuracy(y_pre, labels)
-            return y_pre, loss, acc
+        return y_pre, loss, acc
 
     @tf.function
     def _test_body(self, images, labels):
         with tf.device(self.device):
             with tf.name_scope('test_logits'):
-                y_pre = self.model.test_inference(images)
+                y_pre = self.model(images)
             with tf.name_scope('test_loss'):
                 loss = self.model.loss(y_pre, labels)
             with tf.name_scope('test_accuracy'):
                 acc = self.model.accuracy(y_pre, labels)
-            return y_pre, loss, acc
+        return y_pre, loss, acc
 
     def epoch_end(self, metrics, other=None):
         learning_rate = self.model.optimizer.lr(metrics['epoch']).numpy() if type(self.model.optimizer.lr) is tf.optimizers.schedules.ExponentialDecay else self.model.optimizer.lr
