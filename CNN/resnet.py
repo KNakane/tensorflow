@@ -32,7 +32,7 @@ class ResNet18(BasedResNet):
         return
 
     @tf.function
-    def inference(self, x, trainable=True):
+    def __call__(self, x, trainable=True):
         with tf.name_scope(self.name):
             x = self.conv1(x, training=trainable)
             x = self.bn1(x, training=trainable)
@@ -75,7 +75,7 @@ class ResNet34(BasedResNet):
         return
 
     @tf.function
-    def inference(self, x, trainable=True):
+    def __call__(self, x, trainable=True):
         with tf.name_scope(self.name):
             x = self.conv1(x)
             x = self.bn1(x)

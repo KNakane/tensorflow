@@ -26,11 +26,11 @@ class MyModel(Model):
     def _build(self):
         raise NotImplementedError()
 
-    def inference(self, x, trainable=True):
+    def __call__(self, x, trainable=True):
         raise NotImplementedError()
 
     def test_inference(self, x, trainable=False):
-        return self.inference(x, trainable=trainable)
+        return self.__call__(x, trainable=trainable)
 
     def loss(self, logits, answer):
         return self.loss_function(y_true=answer, y_pred=logits)

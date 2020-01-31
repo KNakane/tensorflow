@@ -21,7 +21,7 @@ class LeNet(MyModel):
         return
     
     @tf.function
-    def inference(self, x, trainable=True):
+    def __call__(self, x, trainable=True):
         with tf.name_scope(self.name):
             x = self.conv1(x, training=trainable)
             x = self.pooling1(x, training=trainable)
@@ -55,7 +55,7 @@ class VGG(MyModel):
         return
     
     @tf.function
-    def inference(self, x, trainable=True):
+    def __call__(self, x, trainable=True):
         with tf.name_scope(self.name):
             x = self.conv1(x, training=trainable)
             x = self.conv2(x, training=trainable)
