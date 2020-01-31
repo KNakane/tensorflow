@@ -20,6 +20,7 @@ class Generator(BasedGenerator):
         self.leaky_relu3 = tf.keras.layers.LeakyReLU()
         self.deconv3 = tf.keras.layers.Conv2DTranspose(self.channel, kernel_size=(5,5), strides=(2,2), activation='tanh', padding='same', kernel_regularizer=self.l2_regularizer)
 
+    @tf.function
     def __call__(self, outputs, trainable=True):
         outputs = self.fc1(outputs, training=trainable)
         outputs = self.bn1(outputs, training=trainable)
@@ -49,6 +50,7 @@ class Discriminator(BasedDiscriminator):
         self.flatten = tf.keras.layers.Flatten()
         self.fc3 = tf.keras.layers.Dense(1, activation=None, kernel_regularizer=self.l2_regularizer)
 
+    @tf.function
     def __call__(self, outputs, trainable=True):
         outputs = self.conv1(outputs, training=trainable)
         outputs = self.leaky_relu1(outputs, training=trainable)
