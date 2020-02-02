@@ -12,7 +12,7 @@ class Generator(BasedGenerator):
         self.bn1 = tf.keras.layers.BatchNormalization()
         self.fc2 = tf.keras.layers.Dense(256, activation=tf.nn.leaky_relu, kernel_regularizer=self.l2_regularizer)
         self.bn2 = tf.keras.layers.BatchNormalization()
-        self.fc3 = tf.keras.layers.Dense(self.size*self.size*self.channel, activation=tf.nn.tanh, kernel_regularizer=self.l2_regularizer)
+        self.fc3 = tf.keras.layers.Dense(self.size*self.size*self.channel, activation=tf.nn.sigmoid, kernel_regularizer=self.l2_regularizer)
         self.reshape = tf.keras.layers.Reshape((self.size,self.size,self.channel))
 
     def __call__(self, outputs, trainable=True):
@@ -67,10 +67,10 @@ class GAN(BasedGAN):
             fake_img = self.combine_binary_image(fake_img, labels)
             inputs = self.combine_binary_image(inputs, labels)
             """
-        #real_logit = tf.nn.sigmoid(self.D(inputs, trainable=trainable))
-        #fake_logit = tf.nn.sigmoid(self.D(fake_img, trainable=trainable))
-        real_logit = self.D(inputs, trainable=trainable)
-        fake_logit = self.D(fake_img, trainable=trainable)
+        real_logit = tf.nn.sigmoid(self.D(inputs, trainable=trainable))
+        fake_logit = tf.nn.sigmoid(self.D(fake_img, trainable=trainable))
+        #real_logit = self.D(inputs, trainable=trainable)
+        #fake_logit = self.D(fake_img, trainable=trainable)
         return fake_logit, real_logit, fake_img
 
     def test_inference(self, inputs, batch_size, index=None, trainable=False):

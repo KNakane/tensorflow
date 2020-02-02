@@ -82,10 +82,10 @@ class DCGAN(BasedGAN):
             fake_img = self.combine_binary_image(fake_img, labels)
             inputs = self.combine_binary_image(inputs, labels)
             """
-        #real_logit = tf.nn.sigmoid(self.D(inputs, trainable=trainable))
-        #fake_logit = tf.nn.sigmoid(self.D(fake_img, trainable=trainable))
-        real_logit = self.D(inputs, trainable=trainable)
-        fake_logit = self.D(fake_img, trainable=trainable)
+        real_logit = tf.nn.sigmoid(self.D(inputs, trainable=trainable))
+        fake_logit = tf.nn.sigmoid(self.D(fake_img, trainable=trainable))
+        #real_logit = self.D(inputs, trainable=trainable)
+        #fake_logit = self.D(fake_img, trainable=trainable)
         return fake_logit, real_logit, fake_img
 
     def test_inference(self, inputs, batch_size, index=None, trainable=False):

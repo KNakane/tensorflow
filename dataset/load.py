@@ -2,7 +2,7 @@ import os,sys
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.datasets import *
-#from dataset.Augmentation import Augment
+from dataset.augmentation import Augmentation
 
 class Load():
     def __init__(self, name):
@@ -55,9 +55,12 @@ class Load():
 
         # Transform and batch data at the same time
         dataset = dataset.map(map_func=preprocess_fn, num_parallel_calls=4)
+        if augmentation is not None:
+            aug = Augmentation(augmentation)
+            dataset = dataset.map(aug)
         dataset = dataset.shuffle(buffer_size)
         dataset = dataset.batch(batch_size, drop_remainder=True if is_training else False)
-        dataset = dataset.prefetch(tf.data.experimental.AUTOTUNE )
+        dataset = dataset.prefetch(tf.data.experimental.AUTOTUNE)
 
         return dataset
 

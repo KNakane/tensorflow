@@ -38,7 +38,6 @@ class AutoEncoder(Model):
         return tf.clip_by_value(outputs, 1e-8, 1 - 1e-8)
     
     def inference(self, outputs, trainable=True):
-        self.inputs = outputs
         if self.denoise:
             outputs = self.noise(outputs)
         outputs = self.encode(outputs, trainable)
@@ -73,7 +72,6 @@ class VAE(AutoEncoder):
         super().__init__(*args, **kwargs)
 
     def inference(self, outputs, trainable=True):
-        self.inputs = outputs
         if self.denoise:
             outputs = self.noise(outputs)
         outputs = self.encode(outputs, trainable)
@@ -88,11 +86,11 @@ class VAE(AutoEncoder):
         return outputs
 
     def predict(self, outputs, trainable=False):
-        x = np.linspace(0, 1, 20)
-        y = np.flip(np.linspace(0, 1, 20))
+        x = np.linspace(0, 1, 20, dtype=np.float32)
+        y = np.flip(np.linspace(0, 1, 20, dtype=np.float32))
         z = []
-        for i, xi in enumerate(x):
-            for j, yi in enumerate(y):
+        for xi in x:
+            for yi in y:
                 z.append(np.array([xi, yi]))
         z = np.stack(z)
         outputs = tf.clip_by_value(self.decode(z, trainable), 1e-8, 1 - 1e-8)
@@ -133,7 +131,6 @@ class CVAE(VAE):
         super().__init__(*args, **kwargs)
 
     def inference(self, outputs, labels=None, trainable=True):
-        self.inputs = outputs
         if self.denoise:
             outputs = self.noise(outputs)
         outputs = self.combine_image(outputs, labels)
@@ -151,8 +148,8 @@ class CVAE(VAE):
         x = np.linspace(0, 1, 20, dtype=np.float32)
         y = np.flip(np.linspace(0, 1, 20, dtype=np.float32))
         z = []
-        for _, xi in enumerate(x):
-            for _, yi in enumerate(y):
+        for xi in x:
+            for yi in y:
                 z.append(np.array([xi, yi]))
         z = np.stack(z)
 

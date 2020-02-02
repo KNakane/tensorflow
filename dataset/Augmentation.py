@@ -1,71 +1,54 @@
 import os, sys
 import numpy as np
-from tqdm import trange
-from scipy.misc import imresize
-from scipy.ndimage.interpolation import shift, rotate
+import tensorflow as tf
+import scipy.ndimage as ndimage
 
-class Augment():
-    def __init__(self, images, labels):
-        self.img = images
-        self.label = labels
-        self.aug_img = self.img.copy()
-        self.aug_label = self.label.copy() 
+class Augmentation():
+    def __init__(self, func):
+        self.func = func
 
-    def shift(self, v=2, h=2):
-        aug = []
-        for i in trange(self.img.shape[0], desc="Augmentation -> Shift"):
-            vertical = 2*v * np.random.rand() - v
-            horizontal = 2*h * np.random.rand() - h
-            if len(self.img[i].shape) == 2:
-                aug.append(shift(self.img[i], [vertical, horizontal], cval=0))
-            elif len(self.img[i].shape) == 3:
-                aug.append(shift(self.img[i], [vertical, horizontal, 0], cval=0))
+    def __call__(self, image, label):
+        im_shape = image.shape
+        [image, label] = tf.py_function(eval('self.' + self.func), inp=[image, label], Tout=[tf.float32, tf.float32])
+        image.set_shape(im_shape)
+        return image, label
+
+    def shift(self, img, label, v=2, h=2):
+        image = []
+        for i in range(img.shape[0]):
+            vertical = 2 * v * np.random.rand() - v
+            horizontal = 2 * h * np.random.rand() - h
+            if len(img[i].shape) == 2:
+                image.append(ndimage.shift(img[i], [vertical, horizontal], cval=0))
+            elif len(img[i].shape) == 3:
+                image.append(ndimage.shift(img[i], [vertical, horizontal, 0], cval=0))
             else:
-                print('Image data_shape -> {}'.format(self.img[i].shape))
+                print('Image data_shape -> {}'.format(img[i].shape))
                 raise NotImplementedError()
-        
-        self.aug_img = np.vstack((self.aug_img, np.asarray(aug)))
-        self.aug_label = np.hstack((self.aug_label, self.label))
-        return self.aug_img, self.aug_label
 
-    def mirror(self):
-        aug = []
-        for i in trange(self.img.shape[0], desc="Augmentation -> Mirror"):
-            aug.append(self.img[i, :, ::-1])
-        self.aug_img = np.vstack((self.aug_img, np.asarray(aug)))
-        self.aug_label = np.hstack((self.aug_label, self.label))
-        return self.aug_img, self.aug_label
+        image = np.vstack((img, np.asarray(image)))
+        label = np.hstack((label, label))
+        return image, label
 
-    def rotate(self, angle_range=(-20, 20)):
-        aug = []
-        for i in trange(self.img.shape[0], desc="Augmentation -> Rotate"):
-            h, w = self.img[i].shape[0], self.img[i].shape[1]
-            angle = np.random.randint(*angle_range)
-            image = rotate(self.img[i], angle)
-            aug.append(imresize(image, (h, w)))
-        self.aug_img = np.vstack((self.aug_img, np.asarray(aug)))
-        self.aug_label = np.hstack((self.aug_label, self.label))
-        return self.aug_img, self.aug_label
+    def mirror(self, img, label):
+        image = img[:, :, ::-1]
+        image = np.vstack((img, np.asarray(image)))
+        label = np.hstack((label, label))
+        return image, label
 
-    def shift_rotate(self, v=2, h=2, angle_range=(-10, 10)):
-        aug = []
-        for i in trange(self.img.shape[0], desc="Augmentation -> Shift & Rotate"):
-            vertical = 2*v * np.random.rand() - v
-            horizontal = 2*h * np.random.rand() - h
-            if len(self.img[i].shape) == 2:
-                self.img[i] = shift(self.img[i], [vertical, horizontal], cval=0)
-            elif len(self.img[i].shape) == 3:
-                self.img[i] = shift(self.img[i], [vertical, horizontal, 0], cval=0)
-            else:
-                print('Image data_shape -> {}'.format(self.img[i].shape))
-                raise NotImplementedError()
-            h, w = self.img[i].shape[0], self.img[i].shape[1]
-            angle = np.random.randint(*angle_range)
-            image = rotate(self.img[i], angle)
-            aug.append(imresize(image, (h, w)))
-        self.aug_img = np.vstack((self.aug_img, np.asarray(aug)))
-        self.aug_label = np.hstack((self.aug_label, self.label))
-        return self.aug_img, self.aug_label
+    def rotate(self, img, label, angle_range=[-20, 20]):
+        image = ndimage.rotate(img, np.random.uniform(angle_range[0], angle_range[1]), reshape=False)
+        image = np.vstack((img, np.asarray(image)))
+        label = np.hstack((label, label))
+        return image, label
+
+    def shift_rotate(self, img, label, v=2, h=2, angle_range=(-10, 10)):
+        image = ndimage.shift(img, [v, h], cval=0)
+        image = ndimage.rotate(image, np.random.uniform(angle_range[0], angle_range[1]), reshape=False)
+        image = np.vstack((img, np.asarray(image)))
+        label = np.hstack((label, label))
+        return image, label
+
 
     def cutout(self, mask_size=7):
         # reference : https://arxiv.org/abs/1708.04552 or http://kenbo.hatenablog.com/entry/2017/11/28/211932
