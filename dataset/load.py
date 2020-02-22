@@ -24,6 +24,10 @@ class Load():
             else:
                 NotImplementedError
 
+    @property
+    def input_shape(self):
+        return (self.size, self.size, self.channel)
+
     def get(self):
         try:
             return self.datasets.load_data(label_mode='fine')
