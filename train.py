@@ -33,7 +33,12 @@ def image_recognition(args):
         "GPU/CPU": args.gpu})
 
     data = Load(args.data)
-    model = eval(args.network)(name=args.network, out_dim=data.output_dim, lr=args.lr, opt=args.opt, l2_reg=args.l2_norm)
+    model = eval(args.network)(name=args.network, 
+                               input_shape=data.input_shape,
+                               out_dim=data.output_dim,
+                               lr=args.lr,
+                               opt=args.opt,
+                               l2_reg=args.l2_norm)
 
     #training
     trainer = Trainer(args, message, data, model, args.network)
@@ -87,11 +92,11 @@ def GAN_fn(args):
 
     data = Load(args.data)
     model = eval(args.network)(z_dim=args.z_dim,
-                                size=data.size,
-                                channel=data.channel,
-                                name=args.network,
-                                class_num=data.output_dim,
-                                lr=args.lr, opt=args.opt, l2_reg=args.l2_norm)
+                               size=data.size,
+                               channel=data.channel,
+                               name=args.network,
+                               class_num=data.output_dim,
+                               lr=args.lr, opt=args.opt, l2_reg=args.l2_norm)
 
     #training
     trainer = GAN_Trainer(args, message, data, model, args.network)

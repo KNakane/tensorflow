@@ -1,3 +1,4 @@
+import numpy as np
 import tensorflow as tf
 from tensorflow.keras.models import Model
 
@@ -5,6 +6,7 @@ class Encoder(Model):
     def __init__(self, 
                  model=None,
                  name='Encoder',
+                 input_shape=None,
                  out_dim=10,
                  l2_reg=False,
                  l2_reg_scale=0.0001
@@ -12,8 +14,11 @@ class Encoder(Model):
         super().__init__()
         self.model_name = name
         self.out_dim = out_dim
-        self.l2_regularizer = l2_reg_scale if l2_reg else None
+        self.l2_regularizer = tf.keras.regularizers.l2(l2_reg_scale) if l2_reg else None
         self._build()
+        with tf.device("/cpu:0"):
+            self(x=tf.constant(np.zeros(shape=(1,)+input_shape,
+                                             dtype=np.float32)))
 
     def _build(self):
         self.flat = tf.keras.layers.Flatten()
@@ -66,6 +71,7 @@ class Decoder(Model):
     def __init__(self, 
                  model=None,
                  name='Encoder',
+                 input_shape=None,
                  size=28,
                  channel=1,
                  l2_reg=False,
@@ -75,8 +81,11 @@ class Decoder(Model):
         self.model_name = name
         self.size = size
         self.channel = channel
-        self.l2_regularizer = l2_reg_scale if l2_reg else None
+        self.l2_regularizer = tf.keras.regularizers.l2(l2_reg_scale) if l2_reg else None
         self._build()
+        with tf.device("/cpu:0"):
+            self(x=tf.constant(tf.zeros(shape=(1,)+input_shape,
+                                             dtype=tf.float32)))
 
     def _build(self):
         self.fc1 = tf.keras.layers.Dense(64, activation='relu', kernel_regularizer=self.l2_regularizer)

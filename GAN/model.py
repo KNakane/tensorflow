@@ -5,12 +5,20 @@ from tensorflow.keras.models import Model
 from utility.optimizer import *
 
 class BasedGenerator(Model):
-    def __init__(self,size=28, channel=1, l2_reg=False, l2_reg_scale=0.0001):
+    def __init__(self,
+                 input_shape=None,
+                 size=28,
+                 channel=1,
+                 l2_reg=False,
+                 l2_reg_scale=0.0001):
         super().__init__()
         self.size = size
         self.channel = channel
-        self.l2_regularizer = l2_reg_scale if l2_reg else None
+        self.l2_regularizer = tf.keras.regularizers.l2(l2_reg_scale) if l2_reg else None
         self._build()
+        with tf.device("/cpu:0"):
+            self(outputs=tf.constant(np.zeros(shape=(1,)+input_shape,
+                                             dtype=np.float32)))
 
     def _build(self):
         raise NotImplementedError()
@@ -24,10 +32,13 @@ class BasedGenerator(Model):
 
 
 class BasedDiscriminator(Model):
-    def __init__(self, l2_reg=False, l2_reg_scale=0.0001):
+    def __init__(self, input_shape=None, l2_reg=False, l2_reg_scale=0.0001):
         super().__init__()
-        self.l2_regularizer = l2_reg_scale if l2_reg else None
+        self.l2_regularizer = tf.keras.regularizers.l2(l2_reg_scale) if l2_reg else None
         self._build()
+        with tf.device("/cpu:0"):
+            self(outputs=tf.constant(np.zeros(shape=(1,)+input_shape,
+                                             dtype=np.float32)))
 
     def _build(self):
         raise NotImplementedError()
@@ -59,7 +70,7 @@ class BasedGAN(Model):
         self.size = size
         self.channel = channel
         self._l2_reg = l2_reg
-        self.l2_regularizer = l2_reg_scale if l2_reg else None
+        self.l2_regularizer = tf.keras.regularizers.l2(l2_reg_scale) if l2_reg else None
         self.g_optimizer = eval(opt)(learning_rate=lr*5, decay_step=None)
         self.d_optimizer = eval(opt)(learning_rate=lr, decay_step=None)
         self.cross_entropy = tf.keras.losses.BinaryCrossentropy(from_logits=True)
