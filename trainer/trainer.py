@@ -236,10 +236,10 @@ class GAN_Trainer(Trainer):
     def _train_body(self, images, labels):
         with tf.device(self.device):
             with tf.GradientTape() as gen_tape, tf.GradientTape() as disc_tape:
-                fake_logit, real_logit, fake_image = self.model.inference(images, self.batch_size)
+                fake_logit, real_logit, fake_image = self.model.inference(images, self.batch_size, labels)
                 d_loss, g_loss = self.model.loss(fake_logit, real_logit)
-            self.model.discriminator_optimize(d_loss, disc_tape, self.n_disc_update)
             self.model.generator_optimize(g_loss, gen_tape)
+            self.model.discriminator_optimize(d_loss, disc_tape, self.n_disc_update)
             acc = self.model.accuracy(real_logit, fake_logit)
         return fake_image, d_loss, g_loss, acc
 
@@ -287,8 +287,8 @@ class GAN_Trainer(Trainer):
         with board_writer.as_default():
             for i in range(1, self.n_epoch+1):
                 start_time = time.time()
-                for (_, (train_images, _)) in enumerate(train_dataset):
-                    train_pre, dis_loss, gene_loss, train_accuracy = self._train_body(train_images, None)
+                for (_, (train_images, train_labels)) in enumerate(train_dataset):
+                    train_pre, dis_loss, gene_loss, train_accuracy = self._train_body(train_images, train_labels)
                 time_per_episode = time.time() - start_time
                 test_pre = self._test_body(test_inputs)
 
