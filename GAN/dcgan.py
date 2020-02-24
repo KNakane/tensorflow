@@ -42,9 +42,10 @@ class Discriminator(BasedDiscriminator):
 
     def _build(self):
         self.conv1 = tf.keras.layers.Conv2D(64, kernel_size=(5, 5), strides=(2,2), padding='same', activation=None, kernel_regularizer=self.l2_regularizer)
+        self.bn1 = tf.keras.layers.BatchNormalization()
         self.leaky_relu1 = tf.keras.layers.LeakyReLU()
-        self.dropout1 = tf.keras.layers.Dropout(0.3)
         self.conv2 = tf.keras.layers.Conv2D(128, kernel_size=(5, 5), strides=(2,2), padding='same', activation=None, kernel_regularizer=self.l2_regularizer)
+        self.bn2 = tf.keras.layers.BatchNormalization()
         self.leaky_relu2 = tf.keras.layers.LeakyReLU()
         self.dropout2 = tf.keras.layers.Dropout(0.3)
         self.flatten = tf.keras.layers.Flatten()
@@ -53,11 +54,11 @@ class Discriminator(BasedDiscriminator):
     @tf.function
     def __call__(self, outputs, trainable=True):
         outputs = self.conv1(outputs, training=trainable)
+        outputs = self.bn1(outputs, training=trainable)
         outputs = self.leaky_relu1(outputs, training=trainable)
-        outputs = self.dropout1(outputs, training=trainable)
         outputs = self.conv2(outputs, training=trainable)
+        outputs = self.bn2(outputs, training=trainable)
         outputs = self.leaky_relu2(outputs, training=trainable)
-        outputs = self.dropout2(outputs, training=trainable)
         outputs = self.flatten(outputs, training=trainable)
         outputs = self.fc3(outputs, training=trainable)
         return outputs
@@ -82,10 +83,8 @@ class DCGAN(BasedGAN):
             fake_img = self.combine_binary_image(fake_img, labels)
             inputs = self.combine_binary_image(inputs, labels)
             """
-        real_logit = tf.nn.sigmoid(self.D(inputs, trainable=trainable))
-        fake_logit = tf.nn.sigmoid(self.D(fake_img, trainable=trainable))
-        #real_logit = self.D(inputs, trainable=trainable)
-        #fake_logit = self.D(fake_img, trainable=trainable)
+        real_logit = self.D(inputs, trainable=trainable)
+        fake_logit = self.D(fake_img, trainable=trainable)
         return fake_logit, real_logit, fake_img
 
     def test_inference(self, inputs, batch_size, index=None, trainable=False):
