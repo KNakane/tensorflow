@@ -265,6 +265,50 @@ class EventGetter():
         plt.close()
         return
 
+    def Plotly_make_graph_prob(self, name, values, num):
+        """
+        plotlyで項目ごとに確率分布のグラフを作成する
+        
+        parameters
+        ----------
+        name : result directory
+
+        values : dict
+
+        returns
+        ----------
+        """
+        colorlist = ["rgba(255, 0, 0, 0.6)", "rgba(0, 255, 0, 0.6)", "rgba(0, 0, 255, 0.6)", "rgba(0, 174, 239, 0.6)", "rgba(236, 0, 140, 0.6)", "rgba(227, 199, 0, 0.6)", "rgba(105, 105, 105, 0.6)"]
+        std_colorlist = ["rgba(255, 0, 0, 0.3)", "rgba(0, 255, 0, 0.3)", "rgba(0, 0, 255, 0.3)", "rgba(0, 174, 239, 0.3)", "rgba(236, 0, 140, 0.3)", "rgba(227, 199, 0, 0.3)", "rgba(105, 105, 105, 0.3)"]
+        fig = make_subplots(rows=1, cols=1, subplot_titles=("epoch☓{}".format(name)))
+        key_num = len(values.keys())
+        if not key_num:
+            return
+        key = list(values)
+        all_results = np.zeros((key_num, len(values[key[0]])))
+        for i in range(key_num):
+            all_results[i] = values[key[i]]
+        mean = np.mean(all_results, axis=0)
+        std = np.std(all_results, axis=0)
+        index = np.array(range(mean.shape[0]))
+
+        
+        if re.search('accuracy', name) and not self._regression:
+            upper_confidence = np.clip(mean + std,0,1)
+            lower_confidence = np.clip(mean - std,0,1)
+        else:
+            upper_confidence = mean + std
+            lower_confidence = mean - std
+
+        fig.add_trace(go.Scattergl(x=index, y=mean, name='Average', line_color='{}'.format(colorlist[num])), row=1, col=1)
+        fig.add_trace(go.Scattergl(x=index, y=upper_confidence, name="Upper confidence", fill= None, line_color='{}'.format(std_colorlist[num])), row=1, col=1)
+        fig.add_trace(go.Scattergl(x=index, y=lower_confidence, name="Lower confidence", fill= 'tonexty', line_color='{}'.format(std_colorlist[num])), row=1, col=1)
+
+        fig.update_xaxes(title_text="epoch", row=1, col=1)
+        fig.update_yaxes(title_text=name, row=1, col=1)
+        plotly.offline.plot(fig, filename=self.log_dir + "/{}_prob.html".format(name))
+        return
+
 
 def main(args):
     assert args.dir is not None

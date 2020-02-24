@@ -24,8 +24,16 @@ class AutoEncoder(Model):
         self.model_name = name
         Encoder_model = Conv_Encoder if conv else Encoder
         Decoder_model = Conv_Decoder if conv else Decoder
-        self.encode = Encoder_model(out_dim=out_dim, l2_reg=l2_reg, l2_reg_scale=l2_reg_scale)
-        self.decode = Decoder_model(size=size, channel=channel, l2_reg=l2_reg, l2_reg_scale=l2_reg_scale)
+        decoder_input = out_dim / 2 if name == 'VAE' or name == 'CVAE' else out_dim
+        self.encode = Encoder_model(input_shape=(size, size, channel),
+                                    out_dim=out_dim,
+                                    l2_reg=l2_reg,
+                                    l2_reg_scale=l2_reg_scale)
+        self.decode = Decoder_model(input_shape=(decoder_input,),
+                                    size=size,
+                                    channel=channel,
+                                    l2_reg=l2_reg,
+                                    l2_reg_scale=l2_reg_scale)
         self.denoise = denoise
         self.class_dim = class_dim
         self.size = size

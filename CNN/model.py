@@ -8,6 +8,7 @@ class MyModel(Model):
     def __init__(self, 
                  model=None,
                  name='Model',
+                 input_shape=None,
                  out_dim=10,
                  opt="Adam",   # Choice the optimizer -> ["SGD","Momentum","Adadelta","Adagrad","Adam","RMSProp"]
                  lr=0.001,
@@ -18,10 +19,13 @@ class MyModel(Model):
         self.model_name = name
         self.out_dim = out_dim
         self.optimizer = eval(opt)(learning_rate=lr, decay_step=None, decay_rate=0.95)
-        self.l2_regularizer = l2_reg_scale if l2_reg else None
+        self.l2_regularizer = tf.keras.regularizers.l2(l2_reg_scale) if l2_reg else None
         self._build()
         self.loss_function = tf.losses.CategoricalCrossentropy()
         self.accuracy_function = tf.keras.metrics.CategoricalAccuracy()
+        with tf.device("/cpu:0"):
+            self(x=tf.constant(tf.zeros(shape=(1,)+input_shape,
+                                             dtype=tf.float32)))
 
     def _build(self):
         raise NotImplementedError()
