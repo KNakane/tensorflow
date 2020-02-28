@@ -45,6 +45,7 @@ class AutoEncoder(Model):
         outputs += tf.random.normal(tf.shape(outputs))
         return tf.clip_by_value(outputs, 1e-8, 1 - 1e-8)
     
+    @tf.function
     def inference(self, outputs, trainable=True):
         if self.denoise:
             outputs = self.noise(outputs)
@@ -52,14 +53,15 @@ class AutoEncoder(Model):
         outputs = self.decode(outputs, trainable)
         return outputs
 
+    @tf.function
     def test_inference(self, outputs, trainable=False):
         return self.inference(outputs, trainable=trainable)
 
     def predict(self, outputs, trainable=False):
         return self.test_inference(outputs, trainable)
 
-    def loss(self, logits, anser):
-        loss = tf.reduce_mean(tf.square(logits - anser))
+    def loss(self, logits, answer):
+        loss = tf.reduce_mean(tf.square(logits - answer))
         return loss
     
     def optimize(self, loss, tape=None):
@@ -79,6 +81,7 @@ class VAE(AutoEncoder):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+    #@tf.function
     def inference(self, outputs, trainable=True):
         if self.denoise:
             outputs = self.noise(outputs)
@@ -88,6 +91,7 @@ class VAE(AutoEncoder):
         outputs = tf.clip_by_value(self.decode(compose_img, trainable), 1e-8, 1 - 1e-8)
         return outputs
 
+    #@tf.function
     def test_inference(self, outputs, trainable=False):
         compose_img, self.mu, self.var = self.gaussian(outputs.shape[0],2)
         outputs = tf.clip_by_value(self.decode(compose_img, trainable), 1e-8, 1 - 1e-8)
@@ -113,7 +117,7 @@ class VAE(AutoEncoder):
         with tf.name_scope('reconstruct_loss'):
                 reconstruct_loss = -tf.reduce_sum(answer * tf.math.log(epsilon + logits) + (1 - answer) * tf.math.log(epsilon + 1 - logits), axis=1)
         with tf.name_scope('KL_divergence'):
-            KL_divergence = 0.5 * tf.reduce_sum(tf.square(self.mu) + tf.exp(self.var)**2 - 2 * self.mu -1, axis=1)
+            KL_divergence = 0.5 * tf.reduce_sum(tf.square(self.mu) + tf.exp(self.var)**2 - 2 * self.mu - 1, axis=1)
         return tf.reduce_mean(reconstruct_loss + KL_divergence)
 
     def re_parameterization(self, mu, var):
@@ -125,7 +129,7 @@ class VAE(AutoEncoder):
             mu is average, var is variance
         """
         with tf.name_scope('re_parameterization'):
-            eps = tf.random.normal(shape=tf.shape(var), mean=mu, stddev=var, dtype=tf.float32)
+            eps = tf.random.normal(shape=tf.shape(mu), mean=mu, stddev=var, dtype=tf.float32)
             return tf.cast(mu + tf.exp(0.5*var) * eps, dtype=tf.float32)    
 
     def gaussian(self, batch_size, n_dim, mean=0, var=1):
