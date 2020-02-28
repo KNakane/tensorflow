@@ -22,10 +22,10 @@ class Encoder(Model):
 
     def _build(self):
         self.flat = tf.keras.layers.Flatten()
-        self.fc1 = tf.keras.layers.Dense(256, activation='relu', kernel_regularizer=self.l2_regularizer)
-        self.fc2 = tf.keras.layers.Dense(128, activation='relu', kernel_regularizer=self.l2_regularizer)
-        self.fc3 = tf.keras.layers.Dense(64, activation='relu', kernel_regularizer=self.l2_regularizer)
-        self.out = tf.keras.layers.Dense(self.out_dim, activation='relu', kernel_regularizer=self.l2_regularizer)
+        self.fc1 = tf.keras.layers.Dense(256, activation='elu', kernel_regularizer=self.l2_regularizer)
+        self.fc2 = tf.keras.layers.Dense(128, activation='elu', kernel_regularizer=self.l2_regularizer)
+        self.fc3 = tf.keras.layers.Dense(64, activation='elu', kernel_regularizer=self.l2_regularizer)
+        self.out = tf.keras.layers.Dense(self.out_dim, activation=None, kernel_regularizer=self.l2_regularizer)
         return
 
     @tf.function
@@ -50,7 +50,7 @@ class Conv_Encoder(Encoder):
         self.conv3 = tf.keras.layers.Conv2D(filters=8, kernel_size=(3,3), activation='relu', padding='same')
         self.max_pool3 = tf.keras.layers.MaxPooling2D((2, 2), padding='same')
         self.flat = tf.keras.layers.Flatten()
-        self.out = tf.keras.layers.Dense(self.out_dim, activation='relu', kernel_regularizer=self.l2_regularizer)
+        self.out = tf.keras.layers.Dense(self.out_dim, activation=None, kernel_regularizer=self.l2_regularizer)
         return
 
     @tf.function
@@ -88,9 +88,9 @@ class Decoder(Model):
                                              dtype=tf.float32)))
 
     def _build(self):
-        self.fc1 = tf.keras.layers.Dense(64, activation='relu', kernel_regularizer=self.l2_regularizer)
-        self.fc2 = tf.keras.layers.Dense(128, activation='relu', kernel_regularizer=self.l2_regularizer)
-        self.fc3 = tf.keras.layers.Dense(256, activation='relu', kernel_regularizer=self.l2_regularizer)
+        self.fc1 = tf.keras.layers.Dense(64, activation='elu', kernel_regularizer=self.l2_regularizer)
+        self.fc2 = tf.keras.layers.Dense(128, activation='elu', kernel_regularizer=self.l2_regularizer)
+        self.fc3 = tf.keras.layers.Dense(256, activation='elu', kernel_regularizer=self.l2_regularizer)
         self.fc4 = tf.keras.layers.Dense(self.size**2 * self.channel, activation='sigmoid', kernel_regularizer=self.l2_regularizer)
         self.out = tf.keras.layers.Reshape((self.size,self.size,self.channel))
         return
