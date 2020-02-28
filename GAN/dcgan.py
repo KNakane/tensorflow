@@ -69,8 +69,14 @@ class DCGAN(BasedGAN):
         self.eps = 1e-8
 
     def _build(self):
-        self.G = Generator(size=self.size, channel=self.channel, l2_reg=self._l2_reg, l2_reg_scale=self.l2_regularizer)
-        self.D = Discriminator(l2_reg=self._l2_reg, l2_reg_scale=self.l2_regularizer)
+        self.G = Generator(input_shape=(self._z_dim,),
+                           size=self.size,
+                           channel=self.channel,
+                           l2_reg=self._l2_reg,
+                           l2_reg_scale=self.l2_regularizer)
+        self.D = Discriminator(input_shape=(self.size, self.size, self.channel),
+                               l2_reg=self._l2_reg,
+                               l2_reg_scale=self.l2_regularizer)
 
     def inference(self, inputs, batch_size, labels=None, trainable=True):
         self.z = tf.random.normal([batch_size, self._z_dim], dtype=tf.float32)

@@ -53,7 +53,7 @@ class GAN(BasedGAN):
         super().__init__(*args, **kwargs)
 
     def _build(self):
-        self.G = Generator(input_shape=(self._z_dim,), 
+        self.G = Generator(input_shape=(self._z_dim,),
                            size=self.size,
                            channel=self.channel,
                            l2_reg=self._l2_reg,
