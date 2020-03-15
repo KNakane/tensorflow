@@ -3,6 +3,7 @@ absl-py
 tqdm
 numpy
 keras
+sklearn
 gym
 gym[atari]
 gym[box2d]
