@@ -2,39 +2,39 @@ import os, sys
 import numpy as np
 import tensorflow as tf
 import scipy.ndimage as ndimage
+from tensorflow.keras.preprocessing.image import random_shift
+from joblib import Parallel, delayed
 
 class Augmentation():
+    # Citation : https://qiita.com/Suguru_Toyohara/items/528447a73fc6dd20ea57
     def __init__(self, func):
         self.func = func
 
+    @tf.function
     def __call__(self, image, label):
         im_shape = image.shape
-        [image, label] = tf.py_function(eval('self.' + self.func), inp=[image, label], Tout=[tf.float32, tf.float32])
+        image, label = tf.py_function(eval('self.' + self.func), inp=[image, label], Tout=[tf.float32, tf.float32])
         image.set_shape(im_shape)
         return image, label
 
     def shift(self, img, label, v=2, h=2):
-        image = []
-        for i in range(img.shape[0]):
-            vertical = 2 * v * np.random.rand() - v
-            horizontal = 2 * h * np.random.rand() - h
-            if len(img[i].shape) == 2:
-                image.append(ndimage.shift(img[i], [vertical, horizontal], cval=0))
-            elif len(img[i].shape) == 3:
-                image.append(ndimage.shift(img[i], [vertical, horizontal, 0], cval=0))
-            else:
-                print('Image data_shape -> {}'.format(img[i].shape))
-                raise NotImplementedError()
+        image = img.numpy()
+        w = v.numpy()
+        h = h.numpy()
+        if tf.rank(img)==4:
+            X = Parallel(n_jobs=-1)( [delayed(random_shift)(pic,w,h,0,1,2) for pic in image] )
+            X = np.asarray(X)
+        elif tf.rank(img)==3:
+            X = random_shift(image, w, h, 0, 1, 2)
+        return X, label
 
-        image = np.vstack((img, np.asarray(image)))
-        label = np.hstack((label, label))
-        return image, label
-
+    @tf.function
     def mirror(self, img, label):
-        image = img[:, :, ::-1]
-        image = np.vstack((img, np.asarray(image)))
-        label = np.hstack((label, label))
-        return image, label
+        return tf.image.random_flip_left_right(img),label
+
+    @tf.function
+    def flip_up_down(self, img,label):
+        return tf.image.random_flip_up_down(img),label
 
     def rotate(self, img, label, angle_range=[-20, 20]):
         image = ndimage.rotate(img, np.random.uniform(angle_range[0], angle_range[1]), reshape=False)
