@@ -2,14 +2,20 @@ import os, sys, re
 import argparse
 import tensorflow as tf
 from CNN.lenet import LeNet, VGG
+from CNN.googlenet import GoogLeNet
 from CNN.resnet import ResNet18, ResNet34
+from CNN.densenet import DenseNet
 from AutoEncoder.model import AutoEncoder, VAE, CVAE
 from GAN.gan import GAN
 from GAN.dcgan import DCGAN
-from dataset.load import Load
+from GAN.wgan import WGAN, WGANGP
+from GAN.lsgan import LSGAN
+from RNN.rnn import RNN, LSTM, GRU
+from CNN.tcn import TCN
+from dataset.load import Load, SeqLoad
 from collections import OrderedDict
 from tensorflow.python.client import device_lib
-from trainer.trainer import Trainer, AE_Trainer, GAN_Trainer
+from trainer.trainer import Trainer, AE_Trainer, GAN_Trainer, Seq_Trainer
 
 
 def find_gpu():
@@ -103,28 +109,61 @@ def GAN_fn(args):
     trainer.train()
     return
 
+def time_series(args):
+    message = OrderedDict({
+        "Network": args.network,
+        "data": args.data,
+        "epoch":args.n_epoch,
+        "batch_size": args.batch_size,
+        "Optimizer":args.opt,
+        "learning_rate":args.lr,
+        "l2_norm":args.l2_norm,
+        "Augmentation": args.aug,
+        "GPU/CPU": args.gpu})
+
+    data = SeqLoad(args.data)
+    model = eval(args.network)(name=args.network, 
+                               input_shape=data.input_shape,
+                               out_dim=data.output_dim,
+                               lr=args.lr,
+                               opt=args.opt,
+                               l2_reg=args.l2_norm)
+
+    #training
+    trainer = Seq_Trainer(args, message, data, model, args.network)
+    trainer.train()
+    return
+
 
 def main(args):
     gpu = find_gpu()
     args.gpu = "/gpu:{}".format(gpu) if gpu >= 0 else "/cpu:0"
-    if args.network == 'LeNet' or args.network == 'VGG' or args.network == 'ResNet18' or args.network == 'ResNet34':
+    if args.network in ['LeNet', 'VGG','GoogLeNet', 'ResNet18', 'ResNet34', 'DenseNet']:
         image_recognition(args)
-    elif args.network == 'AutoEncoder' or args.network == 'VAE' or args.network == 'CVAE':
+    elif args.network in ['AutoEncoder', 'VAE', 'CVAE']:
         construction_image(args)
-    elif args.network == 'GAN' or args.network == 'DCGAN':
+    elif args.network in ['GAN','DCGAN','WGAN', 'WGANGP', 'LSGAN']:
         GAN_fn(args)
+    elif args.network in ['RNN', 'LSTM']:
+        time_series(args)
     else:
         raise NotImplementedError()
     return
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--network', default='LeNet', type=str, choices=['LeNet','VGG','ResNet18','ResNet34','AutoEncoder','VAE', 'CVAE','GAN','DCGAN'])
+    parser.add_argument(
+        '--network', default='LeNet', type=str,
+        choices=['LeNet','VGG', 'GoogLeNet', 'ResNet18','ResNet34', 'DenseNet',
+                 'AutoEncoder','VAE', 'CVAE',
+                 'GAN','DCGAN', 'WGAN', 'WGANGP', 'LSGAN',
+                 'RNN', 'LSTM', 'GRU', 'FCN', 'TCN']
+    )
     parser.add_argument('--data', default='mnist', type=str, choices=['mnist','cifar10','cifar100','kuzushiji'])
     parser.add_argument('--n_epoch', default=1000, type=int, help='Input max epoch')
     parser.add_argument('--batch_size', default=32, type=int, help='Input batch size')
     parser.add_argument('--lr', default=0.001, type=float, help='Input learning rate')
-    parser.add_argument('--opt', default='SGD', type=str, choices=['SGD','Momentum','Adadelta','Adagrad','Adam','RMSProp'])
+    parser.add_argument('--opt', default='SGD', type=str, choices=['SGD','Momentum','Adadelta','Adagrad','Adam','RMSprop'])
     parser.add_argument('--aug', default=None, type=str, choices=['shift','mirror','rotate','shift_rotate','cutout','random_erace'])
     parser.add_argument('--denoise', action='store_true', help='True : Denoising AE, False : standard AE')
     parser.add_argument('--conv', action='store_true', help='True : Convolutional AE, False : standard AE')
