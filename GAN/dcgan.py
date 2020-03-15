@@ -18,7 +18,7 @@ class Generator(BasedGenerator):
         self.deconv2 = tf.keras.layers.Conv2DTranspose(64, kernel_size=(5,5), strides=(2,2), padding='same', kernel_regularizer=self.l2_regularizer)
         self.bn3 = tf.keras.layers.BatchNormalization()
         self.leaky_relu3 = tf.keras.layers.LeakyReLU()
-        self.deconv3 = tf.keras.layers.Conv2DTranspose(self.channel, kernel_size=(5,5), strides=(2,2), activation='tanh', padding='same', kernel_regularizer=self.l2_regularizer)
+        self.deconv3 = tf.keras.layers.Conv2DTranspose(self.channel, kernel_size=(5,5), strides=(2,2), activation='sigmoid', padding='same', kernel_regularizer=self.l2_regularizer)
 
     @tf.function
     def __call__(self, outputs, trainable=True):
@@ -66,7 +66,7 @@ class Discriminator(BasedDiscriminator):
 class DCGAN(BasedGAN):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.eps = 1e-8
+        self.eps = tf.constant(1e-8, dtype=tf.float32)
 
     def _build(self):
         self.G = Generator(input_shape=(self._z_dim,),

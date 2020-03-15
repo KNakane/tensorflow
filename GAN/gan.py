@@ -16,13 +16,14 @@ class Generator(BasedGenerator):
         self.reshape = tf.keras.layers.Reshape((self.size,self.size,self.channel))
 
     def __call__(self, outputs, trainable=True):
-        outputs = self.fc1(outputs, training=trainable)
-        outputs = self.bn1(outputs, training=trainable)
-        outputs = self.fc2(outputs, training=trainable)
-        outputs = self.bn2(outputs, training=trainable)
-        outputs = self.fc3(outputs, training=trainable)
-        outputs = self.reshape(outputs, training=trainable)
-        return outputs
+        with tf.name_scope(self.name):
+            outputs = self.fc1(outputs, training=trainable)
+            outputs = self.bn1(outputs, training=trainable)
+            outputs = self.fc2(outputs, training=trainable)
+            outputs = self.bn2(outputs, training=trainable)
+            outputs = self.fc3(outputs, training=trainable)
+            outputs = self.reshape(outputs, training=trainable)
+            return outputs
 
 
 class Discriminator(BasedDiscriminator):
@@ -39,14 +40,15 @@ class Discriminator(BasedDiscriminator):
         self.fc4 = tf.keras.layers.Dense(1, activation=None, kernel_regularizer=self.l2_regularizer)
 
     def __call__(self, outputs, trainable=True):
-        outputs = self.fc1(outputs, training=trainable)
-        outputs = self.bn1(outputs, training=trainable)
-        outputs = self.fc2(outputs, training=trainable)
-        outputs = self.bn2(outputs, training=trainable)
-        outputs = self.fc3(outputs, training=trainable)
-        outputs = self.bn3(outputs, training=trainable)
-        outputs = self.fc4(outputs, training=trainable)
-        return outputs
+        with tf.name_scope(self.name):
+            outputs = self.fc1(outputs, training=trainable)
+            outputs = self.bn1(outputs, training=trainable)
+            outputs = self.fc2(outputs, training=trainable)
+            outputs = self.bn2(outputs, training=trainable)
+            outputs = self.fc3(outputs, training=trainable)
+            outputs = self.bn3(outputs, training=trainable)
+            outputs = self.fc4(outputs, training=trainable)
+            return outputs
 
 class GAN(BasedGAN):
     def __init__(self, *args, **kwargs):
