@@ -40,7 +40,7 @@ class Adamax(SGD):
         self.method = tf.optimizers.Adamax(self.lr, beta_1=0.9, beta_2=0.999, epsilon=1e-08)
 
 
-class RMSProp(SGD):
+class RMSprop(SGD):
     def __init__(self, learning_rate=0.1, decay_step=None, momentum=0.95, epsilon=0.01):
         super().__init__(learning_rate=learning_rate, decay_step=decay_step)
-        self.method = tf.optimizers.RMSProp(self.lr, rho=0.9, epsilon=1e-06)
+        self.method = tf.optimizers.RMSprop(self.lr, rho=0.9, epsilon=1e-06)
