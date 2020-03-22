@@ -5,6 +5,7 @@ from CNN.lenet import LeNet, VGG
 from CNN.googlenet import GoogLeNet
 from CNN.resnet import ResNet18, ResNet34
 from CNN.densenet import DenseNet
+from CNN.fcn import FCN
 from AutoEncoder.model import AutoEncoder, VAE, CVAE
 from GAN.gan import GAN
 from GAN.dcgan import DCGAN
@@ -121,7 +122,7 @@ def time_series(args):
         "Augmentation": args.aug,
         "GPU/CPU": args.gpu})
 
-    data = SeqLoad(args.data)
+    data = SeqLoad(args.data, pix_by_pix=False)
     model = eval(args.network)(name=args.network, 
                                input_shape=data.input_shape,
                                out_dim=data.output_dim,
@@ -144,7 +145,7 @@ def main(args):
         construction_image(args)
     elif args.network in ['GAN','DCGAN','WGAN', 'WGANGP', 'LSGAN']:
         GAN_fn(args)
-    elif args.network in ['RNN', 'LSTM']:
+    elif args.network in ['RNN', 'LSTM', 'GRU', 'FCN', 'TCN']:
         time_series(args)
     else:
         raise NotImplementedError()
