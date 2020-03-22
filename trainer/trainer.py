@@ -34,6 +34,11 @@ class Trainer():
         return train_dataset, test_dataset
 
     def begin_train(self):
+        # GPU allow_growth
+        if tf.config.experimental.list_physical_devices('GPU'):
+            for cur_device in tf.config.experimental.list_physical_devices("GPU"):
+                tf.config.experimental.set_memory_growth(cur_device, enable=True)
+        
         self.util.write_configuration(self.message, True)
         self.util.save_init(self.model, keep=self.checkpoints_to_keep, n_hour=self.keep_checkpoint_every_n_hours)
         return tf.summary.create_file_writer(self.util.tf_board)
@@ -346,9 +351,11 @@ class Seq_Trainer(Trainer):
                 for (train_images, train_labels) in train_dataset:
                     _, loss, train_accuracy = self._train_body(train_images, train_labels)
                     train_loss = train_loss_fn(loss)
+                """
                 if i == 1:
                     tf.summary.trace_export("summary", step=1, profiler_outdir=self.util.tf_board)
                     tf.summary.trace_off()
+                """
 
                 time_per_episode = time.time() - start_time
                 for (test_images, test_labels) in test_dataset:
@@ -365,7 +372,7 @@ class Seq_Trainer(Trainer):
                     "time/epoch": time_per_episode
                 })
 
-                self.epoch_end(metrics, other_metrics)
+                self.epoch_end(metrics, other=None)
         
         return
 
