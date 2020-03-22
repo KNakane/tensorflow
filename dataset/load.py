@@ -88,7 +88,8 @@ class Load():
 
 
 class SeqLoad(Load):
-    def __init__(self, name, all_seq=False):
+    def __init__(self, name, pix_by_pix=False):
+        self._pix_by_pix = pix_by_pix
         if name == "kuzushiji":
             (x_train, y_train), (self.x_test, self.y_test) = self.get_kuzushiji()
             self.timestep, self.data_num, channel = 28, 28, 1
@@ -102,7 +103,7 @@ class SeqLoad(Load):
             else:
                 NotImplementedError
 
-        if all_seq:
+        if pix_by_pix:
             x_train = x_train.reshape((-1, self.timestep * self.data_num, channel))
             self.x_test = self.x_test.reshape((-1, self.timestep * self.data_num, channel))
             self.timestep = self.timestep * self.data_num
@@ -114,7 +115,7 @@ class SeqLoad(Load):
     def input_shape(self):
         return (self.timestep, self.data_num)
 
-    def load(self, batch_size=32, buffer_size=1000, is_training=False, augmentation=None):
+    def load(self, batch_size=32, buffer_size=1000, is_training=False):
         def preprocess_fn(inputs, label):
             x = tf.reshape(tf.cast(inputs, tf.float32), (self.timestep, self.data_num)) / 255.0
             y = tf.one_hot(tf.cast(label, tf.uint8), self.output_dim)
