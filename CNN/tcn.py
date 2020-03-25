@@ -8,15 +8,15 @@ from utility.optimizer import *
 
 class TCN(MyModel): # Temporal Convolutional Networks
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
         self.__levels = 8
         self.__num_channel = 25
         self.__kernel_size = 7
         self.__dropout_rate = 0.05
         self.__channel_sizes = [self.__num_channel] * self.__levels
-        self.temporal_layer = []
+        super().__init__(*args, **kwargs)
 
     def _build(self):
+        self.temporal_layer = []
         for i in range(self.__levels):
             dilation_rate = 2 ** i
             layer = TemporalBlock(number=i+1, dilation_rate=dilation_rate, 
@@ -47,7 +47,7 @@ class TemporalBlock(tf.keras.Model):
                  l2_reg_scale=None):
         super().__init__()
         assert padding in ['causal', 'same']
-        self.name = 'TemporalBlock_{}'.format(number)
+        self._name = 'TemporalBlock_{}'.format(number)
         self.__dilation_rate = dilation_rate
         self.__filters = filters
         self.__kernel_size = kernel_size
@@ -80,7 +80,7 @@ class TemporalBlock(tf.keras.Model):
 
     @tf.function
     def __call__(self, x, trainable=True):
-        with tf.name_scope(self.name):
+        with tf.name_scope(self._name):
             output = self.conv1(x, training=trainable)
             output = self.batch1(output, training=trainable)
             output = self.relu1(output, training=trainable)
