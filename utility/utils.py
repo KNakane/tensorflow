@@ -4,6 +4,7 @@ import numpy as np
 import datetime
 import tensorflow as tf
 import matplotlib.pyplot as plt
+import matplotlib.cm as cm
 import matplotlib.gridspec as gridspec
 from tensorflow.python.client import device_lib
 
@@ -238,6 +239,30 @@ class Utils():
         plt.savefig(name, bbox_inches='tight')
         plt.close(fig)
 
+        return
+
+    def plot_latent_space(self, z, label, step, n_label=10, xlim=None, ylim=None):
+        """
+        潜在空間zの可視化を行う
+        """
+        # onehot -> index
+        label = np.argmax(label, axis=1)
+        plt.clf()
+        _, ax = plt.subplots(ncols=1, figsize=(8,8))
+        color = cm.rainbow(np.linspace(0, 1, n_label))
+        for l, c in zip(range(10), color):
+            ix = np.where(label==l)[0]
+            x = z[ix,0]
+            y = z[ix, 1]
+            c = np.tile(c, (x.shape[0],1))
+            ax.scatter(x, y, c=c, label=l, s=8, linewidth=0)
+        if xlim is not None:
+            ax.set_xlim(xlim)
+        if ylim is not None:
+            ax.set_ylim(ylim)
+            
+        plt.savefig(self.log_dir + '/latent_space{}.png'.format(step))
+        plt.close()
         return
 
     def MDN_figure(self, x, y, y_test):
