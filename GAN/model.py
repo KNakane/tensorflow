@@ -4,6 +4,8 @@ import tensorflow as tf
 from tensorflow.keras.models import Model
 from utility.optimizer import *
 
+#citation : https://github.com/thisisiron/TF2-GAN
+
 class BasedGenerator(Model):
     def __init__(self,
                  input_shape=None,
@@ -74,8 +76,7 @@ class BasedGAN(Model):
         self.g_optimizer = eval(opt)(learning_rate=lr*5, decay_step=None)
         self.d_optimizer = eval(opt)(learning_rate=lr, decay_step=None)
         self.cross_entropy = tf.keras.losses.BinaryCrossentropy(from_logits=True)
-        if self.conditional:
-            self.class_num = class_num
+        self.class_num = class_num
         self._build()
 
     def _build(self):

@@ -10,10 +10,10 @@ class LSGAN(DCGAN):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def loss(self, fake_logit, real_logit):
-        # discriminator loss
-        d_loss = tf.reduce_mean(0.5 * tf.square(real_logit - tf.ones_like(real_logit)) + 0.5 * tf.square(fake_logit))
-
-        # generator loss
+    def generator_loss(self, fake_logit):
         g_loss = tf.reduce_mean(0.5 * tf.square(fake_logit - tf.ones_like(fake_logit)))
-        return d_loss, g_loss
+        return g_loss
+
+    def discriminator_loss(self, fake_logit, real_logit):
+        d_loss = tf.reduce_mean(0.5 * tf.square(real_logit - tf.ones_like(real_logit)) + 0.5 * tf.square(fake_logit))
+        return d_loss

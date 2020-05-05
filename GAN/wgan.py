@@ -15,21 +15,20 @@ class WGAN(DCGAN):
             for p in self.D.weights:
                 p.assign(tf.clip_by_value(p, -0.01, 0.01))
         return
+    
+    def generator_loss(self, fake_logit):
+        g_loss = -tf.reduce_mean(fake_logit + self.eps)
+        return g_loss
 
-    def loss(self, fake_logit, real_logit):
-        with tf.name_scope('loss'):
-            with tf.name_scope('Discriminator_loss'):
-                d_loss = -tf.reduce_mean(real_logit + self.eps) + tf.reduce_mean(fake_logit + self.eps)
-            with tf.name_scope('Generator_loss'):
-                g_loss = -tf.reduce_mean(fake_logit + self.eps)
-            return d_loss, g_loss
+    def discriminator_loss(self, fake_logit, real_logit):
+        d_loss = -tf.reduce_mean(real_logit + self.eps) + tf.reduce_mean(fake_logit + self.eps)
+        return d_loss
 
-    def discriminator_optimize(self, d_loss, tape=None, n_update=1):
+    def discriminator_optimize(self, d_loss, tape=None):
         assert tape is not None, 'please set tape in optimize'
         d_grads = tape.gradient(d_loss, self.D.trainable_variables)
-        for _ in range(n_update):
-            self.d_optimizer.method.apply_gradients(zip(d_grads, self.D.trainable_variables))
-            self.weight_clipping()
+        self.d_optimizer.method.apply_gradients(zip(d_grads, self.D.trainable_variables))
+        self.weight_clipping()
         return
 
 

@@ -12,7 +12,7 @@ class Generator(BasedGenerator):
         self.bn1 = tf.keras.layers.BatchNormalization()
         self.fc2 = tf.keras.layers.Dense(256, activation=tf.nn.leaky_relu, kernel_regularizer=self.l2_regularizer)
         self.bn2 = tf.keras.layers.BatchNormalization()
-        self.fc3 = tf.keras.layers.Dense(self.size*self.size*self.channel, activation=tf.nn.sigmoid, kernel_regularizer=self.l2_regularizer)
+        self.fc3 = tf.keras.layers.Dense(self.size*self.size*self.channel, activation='tanh', kernel_regularizer=self.l2_regularizer)
         self.reshape = tf.keras.layers.Reshape((self.size,self.size,self.channel))
 
     def __call__(self, outputs, trainable=True):
@@ -55,29 +55,25 @@ class GAN(BasedGAN):
         super().__init__(*args, **kwargs)
 
     def _build(self):
-        self.G = Generator(input_shape=(self._z_dim,),
+        self.G = Generator(input_shape=(self._z_dim + (self.conditional * self.class_num),),
                            size=self.size,
                            channel=self.channel,
                            l2_reg=self._l2_reg,
                            l2_reg_scale=self.l2_regularizer)
-        self.D = Discriminator(input_shape=(self.size, self.size, self.channel),
+        self.D = Discriminator(input_shape=(self.size, self.size, self.channel + (self.conditional * self.class_num)),
                                l2_reg=self._l2_reg,
                                l2_reg_scale=self.l2_regularizer)
 
-    def inference(self, inputs, batch_size, labels=None, trainable=True):
+    def inference_generator(self, batch_size, labels=None, trainable=True):
         self.z = tf.random.normal((batch_size, self._z_dim), dtype=tf.float32)
         fake_img = self.G(self.combine_distribution(self.z, labels) if self.conditional else self.z, trainable=trainable)
-        
+        return fake_img
+
+    def inference_discriminator(self, inputs, labels=None, trainable=True):
         if self.conditional and labels is not None:
-            fake_img = self.combine_image(fake_img, labels)
             inputs = self.combine_image(inputs, labels)
-            """
-            fake_img = self.combine_binary_image(fake_img, labels)
-            inputs = self.combine_binary_image(inputs, labels)
-            """
-        real_logit = self.D(inputs, trainable=trainable)
-        fake_logit = self.D(fake_img, trainable=trainable)
-        return fake_logit, real_logit, fake_img
+        logits = self.D(inputs, trainable=trainable)
+        return logits
 
     def test_inference(self, inputs, batch_size, index=None, trainable=False):
         if self.conditional:
@@ -86,15 +82,15 @@ class GAN(BasedGAN):
             inputs = self.combine_distribution(inputs, labels)
         return self.G(inputs, trainable=trainable)
 
-    def loss(self, fake_logit, real_logit):
-        # discriminator loss
+    def generator_loss(self, fake_logit):
+        g_loss = self.cross_entropy(tf.ones_like(fake_logit), fake_logit)
+        return g_loss
+
+    def discriminator_loss(self, fake_logit, real_logit):
         real_loss = self.cross_entropy(tf.ones_like(real_logit), real_logit)
         fake_loss = self.cross_entropy(tf.zeros_like(fake_logit), fake_logit)
         d_loss = real_loss + fake_loss
-
-        # generator loss
-        g_loss = self.cross_entropy(tf.ones_like(fake_logit), fake_logit)
-        return d_loss, g_loss
+        return d_loss
 
     def generator_optimize(self, g_loss, tape=None):
         assert tape is not None, 'please set tape in opmize'
@@ -102,9 +98,8 @@ class GAN(BasedGAN):
         self.g_optimizer.method.apply_gradients(zip(g_grads, self.G.trainable_variables))
         return
 
-    def discriminator_optimize(self, d_loss, tape=None, n_update=1):
+    def discriminator_optimize(self, d_loss, tape=None):
         assert tape is not None, 'please set tape in opmize'
         d_grads = tape.gradient(d_loss, self.D.trainable_variables)
-        for _ in range(n_update):
-            self.d_optimizer.method.apply_gradients(zip(d_grads, self.D.trainable_variables))
+        self.d_optimizer.method.apply_gradients(zip(d_grads, self.D.trainable_variables))
         return
