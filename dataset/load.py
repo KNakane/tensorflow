@@ -1,6 +1,7 @@
 import os,sys
 import numpy as np
 import tensorflow as tf
+import tensorflow_datasets as tfds
 from tensorflow.keras.datasets import *
 from dataset.augmentation import Augmentation
 from sklearn.model_selection import train_test_split
@@ -12,19 +13,7 @@ class Load():
             self.size, self.channel = 28, 1
             self.output_dim = 49
         else:
-            dataset_name = 'tf.keras.datasets.'+ name
-            (x_train, y_train), (self.x_test, self.y_test) = self.get(dataset_name)
-            if name == 'mnist':
-                self.size, self.channel = 28, 1
-                self.output_dim = 10
-            elif name == 'cifar10':
-                self.size, self.channel = 32, 3
-                self.output_dim = 10
-            elif name == 'cifar100':
-                self.size, self.channel = 32, 3
-                self.output_dim = 100
-            else:
-                NotImplementedError
+            (x_train, y_train), (self.x_test, self.y_test) = self.get(name)
 
         self.x_train, self.x_valid, self.y_train, self.y_valid = train_test_split(x_train, y_train, test_size=0.175)
 
@@ -33,11 +22,20 @@ class Load():
         return (self.size, self.size, self.channel)
 
     def get(self, name):
-        datasets = eval(name)
-        try:
-            return datasets.load_data(label_mode='fine')
-        except:
-            return datasets.load_data()
+        train_dataset, info = tfds.load(name=name, with_info=True, split=tfds.Split.TRAIN, batch_size=-1)
+        test_dataset = tfds.load(name=name, split=tfds.Split.TEST, batch_size=-1)
+
+        train = tfds.as_numpy(train_dataset)
+        test = tfds.as_numpy(test_dataset)
+
+        x_train, y_train = train["image"], train["label"]
+        x_test, y_test = test["image"], test["label"]
+
+        # Information
+        shape = info.features['image'].shape
+        self.size, self.channel = shape[0], shape[2]
+        self.output_dim = info.features['label'].num_classes
+        return (x_train, y_train), (x_test, y_test)
 
     def get_kuzushiji(self):
         train_image = np.load('./dataset/k49-train-imgs.npz')

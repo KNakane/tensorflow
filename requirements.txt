@@ -7,6 +7,7 @@ sklearn
 gym
 gym[atari]
 gym[box2d]
+tensorflow-datasets
 matplotlib
 requests
 opencv-python
