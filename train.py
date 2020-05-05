@@ -6,11 +6,13 @@ from CNN.googlenet import GoogLeNet
 from CNN.resnet import ResNet18, ResNet34
 from CNN.densenet import DenseNet
 from CNN.fcn import FCN
-from AutoEncoder.model import AutoEncoder, VAE, CVAE
+from AutoEncoder.model import AutoEncoder, VAE, CVAE, AAE
 from GAN.gan import GAN
 from GAN.dcgan import DCGAN
 from GAN.wgan import WGAN, WGANGP
 from GAN.lsgan import LSGAN
+from GAN.acgan import ACGAN
+from GAN.began import BEGAN
 from RNN.rnn import RNN, LSTM, GRU
 from CNN.tcn import TCN
 from dataset.load import Load, SeqLoad
@@ -71,7 +73,7 @@ def construction_image(args):
                                name=args.network,
                                size=data.size,
                                channel=data.channel,
-                               out_dim=4,
+                               out_dim=2 if args.network in ['AAE'] else 4,
                                class_dim=data.output_dim,
                                lr=args.lr,
                                opt=args.opt,
@@ -103,7 +105,10 @@ def GAN_fn(args):
                                channel=data.channel,
                                name=args.network,
                                class_num=data.output_dim,
-                               lr=args.lr, opt=args.opt, l2_reg=args.l2_norm)
+                               lr=args.lr,
+                               opt=args.opt,
+                               conditional=args.conditional,
+                               l2_reg=args.l2_norm)
 
     #training
     trainer = GAN_Trainer(args, message, data, model, args.network)
@@ -141,9 +146,9 @@ def main(args):
     args.gpu = "/gpu:{}".format(gpu) if gpu >= 0 else "/cpu:0"
     if args.network in ['LeNet', 'VGG','GoogLeNet', 'ResNet18', 'ResNet34', 'DenseNet']:
         image_recognition(args)
-    elif args.network in ['AutoEncoder', 'VAE', 'CVAE']:
+    elif args.network in ['AutoEncoder', 'VAE', 'CVAE', 'AAE']:
         construction_image(args)
-    elif args.network in ['GAN','DCGAN','WGAN', 'WGANGP', 'LSGAN']:
+    elif args.network in ['GAN','DCGAN','WGAN', 'WGANGP', 'LSGAN', 'ACGAN', 'BEGAN']:
         GAN_fn(args)
     elif args.network in ['RNN', 'LSTM', 'GRU', 'FCN', 'TCN']:
         time_series(args)
@@ -156,8 +161,8 @@ if __name__ == '__main__':
     parser.add_argument(
         '--network', default='LeNet', type=str,
         choices=['LeNet','VGG', 'GoogLeNet', 'ResNet18','ResNet34', 'DenseNet',
-                 'AutoEncoder','VAE', 'CVAE',
-                 'GAN','DCGAN', 'WGAN', 'WGANGP', 'LSGAN',
+                 'AutoEncoder','VAE', 'CVAE', 'AAE',
+                 'GAN','DCGAN', 'WGAN', 'WGANGP', 'LSGAN', 'ACGAN', 'BEGAN',
                  'RNN', 'LSTM', 'GRU', 'FCN', 'TCN']
     )
     parser.add_argument('--data', default='mnist', type=str, choices=['mnist','cifar10','cifar100','kuzushiji'])

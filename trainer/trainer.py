@@ -1,9 +1,11 @@
 import os, sys
 import time
+import numpy as np
 import tensorflow as tf
 from utility.utils import Utils
 from dataset.load import Load
 from collections import OrderedDict
+from AutoEncoder.model import gaussian_mixture, swiss_roll
 
 class Trainer():
     def __init__(self,
@@ -30,7 +32,7 @@ class Trainer():
 
     def load(self):
         train_dataset = self.data.load(batch_size=self.batch_size, is_training=True, augmentation=self.aug)
-        test_dataset = self.data.load(batch_size=self.batch_size*3, is_training=False)
+        test_dataset = self.data.load(batch_size=self.batch_size*10, is_training=False)
         return train_dataset, test_dataset
 
     def begin_train(self):
@@ -147,9 +149,14 @@ class AE_Trainer(Trainer):
     @tf.function
     def _train_body(self, images, correct_image, labels):
         with tf.device(self.device):
-            with tf.GradientTape() as tape:
+            with tf.GradientTape(persistent=True) as tape:
                 with tf.name_scope('train_logits'):
-                    y_pre = self.model.inference(images, labels) if self.name == 'CVAE' else self.model.inference(images)
+                    if self.name == 'AAE':
+                        y_pre = self.model.inference(images, labels)
+                    elif self.name == 'CVAE':
+                        y_pre = self.model.inference(images, labels)
+                    else:
+                        y_pre = self.model.inference(images)
                 with tf.name_scope('train_loss'):
                     loss = self.model.loss(y_pre, correct_image)
             self.model.optimize(loss, tape)
@@ -162,21 +169,20 @@ class AE_Trainer(Trainer):
     def _test_body(self, images, correct_image, labels):
         with tf.device(self.device):
             with tf.name_scope('test_logits'):
-                y_pre = self.model.test_inference(images, labels) if self.name == 'CVAE' else self.model.test_inference(images)
+                y_pre = self.model.test_inference(images, labels) if self.name in ['CVAE', 'AAE'] else self.model.test_inference(images)
             with tf.name_scope('test_loss'):
                 loss = self.model.loss(y_pre, correct_image)
             with tf.name_scope('test_accuracy'):
                 acc = self.model.accuracy(y_pre, correct_image)
             with tf.name_scope('Prediction'):
                 predict = self.model.predict(images)
-
         return y_pre, loss, acc, predict
 
     def train(self):
         board_writer = self.begin_train()
         board_writer.set_as_default()
         if self.restore_dir is not None:
-            self.util.restore_agent(self.model ,self.restore_dir)
+            self.util.restore_agent(self.model, self.restore_dir)
         
         train_dataset, test_dataset = self.load()
 
@@ -196,12 +202,21 @@ class AE_Trainer(Trainer):
                 for (test_images, test_labels) in test_dataset:
                     test_pre, test_loss, test_accuracy, predict_image = self._test_body(test_images, test_images, test_labels)
 
-                if i == 1 or i % 50 == 0:
+                if i == 1 or i % 10 == 0 or i == self.n_epoch+1:
                     if self.name == 'AutoEncoder':
                         self.util.construct_figure(test_images.numpy(), test_pre.numpy(), i)
             
-                    elif self.name == 'VAE' or self.name == 'CVAE':
+                    elif self.name in ['VAE', 'CVAE', 'AAE']:
                         self.util.reconstruct_image(predict_image.numpy(), i)
+                        latent_z = test_pre[1]
+                        self.util.plot_latent_space(latent_z.numpy(), test_labels.numpy(), i)
+
+                if self.name in ['VAE', 'CVAE', 'AAE']:
+                    train_pre = train_pre[0]
+                    test_pre = test_pre[0]
+                if self.name == 'AAE':
+                    train_loss = tf.reduce_sum(train_loss)
+                    test_loss = test_loss[0]
 
                 # Training results
                 metrics = OrderedDict({
@@ -237,16 +252,43 @@ class GAN_Trainer(Trainer):
         self.n_disc_update = FLAGS.n_disc_update
         self.condtional = FLAGS.conditional
 
-    @tf.function
     def _train_body(self, images, labels):
-        with tf.device(self.device):
-            with tf.GradientTape() as gen_tape, tf.GradientTape() as disc_tape:
-                fake_logit, real_logit, fake_image = self.model.inference(images, self.batch_size, labels)
-                d_loss, g_loss = self.model.loss(fake_logit, real_logit)
-            self.model.generator_optimize(g_loss, gen_tape)
-            self.model.discriminator_optimize(d_loss, disc_tape, self.n_disc_update)
-            acc = self.model.accuracy(real_logit, fake_logit)
+        fake_image, g_loss = self.train_generator(images, labels)
+        for _ in range(self.n_disc_update):
+            d_loss, acc = self.train_discriminator(images, labels)
         return fake_image, d_loss, g_loss, acc
+
+    @tf.function
+    def train_generator(self, images, labels):
+        with tf.device(self.device):
+            with tf.GradientTape() as gen_tape:
+                fake_image = self.model.inference_generator(self.batch_size, labels)
+                fake_logit = self.model.inference_discriminator(fake_image, labels)
+                if self.name == 'ACGAN':
+                    g_loss = self.model.generator_loss(fake_logit, labels)
+                elif self.name == 'BEGAN':
+                    g_loss = self.model.generator_loss(fake_logit, images)
+                else:
+                    g_loss = self.model.generator_loss(fake_logit)
+            self.model.generator_optimize(g_loss, gen_tape)
+        return fake_image, g_loss
+
+    @tf.function
+    def train_discriminator(self, images, labels):
+        with tf.device(self.device):
+            with tf.GradientTape() as disc_tape:
+                fake_image = self.model.inference_generator(self.batch_size, labels)
+                fake_logit = self.model.inference_discriminator(fake_image, labels)
+                real_logit = self.model.inference_discriminator(images, labels)
+                if self.name == 'ACGAN':
+                    d_loss = self.model.discriminator_loss(fake_logit, real_logit, labels)
+                elif self.name == 'BEGAN':
+                    d_loss = self.model.discriminator_loss(fake_logit, real_logit, images)
+                else:
+                    d_loss = self.model.discriminator_loss(fake_logit, real_logit)
+            self.model.discriminator_optimize(d_loss, disc_tape)
+            acc = self.model.accuracy(real_logit, fake_logit)
+        return d_loss, acc
 
     @tf.function
     def _test_body(self, images):
@@ -285,7 +327,7 @@ class GAN_Trainer(Trainer):
             self.util.restore_agent(self.model ,self.restore_dir)
         
         train_dataset, _ = self.load()
-        test_inputs = tf.random.uniform([self.batch_size*3, self.z_dim], dtype=tf.float32)
+        test_inputs = tf.random.normal([self.batch_size*3, self.z_dim], dtype=tf.float32)
 
         # Graph for tensorboard
         tf.summary.trace_on(graph=True, profiler=True)
