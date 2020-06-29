@@ -13,6 +13,7 @@ from GAN.wgan import WGAN, WGANGP
 from GAN.lsgan import LSGAN
 from GAN.acgan import ACGAN
 from GAN.began import BEGAN
+from GAN.sngan import SNGAN
 from RNN.rnn import RNN, LSTM, GRU
 from CNN.tcn import TCN
 from dataset.load import Load, SeqLoad
@@ -148,7 +149,7 @@ def main(args):
         image_recognition(args)
     elif args.network in ['AutoEncoder', 'VAE', 'CVAE', 'AAE']:
         construction_image(args)
-    elif args.network in ['GAN','DCGAN','WGAN', 'WGANGP', 'LSGAN', 'ACGAN', 'BEGAN']:
+    elif args.network in ['GAN','DCGAN','WGAN', 'WGANGP', 'LSGAN', 'ACGAN', 'BEGAN', 'SNGAN']:
         GAN_fn(args)
     elif args.network in ['RNN', 'LSTM', 'GRU', 'FCN', 'TCN']:
         time_series(args)
@@ -162,7 +163,7 @@ if __name__ == '__main__':
         '--network', default='LeNet', type=str,
         choices=['LeNet','VGG', 'GoogLeNet', 'ResNet18','ResNet34', 'DenseNet',
                  'AutoEncoder','VAE', 'CVAE', 'AAE',
-                 'GAN','DCGAN', 'WGAN', 'WGANGP', 'LSGAN', 'ACGAN', 'BEGAN',
+                 'GAN','DCGAN', 'WGAN', 'WGANGP', 'LSGAN', 'ACGAN', 'BEGAN', 'SNGAN',
                  'RNN', 'LSTM', 'GRU', 'FCN', 'TCN']
     )
     parser.add_argument('--data', default='mnist', type=str, choices=['mnist','cifar10','cifar100','kuzushiji'])
