@@ -17,6 +17,12 @@ $ python train.py --network LSGAN --opt Adam
 ```
 ![代替テキスト](../sample_results/GAN/LSGAN.png)
 
+# Spectral Normalization GAN(SNGAN)
+```bash
+$ python train.py --network SNGAN --opt Adam
+```
+![代替テキスト](../sample_results/GAN/SNGAN.png)
+
 # Wasserstein GAN(WGAN)
 ```bash
 $ python train.py --network WGAN --opt RMSprop --n_disc_update 5 --lr 0.00005
