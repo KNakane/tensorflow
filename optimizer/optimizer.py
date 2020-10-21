@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 import tensorflow as tf
-from adabound import AdaBoundOptimizer
-from amsgrad import AMSGradOptimizer
-from adabelief import AdaBeliefOptimizer
+from optimizer.adabound import AdaBoundOptimizer
+from optimizer.adabelief import AdaBeliefOptimizer
 
 
 class SGD():
@@ -44,21 +43,21 @@ class Adamax(SGD):
 
 
 class RMSprop(SGD):
-    def __init__(self, learning_rate=0.1, decay_step=None, momentum=0.95, epsilon=0.01):
-        super().__init__(learning_rate=learning_rate, decay_step=decay_step)
+    def __init__(self, learning_rate=0.1, decay_step=None, decay_rate=0.95, momentum=0.95, epsilon=0.01):
+        super().__init__(learning_rate=learning_rate, decay_step=decay_step, decay_rate=decay_rate)
         self.method = tf.optimizers.RMSprop(self.lr, rho=0.9, epsilon=1e-06)
 
 class AdaBound(SGD):
-    def __init__(self, learning_rate=0.1, decay_step=None, momentum=0.95, epsilon=0.01):
-        super().__init__(learning_rate=learning_rate, decay_step=decay_step)
-        self.method = AdaBoundOptimizer(learning_rate=self.lr, final_lr=0.1, beta1=0.9, beta2=0.999, amsbound=False)
+    def __init__(self, learning_rate=0.1, decay_step=None, decay_rate=0.95, momentum=0.95, epsilon=0.01):
+        super().__init__(learning_rate=learning_rate, decay_step=decay_step, decay_rate=decay_rate)
+        self.method = AdaBoundOptimizer(learning_rate=self.lr, final_learning_rate=0.1, beta_1=0.9, beta_2=0.999, amsbound=False)
 
 class AMSGrad(SGD):
-    def __init__(self, learning_rate=0.1, decay_step=None, momentum=0.95, epsilon=0.01):
-        super().__init__(learning_rate=learning_rate, decay_step=decay_step)
-        self.method = AMSGradOptimizer(learning_rate=self.lr, beta1=0.9, beta2=0.99, epsilon=1e-8)
+    def __init__(self, learning_rate=0.1, decay_step=None, decay_rate=0.95, momentum=0.95, epsilon=0.01):
+        super().__init__(learning_rate=learning_rate, decay_step=decay_step, decay_rate=decay_rate)
+        self.method = tf.optimizers.Adam(self.lr, beta_1=0.9, beta_2=0.999, epsilon=1e-08, amsgrad=True)
 
 class AdaBelief(SGD):
-    def __init__(self, learning_rate=0.1, decay_step=None, momentum=0.95, epsilon=0.01):
-        super().__init__(learning_rate=learning_rate, decay_step=decay_step)
+    def __init__(self, learning_rate=0.1, decay_step=None, decay_rate=0.95, momentum=0.95, epsilon=0.01):
+        super().__init__(learning_rate=learning_rate, decay_step=decay_step, decay_rate=decay_rate)
         self.method = AdaBeliefOptimizer(learning_rate=self.lr, epsilon=1e-12)

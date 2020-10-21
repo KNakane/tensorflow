@@ -1,251 +1,132 @@
-"""AdaBound for TensorFlow."""
+import tensorflow as tf
+from tensorflow.python.keras.optimizer_v2 import optimizer_v2
+from tensorflow.python.util.tf_export import keras_export
 
-from tensorflow.python.eager import context
-from tensorflow.python.framework import ops
-from tensorflow.python.ops import control_flow_ops
-from tensorflow.python.ops import math_ops
-from tensorflow.python.ops import resource_variable_ops
-from tensorflow.python.ops import state_ops
-from tensorflow.python.ops import variable_scope
-from tensorflow.python.training import optimizer
-from tensorflow.python.ops.clip_ops import clip_by_value
+# https://github.com/titu1994/keras-adabound/blob/master/adabound_tf.py
 
-"""Implements AdaBound algorithm.
-    It has been proposed in `Adaptive Gradient Methods with Dynamic Bound of Learning Rate`_.
-    Arguments:
-        params (iterable): iterable of parameters to optimize or dicts defining
-            parameter groups
-        lr (float, optional): Adam learning rate (default: 1e-3)
-        betas (Tuple[float, float], optional): coefficients used for computing
-            running averages of gradient and its square (default: (0.9, 0.999))
-        final_lr (float, optional): final (SGD) learning rate (default: 0.1)
-        gamma (float, optional): convergence speed of the bound functions (default: 1e-3)
-        eps (float, optional): term added to the denominator to improve
-            numerical stability (default: 1e-8)
-        weight_decay (float, optional): weight decay (L2 penalty) (default: 0)
-        amsbound (boolean, optional): whether to use the AMSBound variant of this algorithm
-    .. Adaptive Gradient Methods with Dynamic Bound of Learning Rate:
-        https://openreview.net/forum?id=Bkg3g2R9FX
+@keras_export('keras.optimizers.AdaBoundOptimizer')
+class AdaBoundOptimizer(optimizer_v2.OptimizerV2):
+    """AdaBound optimizer.
+    Default parameters follow those provided in the original paper.
+    # Arguments
+        learning_rate: float >= 0. Learning rate.
+        final_learning_rate: float >= 0. Final learning rate.
+        beta_1: float, 0 < beta < 1. Generally close to 1.
+        beta_2: float, 0 < beta < 1. Generally close to 1.
+        gamma: float >= 0. Convergence speed of the bound function.
+        epsilon: float >= 0. Fuzz factor. If `None`, defaults to `K.epsilon()`.
+        decay: float >= 0. Learning rate decay over each update.
+        weight_decay: Weight decay weight.
+        amsbound: boolean. Whether to apply the AMSBound variant of this
+            algorithm.
+    # References
+        - [Adaptive Gradient Methods with Dynamic Bound of Learning Rate]
+          (https://openreview.net/forum?id=Bkg3g2R9FX)
+        - [Adam - A Method for Stochastic Optimization]
+          (https://arxiv.org/abs/1412.6980v8)
+        - [On the Convergence of Adam and Beyond]
+          (https://openreview.net/forum?id=ryQu7f-RZ)
     """
+    def __init__(self,
+                 learning_rate=0.001,
+                 final_learning_rate=0.1,
+                 beta_1=0.9,
+                 beta_2=0.999,
+                 gamma=1e-3,
+                 epsilon=None,
+                 weight_decay=0.0,
+                 amsbound=False,
+                 name='AdaBound', **kwargs):
+        super(AdaBoundOptimizer, self).__init__(name, **kwargs)
 
-# https://github.com/taki0112/AdaBound-Tensorflow/blob/master/AdaBound.py
-
-class AdaBoundOptimizer(optimizer.Optimizer):
-    def __init__(self, learning_rate=0.001, final_lr=0.1, beta1=0.9, beta2=0.999,
-                 gamma=1e-3, epsilon=1e-8, amsbound=False,
-                 use_locking=False, name="AdaBound"):
-        super(AdaBoundOptimizer, self).__init__(use_locking, name)
-        self._lr = learning_rate
-        self._final_lr = final_lr
-        self._beta1 = beta1
-        self._beta2 = beta2
-        self._epsilon = epsilon
-
-        self._gamma = gamma
-        self._amsbound = amsbound
-
-        self._lr_t = None
-        self._beta1_t = None
-        self._beta2_t = None
-        self._epsilon_t = None
+        self._set_hyper('learning_rate', kwargs.get('learning_rate', learning_rate))
+        self._set_hyper('final_learning_rate', kwargs.get('final_learning_rate', final_learning_rate))
+        self._set_hyper('beta_1', beta_1)
+        self._set_hyper('beta_2', beta_2)
+        self._set_hyper('decay', self._initial_decay)
+        self._set_hyper('gamma', gamma)
+        self.epsilon = epsilon or tf.keras.backend.epsilon()
+        self.amsbound = amsbound
+        self.weight_decay = weight_decay
+        self.base_lr = learning_rate
 
     def _create_slots(self, var_list):
-        first_var = min(var_list, key=lambda x: x.name)
-
-        graph = None if context.executing_eagerly() else ops.get_default_graph()
-        create_new = self._get_non_slot_variable("beta1_power", graph) is None
-        if not create_new and context.in_graph_mode():
-            create_new = (self._get_non_slot_variable("beta1_power", graph).graph is not first_var.graph)
-
-        if create_new:
-            self._create_non_slot_variable(initial_value=self._beta1,
-                                           name="beta1_power",
-                                           colocate_with=first_var)
-            self._create_non_slot_variable(initial_value=self._beta2,
-                                           name="beta2_power",
-                                           colocate_with=first_var)
-            self._create_non_slot_variable(initial_value=self._gamma,
-                                           name="gamma_multi",
-                                           colocate_with=first_var)
-        # Create slots for the first and second moments.
-        for v in var_list :
-            self._zeros_slot(v, "m", self._name)
-            self._zeros_slot(v, "v", self._name)
-            self._zeros_slot(v, "vhat", self._name)
-
-
-    def _prepare(self):
-        self._lr_t = ops.convert_to_tensor(self._lr)
-        self._base_lr_t = ops.convert_to_tensor(self._lr)
-        self._beta1_t = ops.convert_to_tensor(self._beta1)
-        self._beta2_t = ops.convert_to_tensor(self._beta2)
-        self._epsilon_t = ops.convert_to_tensor(self._epsilon)
-        self._gamma_t = ops.convert_to_tensor(self._gamma)
-
-    def _apply_dense(self, grad, var):
-        graph = None if context.executing_eagerly() else ops.get_default_graph()
-        beta1_power = math_ops.cast(self._get_non_slot_variable("beta1_power", graph=graph), var.dtype.base_dtype)
-        beta2_power = math_ops.cast(self._get_non_slot_variable("beta2_power", graph=graph), var.dtype.base_dtype)
-        lr_t = math_ops.cast(self._lr_t, var.dtype.base_dtype)
-        base_lr_t = math_ops.cast(self._base_lr_t, var.dtype.base_dtype)
-        beta1_t = math_ops.cast(self._beta1_t, var.dtype.base_dtype)
-        beta2_t = math_ops.cast(self._beta2_t, var.dtype.base_dtype)
-        epsilon_t = math_ops.cast(self._epsilon_t, var.dtype.base_dtype)
-        gamma_multi = math_ops.cast(self._get_non_slot_variable("gamma_multi", graph=graph), var.dtype.base_dtype)
-
-        step_size = (lr_t * math_ops.sqrt(1 - beta2_power) / (1 - beta1_power))
-        final_lr = self._final_lr * lr_t / base_lr_t
-        lower_bound = final_lr * (1. - 1. / (gamma_multi + 1.))
-        upper_bound = final_lr * (1. + 1. / (gamma_multi))
-
-        # m_t = beta1 * m + (1 - beta1) * g_t
-        m = self.get_slot(var, "m")
-        m_scaled_g_values = grad * (1 - beta1_t)
-        m_t = state_ops.assign(m, beta1_t * m + m_scaled_g_values, use_locking=self._use_locking)
-
-        # v_t = beta2 * v + (1 - beta2) * (g_t * g_t)
-        v = self.get_slot(var, "v")
-        v_scaled_g_values = (grad * grad) * (1 - beta2_t)
-        v_t = state_ops.assign(v, beta2_t * v + v_scaled_g_values, use_locking=self._use_locking)
-
-        # amsgrad
-        vhat = self.get_slot(var, "vhat")
-        if self._amsbound :
-            vhat_t = state_ops.assign(vhat, math_ops.maximum(v_t, vhat))
-            v_sqrt = math_ops.sqrt(vhat_t)
-        else :
-            vhat_t = state_ops.assign(vhat, vhat)
-            v_sqrt = math_ops.sqrt(v_t)
-
-
-        # Compute the bounds
-        step_size_bound = step_size / (v_sqrt + epsilon_t)
-        bounded_lr = m_t * clip_by_value(step_size_bound, lower_bound, upper_bound)
-
-        var_update = state_ops.assign_sub(var, bounded_lr, use_locking=self._use_locking)
-        return control_flow_ops.group(*[var_update, m_t, v_t, vhat_t])
+        for var in var_list:
+            self.add_slot(var, 'm')
+            self.add_slot(var, 'v')
+            self.add_slot(var, 'vhat')
 
     def _resource_apply_dense(self, grad, var):
-        graph = None if context.executing_eagerly() else ops.get_default_graph()
-        beta1_power = math_ops.cast(self._get_non_slot_variable("beta1_power", graph=graph), grad.dtype.base_dtype)
-        beta2_power = math_ops.cast(self._get_non_slot_variable("beta2_power", graph=graph), grad.dtype.base_dtype)
-        lr_t = math_ops.cast(self._lr_t, grad.dtype.base_dtype)
-        base_lr_t = math_ops.cast(self._base_lr_t, var.dtype.base_dtype)
-        beta1_t = math_ops.cast(self._beta1_t, grad.dtype.base_dtype)
-        beta2_t = math_ops.cast(self._beta2_t, grad.dtype.base_dtype)
-        epsilon_t = math_ops.cast(self._epsilon_t, grad.dtype.base_dtype)
-        gamma_multi = math_ops.cast(self._get_non_slot_variable("gamma_multi", graph=graph), var.dtype.base_dtype)
+        var_dtype = var.dtype.base_dtype
+        lr_t = self._decayed_lr(var_dtype)
 
-        step_size = (lr_t * math_ops.sqrt(1 - beta2_power) / (1 - beta1_power))
-        final_lr = self._final_lr * lr_t / base_lr_t
-        lower_bound = final_lr * (1. - 1. / (gamma_multi + 1.))
-        upper_bound = final_lr * (1. + 1. / (gamma_multi))
+        m = self.get_slot(var, 'm')
+        v = self.get_slot(var, 'v')
+        vhat = self.get_slot(var, 'vhat')
 
-        # m_t = beta1 * m + (1 - beta1) * g_t
-        m = self.get_slot(var, "m")
-        m_scaled_g_values = grad * (1 - beta1_t)
-        m_t = state_ops.assign(m, beta1_t * m + m_scaled_g_values, use_locking=self._use_locking)
+        beta_1_t = self._get_hyper('beta_1', var_dtype)
+        beta_2_t = self._get_hyper('beta_2', var_dtype)
 
-        # v_t = beta2 * v + (1 - beta2) * (g_t * g_t)
-        v = self.get_slot(var, "v")
-        v_scaled_g_values = (grad * grad) * (1 - beta2_t)
-        v_t = state_ops.assign(v, beta2_t * v + v_scaled_g_values, use_locking=self._use_locking)
+        gamma = self._get_hyper('gamma')
+        final_lr = self._get_hyper('final_learning_rate')
 
-        # amsgrad
-        vhat = self.get_slot(var, "vhat")
-        if self._amsbound:
-            vhat_t = state_ops.assign(vhat, math_ops.maximum(v_t, vhat))
-            v_sqrt = math_ops.sqrt(vhat_t)
+        epsilon_t = tf.convert_to_tensor(self.epsilon, var_dtype)
+        base_lr_t = tf.convert_to_tensor(self.base_lr)
+        t = tf.cast(self.iterations + 1, var_dtype)
+
+        # Applies bounds on actual learning rate
+        step_size = lr_t * (tf.math.sqrt(1. - tf.math.pow(beta_2_t, t)) /
+                          (1. - tf.math.pow(beta_1_t, t)))
+
+        final_lr = final_lr * lr_t / base_lr_t
+        lower_bound = final_lr * (1. - 1. / (gamma * t + 1.))
+        upper_bound = final_lr * (1. + 1. / (gamma * t))
+
+        # apply weight decay
+        if self.weight_decay != 0.:
+            grad += self.weight_decay * var
+
+        # Compute moments
+        m_t = (beta_1_t * m) + (1. - beta_1_t) * grad
+        v_t = (beta_2_t * v) + (1. - beta_2_t) * tf.math.square(grad)
+
+        if self.amsbound:
+            vhat_t = tf.math.maximum(vhat, v_t)
+            denom = (tf.math.sqrt(vhat_t) + epsilon_t)
         else:
-            vhat_t = state_ops.assign(vhat, vhat)
-            v_sqrt = math_ops.sqrt(v_t)
+            vhat_t = vhat
+            denom = (tf.math.sqrt(v_t) + self.epsilon)
 
         # Compute the bounds
-        step_size_bound = step_size / (v_sqrt + epsilon_t)
-        bounded_lr = m_t * clip_by_value(step_size_bound, lower_bound, upper_bound)
+        step_size_p = step_size * tf.ones_like(denom)
+        step_size_p_bound = step_size_p / denom
+        bounded_lr_t = m_t * tf.math.minimum(tf.math.maximum(step_size_p_bound,
+                                             lower_bound), upper_bound)
 
-        var_update = state_ops.assign_sub(var, bounded_lr, use_locking=self._use_locking)
+        # Setup updates
+        m_t = tf.compat.v1.assign(m, m_t)
+        vhat_t = tf.compat.v1.assign(vhat, vhat_t)
 
-        return control_flow_ops.group(*[var_update, m_t, v_t, vhat_t])
+        with tf.control_dependencies([m_t, v_t, vhat_t]):
+            p_t = var - bounded_lr_t
+            param_update = tf.compat.v1.assign(var, p_t)
 
-    def _apply_sparse_shared(self, grad, var, indices, scatter_add):
-        graph = None if context.executing_eagerly() else ops.get_default_graph()
-        beta1_power = math_ops.cast(self._get_non_slot_variable("beta1_power", graph=graph), var.dtype.base_dtype)
-        beta2_power = math_ops.cast(self._get_non_slot_variable("beta2_power", graph=graph), var.dtype.base_dtype)
-        lr_t = math_ops.cast(self._lr_t, var.dtype.base_dtype)
-        base_lr_t = math_ops.cast(self._base_lr_t, var.dtype.base_dtype)
-        beta1_t = math_ops.cast(self._beta1_t, var.dtype.base_dtype)
-        beta2_t = math_ops.cast(self._beta2_t, var.dtype.base_dtype)
-        epsilon_t = math_ops.cast(self._epsilon_t, var.dtype.base_dtype)
-        gamma_t = math_ops.cast(self._gamma_t, var.dtype.base_dtype)
+            return tf.group(*[param_update, m_t, v_t, vhat_t])
 
-        step_size = (lr_t * math_ops.sqrt(1 - beta2_power) / (1 - beta1_power))
-        final_lr = self._final_lr * lr_t / base_lr_t
-        lower_bound = final_lr * (1. - 1. / (gamma_t + 1.))
-        upper_bound = final_lr * (1. + 1. / (gamma_t))
+    def _resource_apply_sparse(self, grad, handle, indices):
+        raise NotImplementedError("Sparse data is not supported yet")
 
-        # m_t = beta1 * m + (1 - beta1) * g_t
-        m = self.get_slot(var, "m")
-        m_scaled_g_values = grad * (1 - beta1_t)
-        m_t = state_ops.assign(m, m * beta1_t, use_locking=self._use_locking)
-        with ops.control_dependencies([m_t]):
-            m_t = scatter_add(m, indices, m_scaled_g_values)
-
-        # v_t = beta2 * v + (1 - beta2) * (g_t * g_t)
-        v = self.get_slot(var, "v")
-        v_scaled_g_values = (grad * grad) * (1 - beta2_t)
-        v_t = state_ops.assign(v, v * beta2_t, use_locking=self._use_locking)
-        with ops.control_dependencies([v_t]):
-            v_t = scatter_add(v, indices, v_scaled_g_values)
-
-        # amsgrad
-        vhat = self.get_slot(var, "vhat")
-        if self._amsbound:
-            vhat_t = state_ops.assign(vhat, math_ops.maximum(v_t, vhat))
-            v_sqrt = math_ops.sqrt(vhat_t)
-        else:
-            vhat_t = state_ops.assign(vhat, vhat)
-            v_sqrt = math_ops.sqrt(v_t)
-
-        # Compute the bounds
-        step_size_bound = step_size / (v_sqrt + epsilon_t)
-        bounded_lr = m_t * clip_by_value(step_size_bound, lower_bound, upper_bound)
-
-        var_update = state_ops.assign_sub(var, bounded_lr, use_locking=self._use_locking)
-
-        return control_flow_ops.group(*[var_update, m_t, v_t, vhat_t])
-
-    def _apply_sparse(self, grad, var):
-        return self._apply_sparse_shared(
-            grad.values, var, grad.indices,
-            lambda x, i, v: state_ops.scatter_add(  # pylint: disable=g-long-lambda
-                x, i, v, use_locking=self._use_locking))
-
-    def _resource_scatter_add(self, x, i, v):
-        with ops.control_dependencies(
-                [resource_variable_ops.resource_scatter_add(x, i, v)]):
-            return x.value()
-
-    def _resource_apply_sparse(self, grad, var, indices):
-        return self._apply_sparse_shared(
-            grad, var, indices, self._resource_scatter_add)
-
-    def _finish(self, update_ops, name_scope):
-        # Update the power accumulators.
-        with ops.control_dependencies(update_ops):
-            graph = None if context.executing_eagerly() else ops.get_default_graph()
-            beta1_power = self._get_non_slot_variable("beta1_power", graph=graph)
-            beta2_power = self._get_non_slot_variable("beta2_power", graph=graph)
-            gamma_multi = self._get_non_slot_variable("gamma_multi", graph=graph)
-            with ops.colocate_with(beta1_power):
-                update_beta1 = beta1_power.assign(
-                    beta1_power * self._beta1_t,
-                    use_locking=self._use_locking)
-                update_beta2 = beta2_power.assign(
-                    beta2_power * self._beta2_t,
-                    use_locking=self._use_locking)
-                update_gamma = gamma_multi.assign(
-                    gamma_multi + self._gamma_t,
-                    use_locking=self._use_locking)
-        return control_flow_ops.group(*update_ops + [update_beta1, update_beta2, update_gamma],
-                                      name=name_scope)
+    def get_config(self):
+        config = super(AdaBound, self).get_config()
+        config.update({
+            'learning_rate': self._serialize_hyperparameter('learning_rate'),
+            'final_learning_rate': self._serialize_hyperparameter('final_learning_rate'),
+            'decay': self._serialize_hyperparameter('decay'),
+            'beta_1': self._serialize_hyperparameter('beta_1'),
+            'beta_2': self._serialize_hyperparameter('beta_2'),
+            'gamma': self._serialize_hyperparameter('gamma'),
+            'epsilon': self.epsilon,
+            'weight_decay': self.weight_decay,
+            'amsbound': self.amsbound,
+        })
+        return config
