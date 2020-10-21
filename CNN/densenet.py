@@ -1,6 +1,6 @@
 import tensorflow as tf
 from CNN.model import MyModel
-from utility.optimizer import *
+from optimizer.optimizer import *
 
 class DenseNet(MyModel):
     def __init__(self, *args, **kwargs):

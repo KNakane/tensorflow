@@ -2,7 +2,7 @@ import os, sys
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.models import Model
-from utility.optimizer import *
+from optimizer.optimizer import *
 
 #citation : https://github.com/thisisiron/TF2-GAN
 

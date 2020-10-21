@@ -2,7 +2,7 @@ import os, sys
 import numpy as np
 import tensorflow as tf
 from CNN.model import MyModel
-from utility.optimizer import *
+from optimizer.optimizer import *
 
 class FCN(MyModel):
     def __init__(self, *args, **kwargs):

@@ -2,7 +2,7 @@ import os, sys
 import numpy as np
 import tensorflow as tf
 from CNN.model import MyModel
-from utility.optimizer import *
+from optimizer.optimizer import *
 
 # Paper : https://arxiv.org/pdf/1803.01271.pdf
 

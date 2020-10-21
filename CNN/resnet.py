@@ -3,7 +3,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras.models import Model
 from CNN.model import BasedResNet, ResidualBlock
-from utility.optimizer import *
+from optimizer.optimizer import *
 
 class ResNet18(BasedResNet):
     """
