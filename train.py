@@ -170,7 +170,7 @@ if __name__ == '__main__':
     parser.add_argument('--n_epoch', default=1000, type=int, help='Input max epoch')
     parser.add_argument('--batch_size', default=32, type=int, help='Input batch size')
     parser.add_argument('--lr', default=0.001, type=float, help='Input learning rate')
-    parser.add_argument('--opt', default='SGD', type=str, choices=['SGD','Momentum','Adadelta','Adagrad','Adam','RMSprop'])
+    parser.add_argument('--opt', default='SGD', type=str, choices=['SGD','Momentum','Adadelta','Adagrad','Adam','RMSprop', 'AdaBound', 'AMSGrad', 'AdaBelief'])
     parser.add_argument('--aug', default=None, type=str, choices=['shift','mirror','rotate','shift_rotate','cutout','random_erace'])
     parser.add_argument('--denoise', action='store_true', help='True : Denoising AE, False : standard AE')
     parser.add_argument('--conv', action='store_true', help='True : Convolutional AE, False : standard AE')

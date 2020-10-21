@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 import tensorflow as tf
+from adabound import AdaBoundOptimizer
+from amsgrad import AMSGradOptimizer
+from adabelief import AdaBeliefOptimizer
 
 
 class SGD():
@@ -44,3 +47,18 @@ class RMSprop(SGD):
     def __init__(self, learning_rate=0.1, decay_step=None, momentum=0.95, epsilon=0.01):
         super().__init__(learning_rate=learning_rate, decay_step=decay_step)
         self.method = tf.optimizers.RMSprop(self.lr, rho=0.9, epsilon=1e-06)
+
+class AdaBound(SGD):
+    def __init__(self, learning_rate=0.1, decay_step=None, momentum=0.95, epsilon=0.01):
+        super().__init__(learning_rate=learning_rate, decay_step=decay_step)
+        self.method = AdaBoundOptimizer(learning_rate=self.lr, final_lr=0.1, beta1=0.9, beta2=0.999, amsbound=False)
+
+class AMSGrad(SGD):
+    def __init__(self, learning_rate=0.1, decay_step=None, momentum=0.95, epsilon=0.01):
+        super().__init__(learning_rate=learning_rate, decay_step=decay_step)
+        self.method = AMSGradOptimizer(learning_rate=self.lr, beta1=0.9, beta2=0.99, epsilon=1e-8)
+
+class AdaBelief(SGD):
+    def __init__(self, learning_rate=0.1, decay_step=None, momentum=0.95, epsilon=0.01):
+        super().__init__(learning_rate=learning_rate, decay_step=decay_step)
+        self.method = AdaBeliefOptimizer(learning_rate=self.lr, epsilon=1e-12)
