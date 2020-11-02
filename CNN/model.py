@@ -17,6 +17,7 @@ class MyModel(Model):
                  ):
         super().__init__()
         self.model_name = name
+        self.input_shape = input_shape
         self.out_dim = out_dim
         self.optimizer = eval(opt)(learning_rate=lr, decay_step=None, decay_rate=0.95)
         self.l2_regularizer = tf.keras.regularizers.l2(l2_reg_scale) if l2_reg else None
@@ -24,7 +25,7 @@ class MyModel(Model):
         self.loss_function = tf.losses.CategoricalCrossentropy()
         self.accuracy_function = tf.keras.metrics.CategoricalAccuracy()
         with tf.device("/cpu:0"):
-            self(x=tf.constant(tf.zeros(shape=(1,)+input_shape,
+            self(x=tf.constant(tf.zeros(shape=(1,)+self.input_shape,
                                              dtype=tf.float32)))
 
     def _build(self):
