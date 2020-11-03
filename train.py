@@ -6,6 +6,7 @@ from CNN.googlenet import GoogLeNet
 from CNN.resnet import ResNet18, ResNet34
 from CNN.densenet import DenseNet
 from CNN.fcn import FCN
+from Transformer.vision_transformer import VisionTransformer
 from AutoEncoder.model import AutoEncoder, VAE, CVAE, AAE
 from GAN.gan import GAN
 from GAN.dcgan import DCGAN
@@ -145,7 +146,7 @@ def time_series(args):
 def main(args):
     gpu = find_gpu()
     args.gpu = "/gpu:{}".format(gpu) if gpu >= 0 else "/cpu:0"
-    if args.network in ['LeNet', 'VGG','GoogLeNet', 'ResNet18', 'ResNet34', 'DenseNet']:
+    if args.network in ['LeNet', 'VGG','GoogLeNet', 'ResNet18', 'ResNet34', 'DenseNet', 'VisionTransformer']:
         image_recognition(args)
     elif args.network in ['AutoEncoder', 'VAE', 'CVAE', 'AAE']:
         construction_image(args)
@@ -161,7 +162,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '--network', default='LeNet', type=str,
-        choices=['LeNet','VGG', 'GoogLeNet', 'ResNet18','ResNet34', 'DenseNet',
+        choices=['LeNet','VGG', 'GoogLeNet', 'ResNet18','ResNet34', 'DenseNet', 'VisionTransformer',
                  'AutoEncoder','VAE', 'CVAE', 'AAE',
                  'GAN','DCGAN', 'WGAN', 'WGANGP', 'LSGAN', 'ACGAN', 'BEGAN', 'SNGAN',
                  'RNN', 'LSTM', 'GRU', 'FCN', 'TCN']
