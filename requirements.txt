@@ -10,6 +10,7 @@ gym[box2d]
 tensorflow-datasets
 matplotlib
 requests
+tensorflow_probability
 opencv-python
 optuna
 pygame==1.9.4
