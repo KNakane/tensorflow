@@ -36,7 +36,7 @@ $ python train.py --network WGANGP --opt RMSprop --n_disc_update 5 --lr 0.00005
 ![代替テキスト](../sample_results/GAN/WGANGP.png)
 
 # Conditional GAN(CGAN)
-- 各GANを実行する際に```--conditional```を追加するとconditional GANになる
+各GANを実行する際に```--conditional```を追加するとconditional GANになる
 ![代替テキスト](../sample_results/GAN/cGAN.png)
 
 # ACGAN
