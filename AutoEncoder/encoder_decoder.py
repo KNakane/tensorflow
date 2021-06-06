@@ -29,7 +29,7 @@ class Encoder(Model):
         self.out = tf.keras.layers.Dense(self.out_dim, activation=None, kernel_regularizer=self.l2_regularizer)
         return
 
-    def __call__(self, x, trainable=True):
+    def __call__(self, x, trainable=False):
         x = self.flat(x, training=trainable)
         x = self.fc1(x, training=trainable)
         x = self.fc2(x, training=trainable)
@@ -53,7 +53,7 @@ class Conv_Encoder(Encoder):
         self.out = tf.keras.layers.Dense(self.out_dim, activation=None, kernel_regularizer=self.l2_regularizer)
         return
 
-    def __call__(self, x, trainable=True):
+    def __call__(self, x, trainable=False):
         x = self.conv1(x, training=trainable)
         x = self.max_pool1(x, training=trainable)
         x = self.conv2(x, training=trainable)
@@ -94,7 +94,7 @@ class Decoder(Model):
         self.out = tf.keras.layers.Reshape((self.size,self.size,self.channel))
         return
 
-    def __call__(self, x, trainable=True):
+    def __call__(self, x, trainable=False):
         x = self.fc1(x, training=trainable)
         x = self.fc2(x, training=trainable)
         x = self.fc3(x, training=trainable)
@@ -119,7 +119,7 @@ class Conv_Decoder(Decoder):
         self.conv4 = tf.keras.layers.Conv2D(filters=self.channel, kernel_size=(3,3), activation='sigmoid', padding='same')
         return
 
-    def __call__(self, x, trainable=True):
+    def __call__(self, x, trainable=False):
         x = self.fc(x, training=trainable)
         x = self.reshape(x)
         x = self.conv1(x, training=trainable)
@@ -142,7 +142,7 @@ class Discriminator(BasedDiscriminator):
         self.dropout2 = tf.keras.layers.Dropout(0.5)
         self.fc3 = tf.keras.layers.Dense(1, activation=None, kernel_regularizer=self.l2_regularizer)
 
-    def __call__(self, outputs, trainable=True):
+    def __call__(self, outputs, trainable=False):
         with tf.name_scope(self.name):
             outputs = self.fc1(outputs, training=trainable)
             outputs = self.dropout1(outputs, training=trainable)
@@ -154,3 +154,37 @@ class Discriminator(BasedDiscriminator):
 class Conv_Discriminator(BasedDiscriminator):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+class PriorNetwork(Model):
+    def __init__(self,
+                 model=None,
+                 name='Prior',
+                 input_shape=None,
+                 out_dim=10,
+                 l2_reg=False,
+                 l2_reg_scale=0.0001
+                 ):
+        super().__init__()
+        self.model_name = name
+        self.out_dim = out_dim
+        self.l2_regularizer = tf.keras.regularizers.l2(l2_reg_scale) if l2_reg else None
+        self.build()
+        with tf.device("/cpu:0"):
+            self(x=tf.constant(np.zeros(shape=(1,)+input_shape,
+                                             dtype=np.float32)))
+
+    def _build(self):
+        self.flat = tf.keras.layers.Flatten()
+        self.fc1 = tf.keras.layers.Dense(256, activation='elu', kernel_regularizer=self.l2_regularizer)
+        self.fc2 = tf.keras.layers.Dense(128, activation='elu', kernel_regularizer=self.l2_regularizer)
+        self.fc3 = tf.keras.layers.Dense(64, activation='elu', kernel_regularizer=self.l2_regularizer)
+        self.out = tf.keras.layers.Dense(self.out_dim, activation=None, kernel_regularizer=self.l2_regularizer)
+        return
+
+    def __call__(self, x, trainable=False):
+        x = self.flat(x, training=trainable)
+        x = self.fc1(x, training=trainable)
+        x = self.fc2(x, training=trainable)
+        x = self.fc3(x, training=trainable)
+        x = self.out(x, training=trainable)
+        return x

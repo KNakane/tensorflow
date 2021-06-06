@@ -3,7 +3,7 @@ import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
 from tensorflow.keras.models import Model
-from AutoEncoder.encoder_decoder import Encoder, Decoder, Conv_Encoder, Conv_Decoder, Discriminator, Conv_Discriminator
+from AutoEncoder.encoder_decoder import Encoder, Decoder, Conv_Encoder, Conv_Decoder, Discriminator, Conv_Discriminator, PriorNetwork
 from optimizer.optimizer import *
 
 
@@ -23,14 +23,27 @@ class AutoEncoder(Model):
                  ):
         super().__init__()
         self.model_name = name
-        Encoder_model = Conv_Encoder if conv else Encoder
-        Decoder_model = Conv_Decoder if conv else Decoder
+        self.denoise = denoise
+        self.is_conv = conv
+        self.out_dim = out_dim
+        self.class_dim = class_dim
+        self.size = size
+        self.channel = channel
+        self.optimizer = eval(opt)(learning_rate=lr, decay_step=None, decay_rate=0.95)
+        self.l2_reg = l2_reg
+        self.l2_regularizer = l2_reg_scale if l2_reg else None
+
+        Encoder_model = Conv_Encoder if self.is_conv else Encoder
+        Decoder_model = Conv_Decoder if self.is_conv else Decoder
         if name == 'VAE':
-            decoder_input = out_dim / 2
+            decoder_input = int(out_dim / 2)
         elif name == 'CVAE':
-            decoder_input = (out_dim / 2 + class_dim)
+            decoder_input = (int(out_dim / 2) + class_dim)
         elif name == 'AAE':
             decoder_input = (out_dim + class_dim)
+        elif name == 'VAEAC':
+            channel = channel * 2
+            decoder_input = int(out_dim / 2)
         else:
             decoder_input = out_dim
         self.encode = Encoder_model(input_shape=(size, size, channel + (class_dim * True if name in ['CVAE'] else False)),
@@ -42,26 +55,23 @@ class AutoEncoder(Model):
                                     channel=channel,
                                     l2_reg=l2_reg,
                                     l2_reg_scale=l2_reg_scale)
-        self.denoise = denoise
-        self.class_dim = class_dim
-        self.size = size
-        self.channel =  channel
-        self.optimizer = eval(opt)(learning_rate=lr, decay_step=None, decay_rate=0.95)
-        self.l2_regularizer = l2_reg_scale if l2_reg else None
+        with tf.device("/cpu:0"):
+            self(x=tf.constant(tf.zeros(shape=(1,self.size, self.size, self.channel),
+                                             dtype=tf.float32)))
 
     def noise(self, outputs):
         outputs += tf.random.normal(tf.shape(outputs))
         return tf.clip_by_value(outputs, 1e-8, 1 - 1e-8)
     
-    def inference(self, outputs, trainable=True):
+    def call(self, x, trainable=False):
         if self.denoise:
-            outputs = self.noise(outputs)
-        outputs = self.encode(outputs, trainable)
+            x = self.noise(x)
+        outputs = self.encode(x, trainable)
         outputs = self.decode(outputs, trainable)
         return outputs
 
     def test_inference(self, outputs, trainable=False):
-        return self.inference(outputs, trainable=trainable)
+        return self(outputs, trainable=trainable)
 
     def predict(self, outputs, trainable=False):
         return self.test_inference(outputs, trainable)
@@ -87,10 +97,10 @@ class VAE(AutoEncoder):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
     
-    def inference(self, outputs, trainable=True):
+    def call(self, x, trainable=False):
         if self.denoise:
-            outputs = self.noise(outputs)
-        outputs = self.encode(outputs, trainable)
+            x = self.noise(x)
+        outputs = self.encode(x, trainable)
         self.mu, self.var = tf.split(outputs, num_or_size_splits=2, axis=1)
         compose_img = self.re_parameterization(self.mu, self.var)
         outputs = tf.clip_by_value(self.decode(compose_img, trainable), 1e-8, 1 - 1e-8)
@@ -153,10 +163,10 @@ class CVAE(VAE):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def inference(self, outputs, labels=None, trainable=True):
+    def call(self, x, labels=None, trainable=False):
         if self.denoise:
-            outputs = self.noise(outputs)
-        outputs = self.combine_image(outputs, labels)
+            x = self.noise(x)
+        outputs = self.combine_image(x, labels)
         outputs = self.encode(outputs, trainable)
         self.mu, self.var = tf.split(outputs, num_or_size_splits=2, axis=1)
         compose_img = self.re_parameterization(self.mu, self.var)
@@ -165,7 +175,7 @@ class CVAE(VAE):
         return [outputs, compose_img]
 
     def test_inference(self, outputs, labels=None, trainable=False):
-        return self.inference(outputs, labels, trainable)
+        return self(outputs, labels, trainable)
 
     def predict(self, outputs, trainable=False):
         x = np.linspace(-1, 1, 20, dtype=np.float32)
@@ -215,6 +225,129 @@ class CVAE(VAE):
         label_image = tf.ones((labels.shape[0], self.size, self.size, self.class_dim))
         label_image = tf.multiply(labels, label_image)
         return tf.concat([image, label_image], axis=3)
+
+class VAEAC(VAE):
+    """
+    VARIATIONAL AUTOENCODER WITH ARBITRARY CONDITIONING
+    https://arxiv.org/pdf/1806.02382.pdf
+    https://github.com/azraelzhor/tf2-VAEAC
+    TODO:coding
+    """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.sigma_mu = 1e4
+        self.sigma_sigma = 1e-4
+        prior_model = Conv_Encoder if self.is_conv else PriorNetwork
+        self.prior = prior_model(
+            input_shape=(self.size, self.size, self.channel*2),
+            out_dim=self.out_dim,
+            l2_reg=self.l2_reg,
+            l2_reg_scale=self.l2_regularizer)
+
+
+    @staticmethod
+    def make_observed_inputs(inputs, masks):
+        return tf.where(tf.cast(masks, tf.bool), tf.zeros_like(inputs), inputs)
+
+    def call(self, inputs, masks, trainable=True):
+        if self.denoise:
+            inputs = self.noise(inputs)
+
+        inputs_with_masks = tf.concat([inputs, masks], axis=-1)
+        outputs = self.encode(inputs_with_masks, trainable)
+        mu, var = tf.split(outputs, num_or_size_splits=2, axis=1)
+        proposal_dist = tfp.distributions.Normal(
+            loc=mu,
+            scale=tf.clip_by_value(
+                tf.nn.softplus(var),
+                1e-3,
+                tf.float32.max
+            )
+        )
+
+        observed_inputs = self.make_observed_inputs(inputs, masks)
+        observed_inputs_with_masks = tf.concat([observed_inputs, masks], axis=-1)
+        prior_params = self.prior(observed_inputs_with_masks, trainable)
+        prior_mu, prior_var = tf.split(prior_params, num_or_size_splits=2, axis=1)
+        prior_dist = tfp.distributions.Normal(
+            loc=prior_mu,
+            scale=tf.clip_by_value(
+                tf.nn.softplus(prior_var),
+                1e-3,
+                tf.float32.max
+            )
+        )
+
+        regularizer = self.prior_regularizer(prior_dist)
+
+        latent = proposal_dist.sample()
+        generative_params = self.decode(latent, trainable)
+        gene_mu, gene_var = tf.split(generative_params, num_or_size_splits=2, axis=-1)
+        print(gene_mu.shape, gene_var.shape)
+
+        generative_dist = tfp.distributions.Normal(
+            loc=gene_mu,
+            scale=tf.clip_by_value(
+                tf.nn.softplus(gene_var),
+                1e-3,
+                tf.float32.max
+            )
+        )
+        sys.exit()
+
+        return
+
+    def test_inference(self, outputs, trainable=False):
+        compose_img, self.mu, self.var = self.gaussian(outputs.shape[0],2)
+        outputs = tf.clip_by_value(self.decode(compose_img, trainable), 1e-8, 1 - 1e-8)
+        return [outputs, compose_img]
+
+    def predict(self, outputs, trainable=False):
+        x = np.linspace(-1, 1, 20, dtype=np.float32)
+        y = np.flip(np.linspace(-1, 1, 20, dtype=np.float32))
+        z = []
+        for xi in x:
+            for yi in y:
+                z.append(np.array([xi, yi]))
+        z = np.stack(z)
+        outputs = tf.clip_by_value(self.decode(z, trainable), 1e-8, 1 - 1e-8)
+        return outputs
+
+    def loss(self, logits, answer):
+
+        regularizer = self.prior_regularizer(prior_dist)
+
+        # reconstruction loss
+        likelihood = tf.reduce_sum(
+            tf.reshape(
+                tf.multiply(generative_distribution.log_prob(inputs), masks),
+            )
+        )
+        """
+        logits = logits[0]
+        if len(logits.shape) > 2:
+            logits = tf.reshape(logits, [logits.shape[0], -1])
+        if len(answer.shape) > 2:
+            answer = tf.reshape(answer, [answer.shape[0], -1])
+        with tf.name_scope('reconstruct_loss'):
+            reconstruct_loss = -tf.reduce_sum(answer * tf.math.log(tf.clip_by_value(logits,1e-20,1e+20)) + (1 - answer) * tf.math.log(tf.clip_by_value(1 - logits,1e-20,1e+20)), axis=1)
+        with tf.name_scope('KL_divergence'):
+            KL_divergence = 0.5 * tf.reduce_sum(tf.square(self.mu) + tf.exp(self.var)**2 - 2 * self.var - 1, axis=1)
+        return tf.reduce_mean(reconstruct_loss + KL_divergence)
+        """
+
+    def prior_regularizer(self, prior):
+        # (batch_size, -1)
+        mu = prior.mean()
+        batch_size = mu.shape[0]
+        mu = tf.reshape(mu, (batch_size, -1))
+        sigma = tf.reshape(prior.scale, (batch_size, -1))
+
+        # (batch_size, )
+        mu_regularizer = -tf.reduce_sum(tf.square(mu), -1) / (2 * self.sigma_mu ** 2)
+        sigma_regularizer = tf.reduce_sum((tf.math.log(sigma) - sigma), -1) * self.sigma_sigma
+        return mu_regularizer + sigma_regularizer
+
 
 class AAE(CVAE):
     """
