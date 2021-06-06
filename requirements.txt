@@ -2,6 +2,7 @@ wget
 absl-py
 tqdm
 numpy
+pydot3
 keras
 sklearn
 gym
