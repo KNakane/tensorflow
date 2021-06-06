@@ -31,24 +31,23 @@ class ResNet18(BasedResNet):
         self.out = tf.keras.layers.Dense(self.out_dim)
         return
 
-    @tf.function
-    def __call__(self, x, trainable=True):
+    def call(self, x, training=False):
         with tf.name_scope(self.name):
-            x = self.conv1(x, training=trainable)
-            x = self.bn1(x, training=trainable)
-            x = self.relu1(x, training=trainable)
-            x = self.pool1(x, training=trainable)
+            x = self.conv1(x, training=training)
+            x = self.bn1(x, training=training)
+            x = self.relu1(x, training=training)
+            x = self.pool1(x, training=training)
             for block in self.block1:
-                x = block(x, training=trainable)
+                x = block(x, training=training)
             for block in self.block2:
-                x = block(x, training=trainable)
+                x = block(x, training=training)
             for block in self.block3:
-                x = block(x, training=trainable)
+                x = block(x, training=training)
             for block in self.block4:
-                x = block(x, training=trainable)
-            x = self.gap(x, training=trainable)
-            x = self.fc(x, training=trainable)
-            x = self.out(x, training=trainable)
+                x = block(x, training=training)
+            x = self.gap(x, training=training)
+            x = self.fc(x, training=training)
+            x = self.out(x, training=training)
             return x
 
 
@@ -74,24 +73,24 @@ class ResNet34(BasedResNet):
         self.out = tf.keras.layers.Dense(self.out_dim)
         return
 
-    @tf.function
-    def __call__(self, x, trainable=True):
+
+    def call(self, x, training=False):
         with tf.name_scope(self.name):
-            x = self.conv1(x)
-            x = self.bn1(x)
-            x = self.relu1(x)
-            x = self.pool1(x)
+            x = self.conv1(x, training=training)
+            x = self.bn1(x, training=training)
+            x = self.relu1(x, training=training)
+            x = self.pool1(x, training=training)
             for block in self.block1:
-                x = block(x)
+                x = block(x, training=training)
             for block in self.block2:
-                x = block(x)
+                x = block(x, training=training)
             for block in self.block3:
-                x = block(x)
+                x = block(x, training=training)
             for block in self.block4:
-                x = block(x)
-            x = self.gap(x)
-            x = self.fc(x)
-            x = self.out(x)
+                x = block(x, training=training)
+            x = self.gap(x, training=training)
+            x = self.fc(x, training=training)
+            x = self.out(x, training=training)
             return x
 
 class ResNet50(BasedResNet):
@@ -117,21 +116,21 @@ class ResNet50(BasedResNet):
         return
 
     @tf.function
-    def __call__(self, x, trainable=True):
+    def __call__(self, x, training=False):
         with tf.name_scope(self.name):
-            x = self.conv1(x)
-            x = self.bn1(x)
-            x = self.relu1(x)
-            x = self.pool1(x)
+            x = self.conv1(x, training=training)
+            x = self.bn1(x, training=training)
+            x = self.relu1(x, training=training)
+            x = self.pool1(x, training=training)
             for block in self.block1:
-                x = block(x)
+                x = block(x, training=training)
             for block in self.block2:
-                x = block(x)
+                x = block(x, training=training)
             for block in self.block3:
-                x = block(x)
+                x = block(x, training=training)
             for block in self.block4:
-                x = block(x)
-            x = self.gap(x)
-            x = self.fc(x)
-            x = self.out(x)
+                x = block(x, training=training)
+            x = self.gap(x, training=training)
+            x = self.fc(x, training=training)
+            x = self.out(x, training=training)
             return x

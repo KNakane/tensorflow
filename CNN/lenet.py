@@ -19,19 +19,29 @@ class LeNet(MyModel):
         self.fc2 = tf.keras.layers.Dense(84, activation='relu', kernel_regularizer=self.l2_regularizer)
         self.out = tf.keras.layers.Dense(self.out_dim, activation='softmax')
         return
-    
-    @tf.function
-    def __call__(self, x, trainable=True):
+
+    def call(self, x, training=False):
         with tf.name_scope(self.name):
-            x = self.conv1(x, training=trainable)
-            x = self.pooling1(x, training=trainable)
-            x = self.conv2(x, training=trainable)
-            x = self.pooling2(x, training=trainable)
-            x = self.flat(x, training=trainable)
-            x = self.fc1(x, training=trainable)
-            x = self.fc2(x, training=trainable)
-            x = self.out(x, training=trainable)
+            x = self.conv1(x, training=training)
+            x = self.pooling1(x, training=training)
+            x = self.conv2(x, training=training)
+            x = self.pooling2(x, training=training)
+            x = self.flat(x, training=training)
+            x = self.fc1(x, training=training)
+            x = self.fc2(x, training=training)
+            x = self.out(x, training=training)
             return x
+
+    @tf.function
+    def feature_extractor(self, x, training=False):
+        x = self.conv1(x, training=training)
+        x = self.pooling1(x, training=training)
+        x = self.conv2(x, training=training)
+        x = self.pooling2(x, training=training)
+        x = self.flat(x, training=training)
+        x = self.fc1(x, training=training)
+        x = self.fc2(x, training=training)
+        return x
 
 
 class VGG(MyModel):
@@ -53,21 +63,20 @@ class VGG(MyModel):
         self.fc2 = tf.keras.layers.Dense(200, activation='relu', kernel_regularizer=self.l2_regularizer)
         self.out = tf.keras.layers.Dense(self.out_dim, activation='softmax')
         return
-    
-    @tf.function
-    def __call__(self, x, trainable=True):
+
+    def call(self, x, training=False):
         with tf.name_scope(self.name):
-            x = self.conv1(x, training=trainable)
-            x = self.conv2(x, training=trainable)
-            x = self.pooling1(x, training=trainable)
-            x = self.conv3(x, training=trainable)
-            x = self.conv4(x, training=trainable)
-            x = self.pooling2(x, training=trainable)
-            x = self.conv5(x, training=trainable)
-            x = self.conv6(x, training=trainable)
-            x = self.pooling3(x, training=trainable)
-            x = self.flat(x, training=trainable)
-            x = self.fc1(x, training=trainable)
-            x = self.fc2(x, training=trainable)
-            x = self.out(x, training=trainable)
+            x = self.conv1(x, training=training)
+            x = self.conv2(x, training=training)
+            x = self.pooling1(x, training=training)
+            x = self.conv3(x, training=training)
+            x = self.conv4(x, training=training)
+            x = self.pooling2(x, training=training)
+            x = self.conv5(x, training=training)
+            x = self.conv6(x, training=training)
+            x = self.pooling3(x, training=training)
+            x = self.flat(x, training=training)
+            x = self.fc1(x, training=training)
+            x = self.fc2(x, training=training)
+            x = self.out(x, training=training)
             return x

@@ -23,19 +23,18 @@ class DenseNet(MyModel):
         self.out = tf.keras.layers.Dense(self.out_dim, activation='softmax')
         return
 
-    @tf.function
-    def __call__(self, x, trainable=True):
+    def call(self, x, training=False):
         with tf.name_scope(self.name):
-            x = self.conv(x, training=trainable)
-            x = self.maxpool(x, training=trainable)
+            x = self.conv(x, training=training)
+            x = self.maxpool(x, training=training)
             for i in tf.range(self.nb_blocks):
-                x = self.dense_blocks[i](x, training=trainable)
-                x = self.transition_blocks[i](x, training=trainable)
-            x = self.dense(x, training=trainable)
-            x = self.bn(x, training=trainable)
-            x = self.relu(x, training=trainable)
-            x = self.gap(x, training=trainable)
-            x = self.out(x, training=trainable)
+                x = self.dense_blocks[i](x, training=training)
+                x = self.transition_blocks[i](x, training=training)
+            x = self.dense(x, training=training)
+            x = self.bn(x, training=training)
+            x = self.relu(x, training=training)
+            x = self.gap(x, training=training)
+            x = self.out(x, training=training)
             return x
     
 
@@ -58,14 +57,13 @@ class DenseBlock(tf.keras.Model):
         for _ in range(self.__n_layers):
             self.dense_layers.append(DenseLayer(self.__growth_k, self.__bottle_neck))
         return      
-            
-    @tf.function
-    def __call__(self, x, trainable=True):
+
+    def call(self, x, training=False):
         with tf.name_scope(self.name):
             self.layers_concat.append(x)
             inputs = x.copy()
             for layers in self.dense_layers:
-                inputs = layers(inputs, training=trainable)
+                inputs = layers(inputs, training=training)
 
                 self.layers_concat.append(inputs)
                 x = tf.concat(self.layers_concat, axis=3)
@@ -97,18 +95,17 @@ class DenseLayer(tf.keras.Model):
             self.dropout1 = tf.keras.layers.Dropout(rate=0.2)
         return
 
-    @tf.function
-    def __call__(self, x, trainable=True):
+    def call(self, x, training=True):
         with tf.name_scope(self.name):
-            x = self.bn1(x, training=trainable)
-            x = self.relu1(x, training=trainable)
-            x = self.conv1(x, training=trainable)
-            x = self.dropout1(x, training=trainable)
+            x = self.bn1(x, training=training)
+            x = self.relu1(x, training=training)
+            x = self.conv1(x, training=training)
+            x = self.dropout1(x, training=training)
             if self.__bottle_neck:
-                x = self.bn2(x, training=trainable)
-                x = self.relu2(x, training=trainable)
-                x = self.conv2(x, training=trainable)
-                x = self.dropout2(x, training=trainable)
+                x = self.bn2(x, training=training)
+                x = self.relu2(x, training=training)
+                x = self.conv2(x, training=training)
+                x = self.dropout2(x, training=training)
 
             return x
 
@@ -125,11 +122,10 @@ class TransitionLayer(tf.keras.Model):
         self.avg_pool = tf.keras.layers.AveragePooling2D(pool_size=(2, 2), strides=(2, 2))
         return
 
-    @tf.function
-    def __call__(self, x, trainable=True):
-        x = self.bn(x, training=trainable)
-        x = self.relu(x, training=trainable)
-        x = self.conv(x, training=trainable)
-        x = self.dropout(x, training=trainable)
-        x = self.avg_pool(x, training=trainable)
+    def call(self, x, training=False):
+        x = self.bn(x, training=training)
+        x = self.relu(x, training=training)
+        x = self.conv(x, training=training)
+        x = self.dropout(x, training=training)
+        x = self.avg_pool(x, training=training)
         return x

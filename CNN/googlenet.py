@@ -16,15 +16,14 @@ class GoogLeNet(MyModel):
         self.out = tf.keras.layers.Dense(self.out_dim, activation='softmax')
         return
 
-    @tf.function
-    def __call__(self, x, trainable=True):
+    def call(self, x, training=False):
         with tf.name_scope(self.name):
-            x = self.conv1(x, training=trainable)
-            x = self.inception1(x, training=trainable)
-            x = self.inception2(x, training=trainable)
-            x = self.inception3(x, training=trainable)
-            x = self.gap(x, training=trainable)
-            x = self.out(x, training=trainable)
+            x = self.conv1(x, training=training)
+            x = self.inception1(x, training=training)
+            x = self.inception2(x, training=training)
+            x = self.inception3(x, training=training)
+            x = self.gap(x, training=training)
+            x = self.out(x, training=training)
             return x
 
 
@@ -36,9 +35,10 @@ class Inception(tf.keras.Model):
                  padding,
                  l2_reg_scale=None):
         super().__init__()
-        self.name = 'Inception{}'.format(number)
+        self._name = 'Inception{}'.format(number)
         self.__filters = filters
         self.l2_regularizer = l2_reg_scale
+        self._build()
 
     def _build(self):
         self.maxpool = tf.keras.layers.MaxPool2D(pool_size=(2, 2))
@@ -50,24 +50,23 @@ class Inception(tf.keras.Model):
         self.conv5 = tf.keras.layers.Conv2D(self.__filters, (5,5), (2,2), 'same', kernel_regularizer=self.l2_regularizer)
         return
 
-    @tf.function
-    def __call__(self, x, trainable=True):
-        with tf.name_scope(self.name):
+    def call(self, x, training=False):
+        with tf.name_scope(self._name):
             # Path1
-            path1 = self.conv1_5(x, training=trainable)
-            path1 = self.conv5(path1, training=trainable)
+            path1 = self.conv1_5(x, training=training)
+            path1 = self.conv5(path1, training=training)
 
             # Path2
-            path2 = self.conv1_3(x, training=trainable)
-            path2 = self.conv3(path2, training=trainable)
+            path2 = self.conv1_3(x, training=training)
+            path2 = self.conv3(path2, training=training)
 
             # Path3
-            path3 = self.maxpool(x, training=trainable)
-            path3 = self.conv1_pool(path3, training=trainable)
+            path3 = self.maxpool(x, training=training)
+            path3 = self.conv1_pool(path3, training=training)
 
             # Path4
-            path4 = self.conv1(x, training=trainable)
+            path4 = self.conv1(x, training=training)
 
-            output = tf.concat([path1, path2, path3, path4])
+            output = tf.concat([path1, path2, path3, path4], axis=-1)
 
             return output
