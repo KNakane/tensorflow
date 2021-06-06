@@ -5,6 +5,7 @@ import tensorflow as tf
 from utility.utils import Utils
 from dataset.load import Load
 from collections import OrderedDict
+from utility.mask_generator import ImageMaskGenerator
 from AutoEncoder.model import gaussian_mixture, swiss_roll
 
 class Trainer():
@@ -43,6 +44,9 @@ class Trainer():
         
         self.util.write_configuration(self.message, True)
         self.util.save_init(self.model, keep=self.checkpoints_to_keep, n_hour=self.keep_checkpoint_every_n_hours)
+
+        # print model construction and save figure
+        self.util.get_functional_model(model=self.model, input_shape=self.data.input_shape)
         return tf.summary.create_file_writer(self.util.tf_board)
 
     @tf.function
@@ -50,7 +54,7 @@ class Trainer():
         with tf.device(self.device):
             with tf.GradientTape() as tape:
                 with tf.name_scope('train_logits'):
-                    y_pre = self.model(images)
+                    y_pre = self.model(images, training=True)
                 with tf.name_scope('train_loss'):
                     loss = self.model.loss(y_pre, labels)
             self.model.optimize(loss, tape)
@@ -145,18 +149,22 @@ class Trainer():
 class AE_Trainer(Trainer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        if self.name == 'VAEAC':
+            self.mask_generator = ImageMaskGenerator()
 
     @tf.function
-    def _train_body(self, images, correct_image, labels):
+    def _train_body(self, images, correct_image, labels, mask=None):
         with tf.device(self.device):
             with tf.GradientTape(persistent=True) as tape:
                 with tf.name_scope('train_logits'):
                     if self.name == 'AAE':
-                        y_pre = self.model.inference(images, labels)
+                        y_pre = self.model(images, labels, True)
                     elif self.name == 'CVAE':
-                        y_pre = self.model.inference(images, labels)
+                        y_pre = self.model(images, labels, True)
+                    elif self.name == 'VAEAC':
+                        y_pre = self.model(images, mask, True)
                     else:
-                        y_pre = self.model.inference(images)
+                        y_pre = self.model(images, True)
                 with tf.name_scope('train_loss'):
                     loss = self.model.loss(y_pre, correct_image)
             self.model.optimize(loss, tape)
@@ -192,7 +200,8 @@ class AE_Trainer(Trainer):
             for i in range(1, self.n_epoch+1):
                 start_time = time.time()
                 for (train_images, train_labels) in train_dataset:
-                    train_pre, train_loss, train_accuracy = self._train_body(train_images, train_images, train_labels)
+                    mask = self.mask_generator(train_images) if self.name == "VAEAC" else None
+                    train_pre, train_loss, train_accuracy = self._train_body(train_images, train_images, train_labels, mask)
                 time_per_episode = time.time() - start_time
                 
                 if i == 1:
