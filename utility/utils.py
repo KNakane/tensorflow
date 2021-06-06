@@ -123,6 +123,22 @@ class Utils():
         builder.save()
         return
 
+    def get_functional_model(self, model, input_shape):
+        #https: // www.atmarkit.co.jp / ait / articles / 2003 / 10 / news016.html
+        x = tf.keras.Input(shape=input_shape, name='layer_in')
+        temp_model = tf.keras.Model(
+            inputs=[x],
+            outputs=model.call(x),  # ※サブクラス化したモデルの`call`メソッドを指定
+            name=model.name)  # 仮モデルにも名前付け
+
+        tf.keras.utils.plot_model(temp_model,
+                                  show_shapes=True,
+                                  show_layer_names=True,
+                                  expand_nested=True,
+                                  to_file=self.log_dir + '/model.png')
+        print(temp_model.summary())
+        return
+
     def construct_figure(self, x_test, decoded_imgs, step, n=10):
         '''
         元の画像と生成した画像10枚ずつを保存する
